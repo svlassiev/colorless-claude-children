@@ -32,7 +32,10 @@ Pushes to `main` trigger GitHub Actions workflow (`.github/workflows/deploy.yml`
 
 1. Builds Docker image for linux/amd64
 2. Pushes to Docker Hub as `svlassiev/colorless-days-children`
-3. Deploys to GKE cluster `sixty-years-to-death` in `europe-north1-a`
+3. Applies all K8s manifests from `k8s/` (infrastructure changes)
+4. Deploys new image to GKE cluster `sixty-years-to-death` in `europe-north1-a`
+
+All infrastructure is managed as code — changes to `k8s/` files are applied automatically on push. No manual `kubectl apply` needed.
 
 The workflow needs these repository secrets:
 - `DOCKERHUB_USERNAME` — Docker Hub username

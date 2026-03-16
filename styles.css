@@ -46,12 +46,39 @@ img {
     color: #0000CC;
 }
 
-.folder-table table {
-    width: 100%;
+.photo-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    text-align: center;
 }
 
-.folder-table img {
+.photo-grid img {
     border: 10px inset #FFFFAA;
+    max-width: 100%;
+    height: auto;
+}
+
+.photo-grid-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+}
+
+.photo-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.photo-nav-up {
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    .photo-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 .preview a:visited {
@@ -64,6 +91,8 @@ img {
 
 .preview-image {
     border: 0;
+    max-width: 100%;
+    height: auto;
 }
 
 .thumbnail-image {

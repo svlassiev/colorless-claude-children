@@ -42,6 +42,9 @@ jobs:
           location: ${{ env.GKE_ZONE }}
           project_id: ${{ env.GKE_PROJECT }}
 
+      - name: Apply K8s manifests
+        run: kubectl apply -f k8s/
+
       - name: Deploy to GKE
         run: |
           kubectl set image deployment/colorless-days-children \

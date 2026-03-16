@@ -28,22 +28,22 @@ function imageSource(folder, pathName, index, thumbnail) {
   return IMAGE_BASE + '/' + encodeURI(path);
 }
 
-function fileImageSource(folder, filename, thumbnail) {
-  if (thumbnail) {
-    var base = filename.replace(/\.jpg$/i, '');
-    return IMAGE_BASE + '/' + encodeURI(folder + '/' + base + '_thumbnail.jpg');
+function fileImageSource(folder, filename, variant) {
+  var base = filename.replace(/\.jpg$/i, '');
+  if (variant) {
+    return IMAGE_BASE + '/' + encodeURI(folder + '/' + base + '_' + variant + '.jpg');
   }
   return IMAGE_BASE + '/' + encodeURI(folder + '/' + filename);
 }
 
-function getImageUrl(album, n, thumbnail) {
+function getImageUrl(album, n, variant) {
   if (album.useFiles && albumFiles[album.folder]) {
     var files = albumFiles[album.folder].files;
     var idx = n - 1;
     if (idx < 0 || idx >= files.length) return '';
-    return fileImageSource(album.folder, files[idx], thumbnail);
+    return fileImageSource(album.folder, files[idx], variant);
   }
-  return imageSource(album.folder, album.pathName, n, thumbnail);
+  return imageSource(album.folder, album.pathName, n, variant === 'thumbnail');
 }
 
 var COLORS = [
@@ -139,51 +139,45 @@ function buildTable(el) {
   var first = parseInt(getParam('first') || '0', 10) || 0;
   var total = getAlbumTotal(album);
 
-  var table = document.createElement('table');
-  for (var i = 0; i < 4; i++) {
-    var tr = table.insertRow();
-    for (var j = 1; j <= 4; j++) {
-      var n = first + i * 4 + j;
-      if (n <= total) {
-        var img = document.createElement('img');
-        img.src = getImageUrl(album, n, true);
-        var a = document.createElement('a');
-        a.appendChild(img);
-        a.href = 'preview.html?folder=' + encodeURIComponent(folder) + '&n=' + n;
-        var td = tr.insertCell();
-        td.appendChild(a);
-      }
-    }
+  var grid = document.createElement('div');
+  grid.className = 'photo-grid';
+  for (var n = first + 1; n <= Math.min(first + 16, total); n++) {
+    var img = document.createElement('img');
+    img.src = getImageUrl(album, n, 'thumbnail');
+    var a = document.createElement('a');
+    a.appendChild(img);
+    a.href = 'preview.html?folder=' + encodeURIComponent(folder) + '&n=' + n;
+    grid.appendChild(a);
   }
   if (total <= 0) {
-    var tr2 = table.insertRow();
-    var td2 = tr2.insertCell();
-    td2.colSpan = 4;
-    td2.textContent = '\u042d\u0442\u0438 \u0444\u043e\u0442\u043e\u0433\u0440\u0430\u0444\u0438\u0438 \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u043d\u044b';
+    var empty = document.createElement('div');
+    empty.className = 'photo-grid-empty';
+    empty.textContent = '\u042d\u0442\u0438 \u0444\u043e\u0442\u043e\u0433\u0440\u0430\u0444\u0438\u0438 \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u043d\u044b';
+    grid.appendChild(empty);
   }
-  var navRow = table.insertRow();
-  var tdPrev = navRow.insertCell();
+  el.appendChild(grid);
+
+  var nav = document.createElement('div');
+  nav.className = 'photo-nav';
   if (first !== 0) {
     var nfirst = first < 16 ? 0 : first - 16;
     var prevLink = document.createElement('a');
     prevLink.href = 'folderIndex.html?folder=' + encodeURIComponent(folder) + '&first=' + nfirst;
     prevLink.textContent = '\u041f\u0440\u0435\u0434\u044b\u0434\u0443\u0449\u0438\u0435 \u0444\u043e\u0442\u043e\u0433\u0440\u0430\u0444\u0438\u0438';
-    tdPrev.appendChild(prevLink);
+    nav.appendChild(prevLink);
   }
-  var tdUp = navRow.insertCell();
-  tdUp.colSpan = 2;
   var upLink = document.createElement('a');
   upLink.href = 'index.html';
   upLink.textContent = '\u0412\u0432\u0435\u0440\u0445';
-  tdUp.appendChild(upLink);
-  var tdNext = navRow.insertCell();
+  upLink.className = 'photo-nav-up';
+  nav.appendChild(upLink);
   if (first + 16 < total) {
     var nextLink = document.createElement('a');
     nextLink.href = 'folderIndex.html?folder=' + encodeURIComponent(folder) + '&first=' + (first + 16);
     nextLink.textContent = '\u0421\u043b\u0435\u0434\u0443\u0449\u0438\u0435 \u0444\u043e\u0442\u043e\u0433\u0440\u0430\u0444\u0438\u0438';
-    tdNext.appendChild(nextLink);
+    nav.appendChild(nextLink);
   }
-  el.appendChild(table);
+  el.appendChild(nav);
 }
 
 function buildPreviewPanel(el) {
@@ -196,7 +190,7 @@ function buildPreviewPanel(el) {
   var table = document.createElement('table');
   var trPic = table.insertRow();
   var img = document.createElement('img');
-  img.src = getImageUrl(album, n, false);
+  img.src = getImageUrl(album, n, album.useFiles ? '1024' : null);
   img.className = 'preview-image';
   var imgLink = document.createElement('a');
   imgLink.appendChild(img);
@@ -209,7 +203,7 @@ function buildPreviewPanel(el) {
   var tdPrev = trNav.insertCell();
   if (n > 1) {
     var prevImg = document.createElement('img');
-    prevImg.src = getImageUrl(album, n - 1, true);
+    prevImg.src = getImageUrl(album, n - 1, 'thumbnail');
     prevImg.className = 'thumbnail-image';
     var prevLink = document.createElement('a');
     prevLink.appendChild(prevImg);
@@ -224,7 +218,7 @@ function buildPreviewPanel(el) {
   var tdNext = trNav.insertCell();
   if (n < total) {
     var nextImg = document.createElement('img');
-    nextImg.src = getImageUrl(album, n + 1, true);
+    nextImg.src = getImageUrl(album, n + 1, 'thumbnail');
     nextImg.className = 'thumbnail-image';
     var nextLink = document.createElement('a');
     nextLink.appendChild(nextImg);
