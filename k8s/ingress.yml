@@ -4,6 +4,7 @@ metadata:
   name: colorless-days-children
   annotations:
     kubernetes.io/ingress.global-static-ip-name: colorless-days-children
+    networking.gke.io/managed-certificates: serg-vlassiev-info
   labels:
     app: colorless-days-children
 spec:
@@ -12,11 +13,6 @@ spec:
       name: colorless-days-children
       port:
         name: http
-  tls:
-    - hosts:
-        - serg.vlassiev.info
-        - www.serg.vlassiev.info
-      secretName: letsencrypt-serg-vlassiev-info
   rules:
     - http:
         paths:

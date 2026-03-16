@@ -1,0 +1,16 @@
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: serg-vlassiev-info
+spec:
+  domains:
+    - serg.vlassiev.info
+    - www.serg.vlassiev.info
+---
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: sixty-lds
+spec:
+  domains:
+    - "xn--60-llcdbsrkrwijg.xn--p1ai"

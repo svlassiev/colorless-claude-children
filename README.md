@@ -50,6 +50,23 @@ New-style albums (camera filenames like `IMG_0562.jpg`):
 - Add file list to `albums-files.json`
 - Thumbnails use `_thumbnail` suffix: `IMG_0562_thumbnail.jpg`
 
+## TLS certificates
+
+HTTPS is handled by [GCP-managed certificates](https://cloud.google.com/kubernetes-engine/docs/how-to/managed-certs) — Google automatically provisions and renews Let's Encrypt certs. No cert-manager running on the cluster.
+
+Managed certificate resources are defined in `k8s/managed-certs.yml` and referenced by the Ingress via the `networking.gke.io/managed-certificates` annotation.
+
+Domains covered:
+- `serg.vlassiev.info`, `www.serg.vlassiev.info`
+- `xn--60-llcdbsrkrwijg.xn--p1ai` (60летдосмерти.рф)
+
+To check certificate status:
+```bash
+kubectl get managedcertificates
+```
+
+Provisioning takes ~10-15 minutes after first apply. Status goes from `Provisioning` → `Active`.
+
 ## Project structure
 
 ```
@@ -63,6 +80,6 @@ albums.json         — album metadata (96 albums)
 albums-files.json   — file lists for camera-filename albums
 nginx.conf          — gzip, cache headers, /healthz endpoint
 Dockerfile          — nginx:alpine + static files
-k8s/                — Kubernetes manifests (deployment, service, ingress)
+k8s/                — Kubernetes manifests (deployment, service, ingress, managed certs)
 .github/workflows/  — GitHub Actions CI/CD
 ```
