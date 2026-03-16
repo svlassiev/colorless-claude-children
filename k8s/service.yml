@@ -1,0 +1,14 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: colorless-days-children
+  labels:
+    app: colorless-days-children
+spec:
+  type: NodePort
+  selector:
+    app: colorless-days-children
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

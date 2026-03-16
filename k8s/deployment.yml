@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: colorless-days-children
+  labels:
+    app: colorless-days-children
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: colorless-days-children
+  template:
+    metadata:
+      labels:
+        app: colorless-days-children
+    spec:
+      imagePullSecrets:
+        - name: svlassiev-dockerhub
+      containers:
+        - name: colorless-days-children
+          image: svlassiev/colorless-days-children:2.0
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16M
+            limits:
+              cpu: 50m
+              memory: 32M

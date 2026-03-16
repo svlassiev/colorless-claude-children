@@ -1,0 +1,71 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: colorless-days-children
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: colorless-days-children
+  labels:
+    app: colorless-days-children
+spec:
+  defaultBackend:
+    service:
+      name: colorless-days-children
+      port:
+        name: http
+  tls:
+    - hosts:
+        - serg.vlassiev.info
+        - www.serg.vlassiev.info
+      secretName: letsencrypt-serg-vlassiev-info
+  rules:
+    - http:
+        paths:
+          - path: /*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: colorless-days-children
+                port:
+                  name: http
+          - path: /hiking/*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: hiking
+                port:
+                  name: http
+          - path: /hiking-api/*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: hiking-api
+                port:
+                  name: http
+          - path: /hiking
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: hiking
+                port:
+                  name: http
+          - path: /css/*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: hiking
+                port:
+                  name: http
+          - path: /js/*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: hiking
+                port:
+                  name: http
+          - path: /favicon.ico
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: hiking
+                port:
+                  name: http
