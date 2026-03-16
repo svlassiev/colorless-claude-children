@@ -46,4 +46,6 @@ jobs:
         run: |
           kubectl set image deployment/colorless-days-children \
             colorless-days-children=$IMAGE:$TAG
+          kubectl scale deployment/colorless-days-children --replicas=0
+          kubectl scale deployment/colorless-days-children --replicas=1
           kubectl rollout status deployment/colorless-days-children --timeout=120s
