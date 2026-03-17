@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Children of Colorless Days</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    @font-face {
+      font-family: 'Sebenta';
+      src: url('https://cdn.epidemicsound.com/fonts/Sebenta-Medium.woff2') format('woff2');
+      font-weight: 500;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    /* ── Tokens ─────────────────────────────────────────────────────────── */
+    :root {
+      --font-heading: 'Sebenta', Georgia, serif;
+      --font-body: 'Inter', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+      --es-pink:        #FF82C2;
+      --es-yellow:      #FFDA40;
+      --es-red:         #FF6138;
+      --es-azur:        #20AFFF;
+      --es-green:       #5AD363;
+      --es-purple:      #BB76FF;
+
+      --bg-base:        #121418;
+      --bg-surface:     rgba(207,214,229,0.08);
+      --bg-elevation:   #292C33;
+      --bg-floating:    #44474F;
+      --text-primary:   #FFFFFF;
+      --text-secondary: rgba(255,255,255,0.72);
+      --text-disabled:  rgba(255,255,255,0.32);
+      --border-secondary: rgba(207,214,229,0.56);
+      --border-tertiary:  rgba(207,214,229,0.08);
+      --divider:          rgba(207,214,229,0.16);
+      --action-accent:    #FF82C2;
+
+      --radius-surface: 16px;
+      --radius-element: 8px;
+    }
+
+    html[data-theme="light"] {
+      --bg-base:        #F1F0EB;
+      --bg-surface:     rgba(18,20,24,0.05);
+      --bg-elevation:   #FFFFFF;
+      --bg-floating:    #E8E6E1;
+      --text-primary:   #121418;
+      --text-secondary: rgba(18,20,24,0.6);
+      --text-disabled:  rgba(18,20,24,0.35);
+      --border-secondary: rgba(18,20,24,0.2);
+      --border-tertiary:  rgba(18,20,24,0.08);
+      --divider:          rgba(18,20,24,0.12);
+      --action-accent:    #E0609F;
+    }
+
+    /* ── Reset & Base ───────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    ::selection { background: var(--es-pink); color: #000; }
+    html[data-theme="light"] ::selection { color: #fff; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-base);
+      color: var(--text-primary);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      transition: background 0.35s, color 0.35s;
+      overflow-x: hidden;
+    }
+
+    /* ── Progress bar ───────────────────────────────────────────────────── */
+    #progress-bar {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      width: 0%;
+      background: linear-gradient(90deg, var(--es-pink), var(--es-azur), var(--es-yellow));
+      z-index: 2000;
+      transition: width 0.1s linear;
+    }
+
+    /* ── Theme toggle ───────────────────────────────────────────────────── */
+    .theme-toggle {
+      position: fixed;
+      top: 20px; right: 20px;
+      z-index: 1000;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--border-tertiary);
+      background: var(--bg-elevation);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      transition: background 0.3s, color 0.3s, border-color 0.3s;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .theme-toggle:hover { background: var(--bg-floating); color: var(--text-primary); }
+    .theme-toggle .icon-sun  { display: none; }
+    .theme-toggle .icon-moon { display: block; }
+    html[data-theme="light"] .theme-toggle .icon-sun  { display: block; }
+    html[data-theme="light"] .theme-toggle .icon-moon { display: none; }
+
+    /* ── Accent bar ─────────────────────────────────────────────────────── */
+    .accent-bar {
+      height: 3px;
+      background: linear-gradient(90deg, var(--es-pink), var(--es-azur), var(--es-yellow));
+    }
+
+    /* ── Hero ───────────────────────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 80px 24px 64px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 40%,
+        rgba(255,130,194,0.07) 0%,
+        rgba(32,175,255,0.04) 50%,
+        transparent 100%);
+      pointer-events: none;
+    }
+
+    .hero-label {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--es-pink);
+      margin-bottom: 32px;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.2s forwards;
+    }
+
+    .hero-title {
+      font-family: var(--font-heading);
+      font-size: clamp(2.8rem, 7vw, 6rem);
+      font-weight: 500;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      max-width: 900px;
+      margin-bottom: 24px;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.4s forwards;
+    }
+
+    .hero-subtitle {
+      font-family: var(--font-body);
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: var(--text-secondary);
+      font-style: italic;
+      margin-bottom: 56px;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.6s forwards;
+    }
+
+    /* Multicolour Russian greeting — mirroring the original blog */
+    .hero-greeting {
+      font-family: var(--font-heading);
+      font-size: 1.4rem;
+      line-height: 1.8;
+      margin-bottom: 12px;
+      min-height: 3em;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.8s forwards;
+    }
+
+    .hero-greeting-latin {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      letter-spacing: 0.05em;
+      font-style: italic;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 1s forwards;
+      margin-bottom: 64px;
+    }
+
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 1.1s forwards;
+    }
+
+    .hero-meta-item {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-disabled);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .hero-meta-sep {
+      width: 32px;
+      height: 1px;
+      background: var(--divider);
+    }
+
+    .hero-scroll {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 1.4s forwards;
+    }
+    .hero-scroll span {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      color: var(--text-disabled);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .hero-scroll-line {
+      width: 1px;
+      height: 40px;
+      background: linear-gradient(to bottom, var(--es-pink), transparent);
+      animation: scrollPulse 2s ease-in-out 2s infinite;
+    }
+
+    /* ── Layout ─────────────────────────────────────────────────────────── */
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .container--wide {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── Divider ─────────────────────────────────────────────────────────── */
+    .section-divider {
+      border: none;
+      height: 1px;
+      background: var(--divider);
+      margin: 80px 0;
+    }
+
+    /* ── Section ────────────────────────────────────────────────────────── */
+    .chapter {
+      padding: 80px 0 0;
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .chapter.visible { opacity: 1; transform: translateY(0); }
+
+    .chapter-header {
+      display: flex;
+      align-items: baseline;
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .chapter-numeral {
+      font-family: var(--font-heading);
+      font-size: clamp(4rem, 10vw, 7rem);
+      font-weight: 500;
+      line-height: 1;
+      color: var(--border-tertiary);
+      color: rgba(255,130,194,0.12);
+      flex-shrink: 0;
+      user-select: none;
+    }
+    html[data-theme="light"] .chapter-numeral { color: rgba(224,96,159,0.1); }
+
+    .chapter-heading-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .chapter-label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--es-pink);
+    }
+
+    .chapter-title {
+      font-family: var(--font-heading);
+      font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+      font-weight: 500;
+      line-height: 1.2;
+      color: var(--text-primary);
+    }
+
+    .chapter-body p {
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5em;
+    }
+    .chapter-body p:last-child { margin-bottom: 0; }
+
+    /* ── Pull quote ─────────────────────────────────────────────────────── */
+    .pull-quote {
+      margin: 48px 0;
+      padding: 32px 40px;
+      border-left: 3px solid var(--es-pink);
+      background: var(--bg-surface);
+      border-radius: 0 var(--radius-element) var(--radius-element) 0;
+    }
+    .pull-quote p {
+      font-family: var(--font-heading);
+      font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+      font-weight: 500;
+      line-height: 1.45;
+      color: var(--text-primary) !important;
+      font-style: italic;
+      margin: 0 !important;
+    }
+
+    /* ── Russian block ──────────────────────────────────────────────────── */
+    .russian-block {
+      margin: 48px 0;
+      padding: 40px;
+      background: var(--bg-elevation);
+      border: 1px solid var(--border-tertiary);
+      border-radius: var(--radius-surface);
+      text-align: center;
+    }
+    .russian-block .russian-text {
+      font-family: var(--font-heading);
+      font-size: clamp(1.3rem, 3vw, 1.8rem);
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    .russian-block .latin-echo {
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      font-style: italic;
+      letter-spacing: 0.03em;
+    }
+
+    /* ── Images ─────────────────────────────────────────────────────────── */
+    .img-full {
+      width: 100%;
+      margin: 48px 0;
+      display: block;
+    }
+    .img-full img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: var(--radius-element);
+      object-fit: cover;
+    }
+
+    .img-float-right {
+      float: right;
+      width: 42%;
+      margin: 8px 0 32px 40px;
+    }
+    .img-float-left {
+      float: left;
+      width: 42%;
+      margin: 8px 40px 32px 0;
+    }
+    .img-float-right img,
+    .img-float-left img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: var(--radius-element);
+      object-fit: cover;
+    }
+    .clearfix::after { content: ''; display: table; clear: both; }
+
+    .img-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 48px 0;
+    }
+    .img-grid img {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+      border-radius: var(--radius-element);
+      display: block;
+    }
+
+    .img-caption {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-disabled);
+      letter-spacing: 0.06em;
+      font-style: italic;
+      margin-top: 8px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    /* panoramic tall image */
+    .img-full--tall img { height: 520px; object-fit: cover; object-position: center; }
+
+    /* ── Timeline strip ─────────────────────────────────────────────────── */
+    .timeline-strip {
+      margin: 80px 0;
+      padding: 40px;
+      background: var(--bg-elevation);
+      border: 1px solid var(--border-tertiary);
+      border-radius: var(--radius-surface);
+      overflow-x: auto;
+    }
+
+    .timeline-strip-label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--es-pink);
+      margin-bottom: 24px;
+    }
+
+    .timeline-track {
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+      min-width: 700px;
+      position: relative;
+    }
+    .timeline-track::before {
+      content: '';
+      position: absolute;
+      top: 10px;
+      left: 0; right: 0;
+      height: 1px;
+      background: var(--divider);
+    }
+
+    .timeline-node {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+    }
+    .timeline-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      border: 2px solid var(--es-pink);
+      background: var(--bg-base);
+      position: relative;
+      z-index: 1;
+      flex-shrink: 0;
+    }
+    .timeline-dot--accent { background: var(--es-pink); }
+    .timeline-year {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--text-disabled);
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+    .timeline-event {
+      font-family: var(--font-body);
+      font-size: 0.68rem;
+      color: var(--text-secondary);
+      text-align: center;
+      line-height: 1.4;
+      max-width: 80px;
+    }
+
+    /* ── Opening paragraph ──────────────────────────────────────────────── */
+    .intro-text {
+      padding: 80px 0 40px;
+    }
+    .intro-text p {
+      font-size: clamp(1.1rem, 2.2vw, 1.25rem);
+      color: var(--text-secondary);
+      line-height: 1.75;
+      margin-bottom: 1.5em;
+    }
+    .intro-text p:first-child::first-letter {
+      font-family: var(--font-heading);
+      font-size: 4.5em;
+      line-height: 0.85;
+      float: left;
+      margin-right: 8px;
+      margin-top: 4px;
+      color: var(--es-pink);
+    }
+
+    /* ── Colophon / footnote ────────────────────────────────────────────── */
+    .colophon {
+      margin: 80px 0;
+      padding: 40px;
+      border-top: 1px solid var(--divider);
+    }
+    .colophon p {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-disabled);
+      line-height: 1.7;
+      letter-spacing: 0.01em;
+    }
+    .colophon p sup { font-size: 0.6em; color: var(--es-pink); }
+    .colophon-asterisk { color: var(--es-pink); }
+
+    /* ── Footer ─────────────────────────────────────────────────────────── */
+    footer {
+      padding: 48px 24px;
+      text-align: center;
+      border-top: 1px solid var(--divider);
+    }
+    footer p {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-disabled);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    footer a {
+      color: var(--es-pink);
+      text-decoration: none;
+    }
+    footer a:hover { text-decoration: underline; }
+
+    /* ── Animations ─────────────────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 0.3; transform: scaleY(1); }
+      50%       { opacity: 1;   transform: scaleY(1.15); }
+    }
+
+    @keyframes letterIn {
+      from { opacity: 0; transform: translateY(8px) scale(0.9); }
+      to   { opacity: 1; transform: translateY(0)  scale(1); }
+    }
+
+    /* ── Responsive ─────────────────────────────────────────────────────── */
+    @media (max-width: 700px) {
+      .img-float-right,
+      .img-float-left {
+        float: none;
+        width: 100%;
+        margin: 24px 0;
+      }
+      .img-grid { grid-template-columns: 1fr; }
+      .img-grid img { height: 240px; }
+      .pull-quote { padding: 24px; }
+      .timeline-strip { padding: 24px 16px; }
+      .chapter-numeral { font-size: 3.5rem; }
+      .russian-block { padding: 24px; }
+      .hero-title { font-size: 2.4rem; }
+    }
+
+    /* ── EXIF badge ─────────────────────────────────────────────────────── */
+    .exif-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(32,175,255,0.1);
+      color: var(--es-azur);
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.08em;
+      padding: 3px 10px;
+      border-radius: 10000px;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="progress-bar"></div>
+
+  <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+    <span class="icon-moon">&#9790;</span>
+    <span class="icon-sun">&#9728;</span>
+  </button>
+
+  <div class="accent-bar"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════ HERO -->
+  <section class="hero">
+    <p class="hero-label">A literary anthropological portrait</p>
+
+    <h1 class="hero-title">The Children<br>of Colorless Days</h1>
+
+    <p class="hero-subtitle">A portrait assembled from photographs</p>
+
+    <div class="hero-greeting" id="hero-greeting" aria-label="Zdravstvuyte, Deti Bestsvetnyh Dney!"></div>
+
+    <p class="hero-greeting-latin">Hello, Children of Colorless Days!</p>
+
+    <div class="hero-meta">
+      <span class="hero-meta-item">St. Petersburg</span>
+      <span class="hero-meta-sep"></span>
+      <span class="hero-meta-item">c. 2003–2013</span>
+      <span class="hero-meta-sep"></span>
+      <span class="hero-meta-item">~4,200 photographs</span>
+    </div>
+
+    <div class="hero-scroll">
+      <div class="hero-scroll-line"></div>
+      <span>scroll</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════ OPENING -->
+  <div class="container">
+    <div class="intro-text chapter" data-chapter>
+      <p>I found it by accident, the way one finds the best things on the internet — a small personal domain, no social platform, no algorithm, no advertising. Just a page called <em>"The Importance Of Being Idle"</em> (a nod to Wilde that announces, immediately, something about its author's sensibility) and a greeting rendered in multicoloured, randomly-sized Russian letters.</p>
+      <p>The irony is deliberate. The days documented here are anything but colorless.</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ TIMELINE -->
+  <div class="container--wide">
+    <div class="timeline-strip chapter" data-chapter>
+      <p class="timeline-strip-label">Album timeline</p>
+      <div class="timeline-track">
+        <div class="timeline-node">
+          <div class="timeline-dot timeline-dot--accent"></div>
+          <span class="timeline-year">c. 1987</span>
+          <span class="timeline-event">Born, Leningrad / St. Petersburg</span>
+        </div>
+        <div class="timeline-node">
+          <div class="timeline-dot"></div>
+          <span class="timeline-year">1998</span>
+          <span class="timeline-event">Enters FML 239</span>
+        </div>
+        <div class="timeline-node">
+          <div class="timeline-dot timeline-dot--accent"></div>
+          <span class="timeline-year">2004–05</span>
+          <span class="timeline-event">Graduation; first albums</span>
+        </div>
+        <div class="timeline-node">
+          <div class="timeline-dot"></div>
+          <span class="timeline-year">2005</span>
+          <span class="timeline-event">1st Traditional May Hike</span>
+        </div>
+        <div class="timeline-node">
+          <div class="timeline-dot"></div>
+          <span class="timeline-year">2006–09</span>
+          <span class="timeline-event">University years</span>
+        </div>
+        <div class="timeline-node">
+          <div class="timeline-dot timeline-dot--accent"></div>
+          <span class="timeline-year">Jun 2009</span>
+          <span class="timeline-event">Army conscription</span>
+        </div>
+        <div class="timeline-node">
+          <div class="timeline-dot"></div>
+          <span class="timeline-year">Nov 2010</span>
+          <span class="timeline-event">Prague, visit to Nastya</span>
+        </div>
+        <div class="timeline-node">
+          <div class="timeline-dot timeline-dot--accent"></div>
+          <span class="timeline-year">May 2011</span>
+          <span class="timeline-event">Kailash kora, Tibet</span>
+        </div>
+        <div class="timeline-node">
+          <div class="timeline-dot"></div>
+          <span class="timeline-year">2012–13</span>
+          <span class="timeline-event">Lovozero expeditions</span>
+        </div>
+        <div class="timeline-node">
+          <div class="timeline-dot"></div>
+          <span class="timeline-year">2013–14</span>
+          <span class="timeline-event">Blog ends; 10th hike</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ CHAPTER I ── Before Photos -->
+  <div class="container">
+    <article class="chapter" data-chapter>
+      <div class="chapter-header">
+        <span class="chapter-numeral" aria-hidden="true">I</span>
+        <div class="chapter-heading-group">
+          <span class="chapter-label">Before the photographs</span>
+          <h2 class="chapter-title">c. 1987–2003</h2>
+        </div>
+      </div>
+
+      <div class="chapter-body">
+        <p>To understand this blog you must understand its silence — the years it doesn't cover.</p>
+
+        <p>He was born approximately 1987–1988, almost certainly in St. Petersburg — then still called Leningrad for the first three or four years of his life. He arrived into the last light of Soviet civilization: the queues, the collective apartments with their floral wallpapers (those wallpapers will appear in his photographs again and again, as if he is always trying to remember something), the certainty that the world had a shape even if that shape was grey.</p>
+
+        <p>Then 1991. The wall of the Soviet world fell not with a bang but with a long, chaotic crumbling, and the 1990s descended on Russia with a peculiar combination of liberation and catastrophe. Hyperinflation. Kiosks selling Turkish candy and pirated cassettes. Men his father's age reduced to selling possessions on street corners. But also: the sudden availability of Western music, books, ideas. A child growing up in St. Petersburg in the 1990s was growing up in the most culturally charged city in Russia — the city of Brodsky, of Dostoevsky, of the Hermitage, of the Neva ice. A city that had always considered itself slightly separate from the Russian state, more European, more literary, more ironic.</p>
+
+        <div class="pull-quote">
+          <p>"Somewhere around the age of ten or eleven, he sat an entrance examination for Физико-математический лицей №239. He passed. This is not a small fact."</p>
+        </div>
+
+        <p>FML 239 produced Perelman's contemporaries, future mathematicians at MIT and Stanford, engineers at Boeing and Yandex, physicists at CERN. Entry is competitive and demanding. His parents, whoever they were, had prepared him for this. Or he had prepared himself.</p>
+
+        <p>He picked up a guitar somewhere in these years. He would play it at dachas, by open windows, looking out at fields.</p>
+      </div>
+    </article>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- ═════════════════════════════════════ CHAPTER II ── The Graduation -->
+  <div class="container">
+    <article class="chapter" data-chapter>
+      <div class="chapter-header">
+        <span class="chapter-numeral" aria-hidden="true">II</span>
+        <div class="chapter-heading-group">
+          <span class="chapter-label">The graduation</span>
+          <h2 class="chapter-title">c. 2004–2005</h2>
+        </div>
+      </div>
+
+      <div class="chapter-body clearfix">
+        <div class="img-full img-full--tall">
+          <img
+            src="https://storage.googleapis.com/colorless-days-children/party/party001.jpg"
+            alt="Graduation party — boys in suits in a Russian school classroom"
+            loading="lazy">
+          <span class="img-caption">Graduation party, FML 239. Boys in dark suits, mint-green walls, a teacher watching from the back. They are seventeen, eighteen. They have no idea what is about to happen to them.</span>
+        </div>
+
+        <p>The first album is called <em>"Photographs from the graduation party"</em> and the first photograph is all you need to understand what this school was. A Russian classroom, mint-green walls. Boys — all boys in this frame, because this is a physics-mathematics school and the gender ratio bends that way — wearing dark suits and ties, some of them with the slightly stunned, slightly proud expression of young men who have made it through a gauntlet.</p>
+
+        <div class="img-float-right">
+          <img
+            src="https://storage.googleapis.com/colorless-days-children/school/Picture001.jpg"
+            alt="Young man standing at ornate wooden doors in St. Petersburg"
+            loading="lazy">
+          <span class="img-caption">St. Petersburg, c. 2003–04. The great carved doors of the city that raised him.</span>
+        </div>
+
+        <p>A female teacher stands at the back, arms folded, watching. One boy sits on the edge of the teacher's desk, which would be unthinkable during normal school hours but today everything is permitted. They are seventeen, eighteen. They have no idea what is about to happen to them.</p>
+
+        <p>In another photograph from roughly the same period, he is standing alone in front of a set of enormous, ornate wooden doors — the kind of doors you find in St. Petersburg's historic buildings, arched, carved, weathered, simultaneously grandeur and decay. He is wearing a pink-and-white checked shirt and dark jeans. He stands with his hands slightly at his sides, looking at the camera without quite smiling. He is perhaps sixteen. There is something in his posture that is already characteristic: composed, slightly apart, observing.</p>
+      </div>
+    </article>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- ════════════════════════════════════ CHAPTER III ── The Summer World -->
+  <div class="container">
+    <article class="chapter" data-chapter>
+      <div class="chapter-header">
+        <span class="chapter-numeral" aria-hidden="true">III</span>
+        <div class="chapter-heading-group">
+          <span class="chapter-label">The summer world</span>
+          <h2 class="chapter-title">2005–2006</h2>
+        </div>
+      </div>
+
+      <div class="chapter-body clearfix">
+        <p>Summer in Russia means the dacha. It means floral wallpaper and wooden shelves of miscellaneous objects and a sink in the corner of the kitchen and a garden beyond the window and teenagers who have known each other for years and are in the process of becoming adults together.</p>
+
+        <div class="img-float-left">
+          <img
+            src="https://storage.googleapis.com/colorless-days-children/summer2005/summer001.jpg"
+            alt="Girl with red hair at dacha kitchen"
+            loading="lazy">
+          <span class="img-caption">Summer 2005, Zuevo. She is the energy of those summers — the kind of girl who makes rooms louder.</span>
+        </div>
+
+        <p>The album <em>"Summer 2005 in Zuevo"</em> documents this world. A girl with long red-dyed hair and braces raises both arms in the kitchen of a village house, exuberant, laughing, her black lace top incongruously fashionable against the Soviet-era background. She is the energy of those summers — the kind of girl who makes rooms louder.</p>
+
+        <p>Sitting at the same table in another photograph: two girls and a boy, all with the same inward, slightly solemn expression of people listening to something or thinking something they are not quite saying. The boy has short fair hair, his hands loosely clasped on the table. The room behind them is warm and close. Someone has hung a coat by the door.</p>
+
+        <div class="img-float-right">
+          <img
+            src="https://storage.googleapis.com/colorless-days-children/photo/img001.jpg"
+            alt="Three teenagers at a dacha table"
+            loading="lazy">
+          <span class="img-caption">The dacha interior — floral wallpaper, close rooms, unhurried evenings. A recurring backdrop in the archive.</span>
+        </div>
+
+        <p>Summer 2006 yields 320 photographs — his largest album. Somewhere in it is a young man sitting by the window of a wooden dacha building, holding a white Yamaha electric guitar, looking at the camera with what I can only call studied cool — the particular expression of a teenage boy who has just discovered what music can do for one's self-image. The hills behind him are green. It is summer.</p>
+      </div>
+
+      <div class="img-full">
+        <img
+          src="https://storage.googleapis.com/colorless-days-children/summer2006/Picture001.jpg"
+          alt="Young man with Yamaha guitar at dacha window, summer 2006"
+          loading="lazy">
+        <span class="img-caption">Summer 2006. A white Yamaha electric guitar, a dacha window, the hills beyond. 320 photographs in this album — his richest summer.</span>
+      </div>
+    </article>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- ══════════════════════════════════════ CHAPTER IV ── The Tradition -->
+  <div class="container">
+    <article class="chapter" data-chapter>
+      <div class="chapter-header">
+        <span class="chapter-numeral" aria-hidden="true">IV</span>
+        <div class="chapter-heading-group">
+          <span class="chapter-label">The tradition</span>
+          <h2 class="chapter-title">2005–2013</h2>
+        </div>
+      </div>
+
+      <div class="chapter-body clearfix">
+        <p>The most important fact about this blog is not the individual albums but the series that runs through all of them like a spine.</p>
+
+        <p>The First Traditional May Hike. The Second Traditional May Hike. The First Traditional Autumn Hike. And so on, numbered with the gravity of ceremonies, until we reach the Tenth Traditional May Hike and the Tenth Traditional Autumn Hike — twenty in total, spanning a decade.</p>
+
+        <div class="img-float-left">
+          <img
+            src="https://storage.googleapis.com/colorless-days-children/Lovozero10/Picture001.jpg"
+            alt="FML 239 expedition badge, Lovozero Tundra 2010"
+            loading="lazy">
+          <span class="img-caption">ФМЛ №239 — Ловозерские Тундры, 2010. The badge stitched onto a backpack: school identity carried to the Arctic Circle.</span>
+        </div>
+
+        <p>This is <em>turizm</em> — not tourism but the Russian tradition of organized hiking, a practice with deep Soviet roots that survived the collapse because it answered something permanent in human beings: the need to leave the city and carry everything on your back and sleep on the ground and trust the people around you completely.</p>
+
+        <p>The FML 239 badge appears explicitly in a photograph from Lovozero Tundra 2010 — stitched onto a backpack, a little printed photograph of an Arctic waterfall beneath the school's emblem. The school organized expeditions to the Kola Peninsula, far above the Arctic Circle. These children of colorless days went to places of extraordinary wildness, year after year.</p>
+
+        <div class="pull-quote">
+          <p>"It is one image. No people. Just the tent and the forest and the water. He has learned something about photography, and something about solitude."</p>
+        </div>
+
+        <p>The hike albums span from his school days through his army service and beyond, gathering and losing participants as people graduated, moved, married, had children — but the tradition held. By the time of the Tenth Traditional May Hike, the photographs are taken with a Nikon DSLR.</p>
+      </div>
+
+      <div class="img-full img-full--tall">
+        <img
+          src="https://storage.googleapis.com/colorless-days-children/10tradmay/DSC_0356.jpg"
+          alt="Green tent by a forest lake, 10th Traditional May Hike"
+          loading="lazy">
+        <span class="img-caption">10th Traditional May Hike. A green tent in a pine forest beside a perfectly still lake. It is one image. No people.</span>
+      </div>
+    </article>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- ═══════════════════════════════ CHAPTER V ── University & Army -->
+  <div class="container">
+    <article class="chapter" data-chapter>
+      <div class="chapter-header">
+        <span class="chapter-numeral" aria-hidden="true">V</span>
+        <div class="chapter-heading-group">
+          <span class="chapter-label">The university, and the army</span>
+          <h2 class="chapter-title">2006–2009/10</h2>
+        </div>
+      </div>
+
+      <div class="chapter-body">
+        <div class="img-grid">
+          <div>
+            <img
+              src="https://storage.googleapis.com/colorless-days-children/UniversityIVV/Picture001.jpg"
+              alt="University students examining exam papers"
+              loading="lazy">
+            <span class="img-caption">University, St. Petersburg, c. 2007–08. Exam results, institutional green, twenty years old.</span>
+          </div>
+          <div>
+            <img
+              src="https://storage.googleapis.com/colorless-days-children/army/Picture001.jpg"
+              alt="Two Russian conscripts at a St. Petersburg railway station, June 2009"
+              loading="lazy">
+            <span class="img-caption">June 2009. Two conscripts, woodland camouflage, Finlyandsky station. The metadata is precise. They look very young.</span>
+            <span class="exif-badge">Canon PowerShot A410 · 15 Jun 2009</span>
+          </div>
+        </div>
+
+        <p>The university album shows a group of young men clustered around a printed sheet — exam results, or a timetable — in a classroom that smells of chalk and institutional paint. They are animated, intent. Someone is wearing glasses and a white shirt and leaning over to read. The room is institutional green, the same green as the school, as every Soviet-built educational institution in Russia. They are about twenty years old.</p>
+
+        <p>And then: the army.</p>
+
+        <p>Russia's conscription has a specific visual language. Two young men in woodland camouflage, heads recently shaved, standing under the vaulted iron-and-glass ceiling of a major St. Petersburg railway station. They look directly at the camera. One has his arm around the other's shoulder. They look very young. The metadata says June 2009. The army takes them from the city that shaped them — from the university, from the hiking group, from the dachas and the guitars — and deposits them somewhere else entirely.</p>
+
+        <p>The army album is 191 photographs. He documented it, as he documented everything. He came back.</p>
+      </div>
+    </article>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- ══════════════════════════════════════ CHAPTER VI ── The Journey Out -->
+  <div class="container">
+    <article class="chapter" data-chapter>
+      <div class="chapter-header">
+        <span class="chapter-numeral" aria-hidden="true">VI</span>
+        <div class="chapter-heading-group">
+          <span class="chapter-label">The journey out</span>
+          <h2 class="chapter-title">2010–2011</h2>
+        </div>
+      </div>
+
+      <div class="chapter-body clearfix">
+        <p>Something shifts after the army. Or perhaps it was shifting before and the army simply catalyzed it.</p>
+
+        <div class="img-float-right">
+          <img
+            src="https://storage.googleapis.com/colorless-days-children/VisitToNastya/Picture030.jpg"
+            alt="No skateboarding sign in snowy Prague, November 2010"
+            loading="lazy">
+          <span class="img-caption">Prague, November 2010. Not the cathedral. Not the Charles Bridge. A "no skateboarding" sign, dusted with snow. The observant eye chooses differently.</span>
+          <span class="exif-badge">Canon IXUS 95 IS · 28 Nov 2010</span>
+        </div>
+
+        <p>In November 2010 he travels to Prague — <em>VisitToNastya</em>, the album is called, a visit to a friend named Nastya who is living there. It is snowing in Prague. He photographs a "no skateboarding" sign on a pole, dusted with snow, against a cream-coloured wall. The partial text of a Czech street name is visible behind it. It is exactly the kind of photograph an observant, slightly ironic person takes when they arrive in a new city: not the cathedral, not the Charles Bridge, not the postcard view — but the small, funny, specific detail that makes a place real.</p>
+
+        <p>Then, six months later: Tibet.</p>
+
+        <p>The album is called <em>Кайлас</em> — Kailash.</p>
+
+        <p>Mount Kailash, at 6,638 metres in the Tibetan Autonomous Region, is held sacred by Hindus, Tibetan Buddhists, Jains, and Bon practitioners. No one is permitted to climb it. The practice is the kora: a circumambulation of the mountain, 52 kilometres, taking three days, reaching a maximum altitude of 5,630 metres at the Dolma La pass. It requires permits, preparation, fitness, and something harder to name.</p>
+      </div>
+
+      <div class="img-full">
+        <img
+          src="https://storage.googleapis.com/colorless-days-children/Kailash/IMG_0769.jpg"
+          alt="Lone backpacker at Tibetan prayer wheels during Kailash kora"
+          loading="lazy">
+        <span class="img-caption">Kailash kora, Tibet, May 2011. A lone figure at the prayer wheels. A dog ambles alongside. He is twenty-three or twenty-four years old.</span>
+      </div>
+
+      <div class="chapter-body" style="padding-top: 0;">
+        <p>An earlier image from the same kora shows a lone figure walking a dirt path past a row of Tibetan prayer wheels decorated with coloured flags and yak horns. A dog ambles alongside. The figure's posture is that of someone mid-thought, mid-step, mid-journey.</p>
+      </div>
+
+      <div class="pull-quote">
+        <p>"At 6:16 in the morning on May 4, 2011, he photographs pack yaks crossing the Dolma La in deep snow. It is dawn on the roof of the world, and someone — he — is there with a Canon compact camera and a rucksack."</p>
+      </div>
+
+      <div class="img-full img-full--tall">
+        <img
+          src="https://storage.googleapis.com/colorless-days-children/Kailash/IMG_0820.jpg"
+          alt="Pack yaks crossing the Dolma La pass in deep snow, Kailash kora"
+          loading="lazy">
+        <span class="img-caption">Dolma La pass, 5,630 m. May 4, 2011, 6:16 a.m. Tibetan handlers guide yaks loaded with expedition gear through deep snow. The sky is white and immense.</span>
+        <span class="exif-badge">Canon PowerShot A1200 · 04 May 2011 · 06:16</span>
+      </div>
+    </article>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- ══════════════════════════════════════ CHAPTER VII ── The Turning -->
+  <div class="container">
+    <article class="chapter" data-chapter>
+      <div class="chapter-header">
+        <span class="chapter-numeral" aria-hidden="true">VII</span>
+        <div class="chapter-heading-group">
+          <span class="chapter-label">The turning</span>
+          <h2 class="chapter-title">2011–2013</h2>
+        </div>
+      </div>
+
+      <div class="chapter-body clearfix">
+
+        <div class="img-float-left">
+          <img
+            src="https://storage.googleapis.com/colorless-days-children/Karelia2007/Picture001.jpg"
+            alt="Young man in Red Fox jacket at a winter night gathering"
+            loading="lazy">
+          <span class="img-caption">Winter gathering, c. 2007. A Red Fox outdoor jacket — the gear is already serious. The group is still whole.</span>
+        </div>
+
+        <p>He comes back from Tibet. The hikes continue — paddling canoes somewhere in 2011, back to Lovozero in 2012 and 2013, the Arctic becoming a kind of annual address. His camera upgrades. The images get technically better and emotionally quieter.</p>
+
+        <p>Friends are marrying. Tanya and Andrey's Wedding. Kate's Wedding. The large, mobile cohort of school and university is beginning to crystallize into separate lives. Children will follow. The tight geography of shared apartments and shared dachas and shared hikes will gradually give way to the private geographies of family.</p>
+
+        <div class="img-float-right">
+          <img
+            src="https://storage.googleapis.com/colorless-days-children/NUral/Picture050.jpg"
+            alt="Three people at an outdoor departure, North Ural expedition"
+            loading="lazy">
+          <span class="img-caption">Before the North Ural expedition. An older man, a young woman, a young man with a black cap. The send-off has the quiet ceremony of things done seriously.</span>
+        </div>
+
+        <p>The last albums in the list are the Tenth Traditional May Hike and the Tenth Traditional Autumn Hike — only four photographs in the autumn one, as if the tradition is tapering toward silence. The green tent by the lake. A few shapes in the woods. A world briefly lit.</p>
+      </div>
+    </article>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- ════════════════════════════════════ CHAPTER VIII ── Why It Ends -->
+  <div class="container">
+    <article class="chapter" data-chapter>
+      <div class="chapter-header">
+        <span class="chapter-numeral" aria-hidden="true">VIII</span>
+        <div class="chapter-heading-group">
+          <span class="chapter-label">Why it ends</span>
+          <h2 class="chapter-title">c. 2013–2014</h2>
+        </div>
+      </div>
+
+      <div class="chapter-body">
+        <p>Personal blogs of this type — lovingly hand-coded, sitting on personal domains, structured around photo albums rather than feeds — belong to a specific moment in internet culture: roughly 2003–2012, when the web was still something you built rather than something you merely inhabited. By 2013–2014, VKontakte was where young Russians posted photos, shared moments, maintained friendships. Instagram was rising. The effort of maintaining a personal site became both more visible and less rational.</p>
+
+        <p>But I think there is more than that.</p>
+
+        <div class="pull-quote">
+          <p>"It becomes harder to narrate your own life as a continuous story when the story is no longer shared."</p>
+        </div>
+
+        <p>The blog is a document of a particular social world — the world of this cohort, these friends, these mountains and dachas and stations. As that world disperses into adult life, the coherence that made the blog worth maintaining disperses too. It becomes harder to narrate your own life as a continuous story when the story is no longer shared.</p>
+      </div>
+    </article>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- ═════════════════════════════════════ CHAPTER IX ── After Photos -->
+  <div class="container">
+    <article class="chapter" data-chapter>
+      <div class="chapter-header">
+        <span class="chapter-numeral" aria-hidden="true">IX</span>
+        <div class="chapter-heading-group">
+          <span class="chapter-label">After the photographs</span>
+          <h2 class="chapter-title">2014–present</h2>
+        </div>
+      </div>
+
+      <div class="chapter-body">
+        <p>He is approximately 37–38 years old as of 2026.</p>
+
+        <p>His educational background — FML 239, likely a St. Petersburg technical university — positioned him for precisely the sector that boomed in Russia in the 2010s: technology, mathematics, software engineering. Yandex, JetBrains (St. Petersburg's own, makers of the IntelliJ IDE and the Kotlin language), a dozen other firms were building world-class products in the city where he grew up. It is not difficult to imagine him among them.</p>
+
+        <p>His profile — internationally curious, literary, physically adventurous, with a friendship network that spanned Prague — is the profile of a generation of educated Russians who spent the 2010s increasingly aware of the gap between the country their education had prepared them for and the country that was actually emerging around them. 2022 made that gap into a chasm. Many of this generation left. Many stayed. Many still do not know.</p>
+
+        <div class="russian-block">
+          <div class="russian-text" id="closing-greeting"></div>
+          <p class="latin-echo">Hello. Children. Of colorless days.</p>
+          <p class="latin-echo" style="margin-top: 12px; font-style: normal; font-size: 0.8rem; opacity: 0.6;">The photographs say otherwise.</p>
+        </div>
+
+        <p>The blog remains. The title is still there — <em>"The Importance Of Being Idle"</em> — and so is the greeting in its random colours, its letters each a different size and hue, addressed to all of us passing through.</p>
+      </div>
+    </article>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ COLOPHON -->
+  <div class="container">
+    <div class="colophon chapter" data-chapter>
+      <p><span class="colophon-asterisk">*</span> &nbsp;Assembled from image evidence, EXIF metadata, and album titles recovered from <em>serg.vlassiev.info</em> (GCS bucket: <code>colorless-days-children</code>). The blog spans approximately 98 albums, c. 2003–2013, containing an estimated 4,000+ photographs. Camera progression: Canon PowerShot A410 → Canon IXUS 95 IS → Canon PowerShot A1200 → Nikon Coolpix L810 → Nikon DSLR (DSC series). The school badge "ФМЛ №239" confirmed via Lovozero Tundra 2010 expedition photograph. Army EXIF date: 15 June 2009. Kailash EXIF date: 04 May 2011, 06:16. Prague EXIF date: 28 November 2010. All dates local to device. The author is a fiction writer and anthropologist who insists that personal archives are the truest history we have.</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ FOOTER -->
+  <footer>
+    <p>Source: <a href="https://www.serg.vlassiev.info" target="_blank" rel="noopener">serg.vlassiev.info</a> &nbsp;·&nbsp; Portrait assembled 2026 &nbsp;·&nbsp; All photographs © their author</p>
+  </footer>
+
+  <!-- ══════════════════════════════════════════════════════════ SCRIPTS -->
+  <script>
+    /* ── Theme ──────────────────────────────────────────────────────────── */
+    function toggleTheme() {
+      const html = document.documentElement;
+      const next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('es-theme', next);
+    }
+    (function() {
+      const saved = localStorage.getItem('es-theme');
+      if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+    })();
+
+    /* ── Reading progress bar ───────────────────────────────────────────── */
+    const progressBar = document.getElementById('progress-bar');
+    window.addEventListener('scroll', () => {
+      const doc = document.documentElement;
+      const scrollTop = doc.scrollTop || document.body.scrollTop;
+      const scrollHeight = doc.scrollHeight - doc.clientHeight;
+      const pct = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+      progressBar.style.width = pct + '%';
+    }, { passive: true });
+
+    /* ── Intersection observer for chapter fade-in ──────────────────────── */
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          observer.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('[data-chapter]').forEach(el => observer.observe(el));
+
+    /* ── Multicolour letter renderer (mirrors original blog JS) ─────────── */
+    const COLORS = [
+      '#FF82C2','#20AFFF','#FFDA40','#5AD363','#BB76FF','#FF6138',
+      '#FF82C2','#20AFFF','#FFDA40','#5AD363','#FF82C2','#BB76FF',
+      'coral','cyan','deeppink','orangered','violet','tomato',
+      'sandybrown','forestgreen','dodgerblue','orchid','gold'
+    ];
+
+    function buildColorfulText(el, text) {
+      el.innerHTML = '';
+      text.split('').forEach((ch, i) => {
+        const span = document.createElement('span');
+        span.textContent = ch;
+        const size = (Math.random() * 1.1 + 0.8).toFixed(2);
+        span.style.cssText = [
+          'display:inline-block',
+          `color:${COLORS[Math.floor(Math.random() * COLORS.length)]}`,
+          `font-size:${size}em`,
+          'opacity:0',
+          `animation:letterIn 0.4s ease ${(i * 0.04).toFixed(2)}s forwards`
+        ].join(';');
+        el.appendChild(span);
+      });
+    }
+
+    buildColorfulText(
+      document.getElementById('hero-greeting'),
+      'Здравствуйте, Дети Бесцветных Дней!'
+    );
+
+    buildColorfulText(
+      document.getElementById('closing-greeting'),
+      'Здравствуйте, Дети Бесцветных Дней.'
+    );
+  </script>
+</body>
+</html>
