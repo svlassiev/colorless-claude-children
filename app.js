@@ -199,6 +199,29 @@ function buildPreviewPanel(el) {
   tdPic.colSpan = 3;
   tdPic.appendChild(imgLink);
 
+  var trShare = table.insertRow();
+  var tdShare = trShare.insertCell();
+  tdShare.colSpan = 3;
+  tdShare.style.textAlign = 'center';
+  tdShare.style.paddingTop = '4px';
+  var shareBtn = document.createElement('a');
+  shareBtn.href = '#';
+  shareBtn.textContent = '\u041f\u043e\u0434\u0435\u043b\u0438\u0442\u044c\u0441\u044f';
+  shareBtn.style.fontSize = '8pt';
+  shareBtn.onclick = function(e) {
+    e.preventDefault();
+    var shareUrl = 'https://serg.vlassiev.info/share/' + encodeURIComponent(folder) + '/' + n;
+    if (navigator.share) {
+      navigator.share({ title: album.title + ' \u2014 ' + n, url: shareUrl });
+    } else {
+      navigator.clipboard.writeText(shareUrl).then(function() {
+        shareBtn.textContent = '\u0421\u0441\u044b\u043b\u043a\u0430 \u0441\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d\u0430!';
+        setTimeout(function() { shareBtn.textContent = '\u041f\u043e\u0434\u0435\u043b\u0438\u0442\u044c\u0441\u044f'; }, 2000);
+      });
+    }
+  };
+  tdShare.appendChild(shareBtn);
+
   var trNav = table.insertRow();
   var tdPrev = trNav.insertCell();
   if (n > 1) {
