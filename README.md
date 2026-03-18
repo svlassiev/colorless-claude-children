@@ -70,6 +70,12 @@ kubectl get managedcertificates
 
 Provisioning takes ~10-15 minutes after first apply. Status goes from `Provisioning` → `Active`.
 
+## Sharing
+
+Each photo preview page has a "Поделиться" (Share) link. On mobile it opens the native share sheet, on desktop it copies the share URL to clipboard.
+
+Share URLs (`serg.vlassiev.info/share/{folder}/{n}`) are served by hiking-api, which returns Open Graph meta tags so social media platforms (Telegram, Facebook, VK) show a rich preview card with the photo.
+
 ## Project structure
 
 ```
