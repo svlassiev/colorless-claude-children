@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sergey Vlassiev</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/computer-modern@0.1.2/cmu-serif.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+
+  <style>
+    /* ─── TOKENS ─────────────────────────────────────────── */
+    :root {
+      --bg:        #F8F6F1;
+      --page:      #FDFCF9;
+      --text:      #1C1A17;
+      --muted:     #6B6560;
+      --faint:     #B0AAA0;
+      --rule:      #1C1A17;
+      --dim-rule:  #D4CEBF;
+      --accent:    #8B3A1A;
+      --metric-bg: rgba(139,58,26,0.07);
+      --expand-border: #C8A882;
+      --toggle-bg: #EDEAE3;
+      --shadow:    0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+
+      --serif:         'Computer Modern Serif', 'Latin Modern Roman', 'CMU Serif', Georgia, serif;
+      --sans:          'Source Sans 3', system-ui, sans-serif;
+    }
+
+    [data-theme="dark"] {
+      --bg:        #17150F;
+      --page:      #1E1B14;
+      --text:      #E8E2D6;
+      --muted:     #9A9082;
+      --faint:     #5A5248;
+      --rule:      #6A6050;
+      --dim-rule:  #3A342C;
+      --accent:    #D4784A;
+      --metric-bg: rgba(212,120,74,0.10);
+      --expand-border: #7A6040;
+      --toggle-bg: #28231C;
+      --shadow:    0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2);
+    }
+
+    /* ─── PAPER GRAIN (SVG noise via filter) ─────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 999;
+      opacity: .025;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 300px 300px;
+    }
+    [data-theme="dark"] body::before { opacity: .045; }
+
+    /* ─── RESET ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { font-size: 14.5px; }
+
+    body {
+      font-family: var(--serif);
+      font-size: 1rem;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+      padding: 0;
+      min-height: 100vh;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* ─── PAGE CARD ───────────────────────────────────────── */
+    .page {
+      max-width: 730px;
+      margin: 0 auto;
+      background: var(--page);
+      box-shadow: var(--shadow);
+      padding: 52px 56px 72px;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      /* staggered load */
+      animation: pageIn 0.4s ease both;
+    }
+
+    @keyframes pageIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── THEME TOGGLE ────────────────────────────────────── */
+    #theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      font-family: var(--sans);
+      font-size: 0.66rem;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: var(--toggle-bg);
+      border: 1px solid var(--dim-rule);
+      border-radius: 2px;
+      padding: 5px 11px 6px;
+      cursor: pointer;
+      z-index: 100;
+      transition: color 0.2s, background 0.3s, border-color 0.3s;
+    }
+    #theme-toggle:hover { color: var(--text); }
+
+    /* ─── HEADER ──────────────────────────────────────────── */
+    .header {
+      text-align: center;
+      margin-bottom: 18px;
+      animation: fadeUp 0.45s 0.05s ease both;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0;
+    }
+
+    .header-side {
+      font-family: var(--sans);
+      font-size: 0.79rem;
+      font-weight: 300;
+      color: var(--muted);
+      flex: 1;
+      letter-spacing: 0.01em;
+      text-align: left;
+    }
+    .header-side.right { text-align: right; }
+    .header-side a { color: inherit; text-decoration: none; }
+    .header-side a:hover { color: var(--accent); }
+
+    .name {
+      font-family: var(--serif);
+      font-size: 2.35rem;
+      font-weight: 300;
+      letter-spacing: 0.04em;
+      font-variant-ligatures: common-ligatures;
+      color: var(--text);
+      flex: 0 1 auto;
+      white-space: nowrap;
+    }
+
+    /* ─── RULE DIVIDER ────────────────────────────────────── */
+    .header-rule {
+      border: none;
+      border-top: 0.75px solid var(--rule);
+      margin: 10px 0 0;
+    }
+
+    /* ─── SECTION ─────────────────────────────────────────── */
+    .section {
+      margin-bottom: 16px;
+      animation: fadeUp 0.45s ease both;
+    }
+
+    .section:nth-child(2) { animation-delay: 0.08s; }
+    .section:nth-child(3) { animation-delay: 0.13s; }
+    .section:nth-child(4) { animation-delay: 0.18s; }
+    .section:nth-child(5) { animation-delay: 0.23s; }
+    .section:nth-child(6) { animation-delay: 0.28s; }
+    .section:nth-child(7) { animation-delay: 0.33s; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .section-title {
+      font-family: var(--serif);
+      font-size: 0.96rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .section-rule {
+      border: none;
+      border-top: 0.5px solid var(--rule);
+      flex: 1;
+      margin-top: 3px; /* align with text baseline */
+    }
+
+    /* ─── PROFILE ─────────────────────────────────────────── */
+    .profile .section-header { margin-bottom: 0; }
+
+    .profile-text {
+      margin-top: 10px;
+    }
+
+    .profile-text p {
+      font-size: 0.98rem;
+      line-height: 1.6;
+      text-align: justify;
+      hyphens: auto;
+      color: var(--text);
+    }
+    .profile-text p + p { margin-top: 7px; }
+
+
+    /* ─── JOBS ────────────────────────────────────────────── */
+    .job {
+      margin-bottom: 12px;
+    }
+    .job:last-child { margin-bottom: 0; }
+
+    .job-location {
+      font-family: var(--sans);
+      font-size: 0.77rem;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--muted);
+      letter-spacing: 0.01em;
+    }
+
+    /* Mirrors LaTeX tabular: Role (left) · Company (center, bold) · Dates (right) */
+    .job-row {
+      display: flex;
+      align-items: baseline;
+      line-height: 1.4;
+    }
+
+    .job-role {
+      font-weight: 600;
+      flex: 1;
+      font-size: 0.97rem;
+    }
+
+    .job-company {
+      font-weight: 600;
+      flex: 1;
+      text-align: center;
+      font-size: 0.97rem;
+      white-space: nowrap;
+      padding: 0 8px;
+    }
+
+    .job-dates {
+      flex: 1;
+      text-align: right;
+      font-weight: 300;
+      font-size: 0.93rem;
+      white-space: nowrap;
+    }
+
+    .job-subtitle {
+      font-style: italic;
+      font-size: 0.93rem;
+      line-height: 1.4;
+      margin-bottom: 1px;
+      color: var(--text);
+    }
+
+    .job-tech {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      font-weight: 300;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    /* ─── EXPAND / DETAILS ────────────────────────────────── */
+    details.brag { margin-top: 3px; }
+
+    details.brag > summary {
+      list-style: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--sans);
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      user-select: none;
+      outline: none;
+      transition: opacity 0.15s;
+    }
+    details.brag > summary::-webkit-details-marker { display: none; }
+
+    details.brag > summary::before {
+      content: '▸';
+      font-size: 0.6rem;
+      display: inline-block;
+      transition: transform 0.18s ease;
+    }
+    details[open].brag > summary::before { transform: rotate(90deg); }
+    details.brag > summary:hover { opacity: 0.6; }
+
+    .brag-body {
+      margin-top: 8px;
+      padding-left: 14px;
+      border-left: 1.5px solid var(--expand-border);
+    }
+
+    .brag-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .brag-list li {
+      font-size: 0.93rem;
+      line-height: 1.55;
+      padding-left: 16px;
+      position: relative;
+      margin-bottom: 5px;
+      text-align: justify;
+      hyphens: auto;
+    }
+
+    .brag-list li::before {
+      content: '•';
+      position: absolute;
+      left: 3px;
+      color: var(--faint);
+      font-size: 0.85rem;
+    }
+
+    .brag-list li strong { font-weight: 600; }
+
+    .brag-list li em {
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    /* Discreet inline link — looks like text, reveals on hover */
+    .subtle-link {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px dotted var(--faint);
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .subtle-link:hover {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* Metric callouts — numbers like 100×, 35%, 15% */
+    .m {
+      font-family: var(--serif);
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: var(--accent);
+      background: var(--metric-bg);
+      padding: 0 3px;
+      border-radius: 2px;
+      font-variant-numeric: lining-nums;
+      white-space: nowrap;
+    }
+
+    /* ─── EDUCATION ───────────────────────────────────────── */
+    .edu-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+    .edu-row:last-child { margin-bottom: 0; }
+
+    .edu-name {
+      font-size: 0.97rem;
+      font-weight: 600;
+    }
+
+    .edu-inst {
+      font-family: var(--sans);
+      font-size: 0.79rem;
+      font-weight: 300;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    .edu-years {
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      font-weight: 300;
+      color: var(--faint);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* ─── OTHER ───────────────────────────────────────────── */
+    .other-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .other-list li {
+      font-size: 0.95rem;
+      line-height: 1.55;
+      padding-left: 16px;
+      position: relative;
+      margin-bottom: 5px;
+    }
+
+    .other-list li::before {
+      content: '•';
+      position: absolute;
+      left: 3px;
+      color: var(--faint);
+    }
+
+    .other-list li strong { font-weight: 600; }
+
+    /* ─── FOOTER ──────────────────────────────────────────── */
+    .footer {
+      margin-top: 28px;
+      padding-top: 14px;
+      border-top: 0.5px solid var(--dim-rule);
+      text-align: center;
+      font-family: var(--sans);
+      font-size: 0.73rem;
+      font-weight: 300;
+      color: var(--faint);
+    }
+    .footer a { color: inherit; text-decoration: none; }
+    .footer a:hover { color: var(--accent); }
+
+    /* ─── RESPONSIVE ──────────────────────────────────────── */
+    @media (max-width: 640px) {
+      html { font-size: 13.5px; }
+      .page { padding: 36px 24px 52px; }
+      .header-row { flex-direction: column; align-items: center; gap: 3px; }
+      .header-side, .header-side.right { text-align: center; flex: none; }
+      .name { font-size: 1.95rem; }
+      .job-row { flex-wrap: wrap; }
+      .job-company, .job-dates { flex: none; text-align: left; }
+      #theme-toggle { top: 12px; right: 12px; }
+    }
+
+    /* ─── PRINT ───────────────────────────────────────────── */
+    @media print {
+      html { font-size: 10.5pt; }
+      body { background: white; }
+      body::before { display: none; }
+      .page { box-shadow: none; padding: 0; max-width: 100%; background: white; animation: none; }
+      .section { animation: none; }
+      .header { animation: none; }
+      #theme-toggle { display: none; }
+      details.brag { open: true; }
+      .brag-body { display: block !important; }
+      @page { margin: 14mm 16mm; }
+    }
+  </style>
+</head>
+
+<body>
+<button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">dark</button>
+
+<div class="page">
+
+  <!-- ── HEADER ─────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header-row">
+      <span class="header-side left">
+        <a href="https://www.linkedin.com/in/sergey-vlassiev/" target="_blank" rel="noopener">linkedin.com/in/sergey-vlassiev</a>
+      </span>
+      <h1 class="name">Sergey Vlassiev</h1>
+      <span class="header-side right">Stockholm, Sweden</span>
+    </div>
+    <hr class="header-rule">
+  </header>
+
+  <!-- ── PROFILE ────────────────────────────────────────── -->
+  <section class="section profile">
+    <div class="profile-text">
+      <p>I&rsquo;ve been writing software since I was seven &mdash; I was born into a family of engineers and it was simply what people around me did. One of the programs I&rsquo;m still proud of from those years is a two-player game where my brother and I could fight as knights together.</p>
+      <p>I trained as a mathematician &mdash; and graduated as both mathematician and teacher &mdash; which shapes how I approach problems: I want to understand how something actually works before touching it, and I tend to explain things to people along the way. That was true when I was running algebra seminars at university in St. Petersburg and leading three-week expeditions above the Arctic Circle &mdash; and it is largely what my current role is about.</p>
+      <p>We&rsquo;ve moved as a family three times: to Stockholm when my wife was offered a role here, to Amsterdam when I joined AWS, and back to Sweden when we wanted the best conditions for our kids. We&rsquo;ve kept both careers throughout without either of us disappearing into the other&rsquo;s story. Parenting has been the central project of my life in recent years &mdash; it makes me more deliberate about what I spend my time on and why.</p>
+      <p>Most of my work is platform engineering &mdash; I build the systems, processes, and guardrails that let other engineers ship safely: on-call structures, alerts, documentation, automation, deployment pipelines. I&rsquo;m at Epidemic Sound in part because the domain matters to me. My <a href="https://open.spotify.com/artist/3KZLaCPYJKpRm56MrA4Hdr" target="_blank" rel="noopener" class="subtle-link">brother is a musician</a>, and working on infrastructure that affects millions of users means I&rsquo;m thinking about people like him &mdash; not abstractions. Right now my focus is on agentic readiness: making the platform infrastructure consumable by AI agents. I took a philosophy of technology course in 2021 because what engineers build shapes how people feel, create, and connect &mdash; and I&rsquo;d rather that be deliberate.</p>
+    </div>
+  </section>
+
+  <!-- ── EXPERIENCE ─────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">Experience</h2>
+      <hr class="section-rule">
+    </div>
+
+    <!-- Epidemic Sound -->
+    <div class="job">
+      <div class="job-location">Stockholm, Sweden</div>
+      <div class="job-row">
+        <span class="job-role">Software Engineer</span>
+        <span class="job-company"><a href="https://www.epidemicsound.com/" target="_blank" rel="noopener" class="subtle-link">Epidemic Sound</a></span>
+        <span class="job-dates">Apr 2024&mdash;present</span>
+      </div>
+      <div class="job-subtitle">Enabling development teams to build backend services safely and at high velocity</div>
+      <div class="job-tech">Main technologies: AWS, Go, Python, Keycloak, OAuth2&thinsp;/&thinsp;OIDC, Fastly CDN</div>
+      <details class="brag">
+        <summary>key achievements</summary>
+        <div class="brag-body">
+          <ul class="brag-list">
+            <li><strong>API Platform &amp; agentic readiness</strong> &mdash; Building the API platform&rsquo;s client generation pipeline: automated TypeScript and Go client libraries from OpenAPI specs, published to internal registries, with agentic metadata embedded so AI agents can consume services without external documentation. Currently driving adoption across the engineering organisation.</li>
+            <li><strong>GitHub Access Control</strong> &mdash; Identified compliance risks in the company&rsquo;s GitHub organisation setup. Ran the threat analysis, prepared stakeholder slides, coordinated with Security and Internal IT. Result: <span class="m">35%</span> fewer super-admins, all non-human owners removed, admin access made traceable. Directly supported IPO readiness.</li>
+            <li><strong>Email verification simplification</strong> &mdash; Mapped the entire flow across Keycloak, multiple services, mobile, and CRM. Found the inconsistencies blocking the legacy user management service migration for months. Designed a cleaner flow where Keycloak fully owns verification &mdash; unblocking a long-stalled migration and making verification reliable for conversion flows.</li>
+            <li><strong>Unified logout &amp; session invalidation</strong> &mdash; Investigated inconsistencies across web, mobile, plugins, and frontend. Designed Keycloak backchannel logout to close a real security gap. Scoped and planned as part of the External Publishing project.</li>
+            <li><strong>MCP integration authentication</strong> &mdash; Designed auth infrastructure enabling MCP integration with the platform, including session invalidation mechanisms to control agentic users and ensure secure token lifecycle management.</li>
+            <li><strong>Enterprise SSO self-service</strong> &mdash; Implemented enterprise-enabling flows including domain verification and session handling, enabling customer self-service onboarding and reducing manual operational overhead. Opened easy onboarding for the pending enterprise market with an estimated <span class="m">5,000</span> new customers expected in the coming years.</li>
+            <li><strong>Observability pilot</strong> &mdash; Part of the pilot team connecting OpenTelemetry metrics and tracing with Grafana&rsquo;s Loki and Tempo; helped shape the rollout for the broader organisation.</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+
+    <!-- Amazon Web Services -->
+    <div class="job">
+      <div class="job-location">Amsterdam, Netherlands</div>
+      <div class="job-row">
+        <span class="job-role">Software Engineer</span>
+        <span class="job-company">Amazon Web Services</span>
+        <span class="job-dates">Sep 2022&mdash;Dec 2023</span>
+      </div>
+      <div class="job-subtitle">Cloud solution for managed development environments</div>
+      <div class="job-tech">Main technologies: AWS, Go, CDK, Lambda, Serverless, Docker, JavaScript</div>
+      <details class="brag">
+        <summary>key achievements</summary>
+        <div class="brag-body">
+          <ul class="brag-list">
+            <li><strong><a href="https://developer.salesforce.com/docs/platform/code-builder/overview" target="_blank" rel="noopener" class="subtle-link">Salesforce Code Builder</a></strong> &mdash; Designed, scoped, and implemented the Docker image reservation feature enabling Salesforce to ship Code Builder on schedule. Also introduced an activity-tracking feature that idled inactive environments, cutting unnecessary runtime and reducing customer costs.</li>
+            <li><strong>Pipeline modernisation</strong> &mdash; Reworked release pipelines to incorporate automated testing, reducing vulnerabilities and ensuring stable deployments for <a href="https://aws.amazon.com/cloudshell/" target="_blank" rel="noopener" class="subtle-link">AWS CloudShell</a>, <a href="https://aws.amazon.com/codecatalyst/" target="_blank" rel="noopener" class="subtle-link">AWS CodeCatalyst</a>, and downstream teams.</li>
+            <li><strong>Cross-team coordination</strong> &mdash; Proactively collaborated with <span class="m">8</span> independent teams, submitting PRs to prevent outages and ensure seamless integration of internal changes.</li>
+            <li><strong>Billing launch blocker</strong> &mdash; Led resolution of a multi-team blocking issue through deep investigation and extensive communication. A critical billing module was delivered on time at <strong>AWS re:Invent 2022</strong>.</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+
+    <!-- PingPong AB (incl. Baloo Learning division) -->
+    <div class="job">
+      <div class="job-location">Stockholm, Sweden</div>
+      <div class="job-row">
+        <span class="job-role">Software Engineer</span>
+        <span class="job-company">PingPong AB</span>
+        <span class="job-dates">May 2019&mdash;Jul 2022</span>
+      </div>
+      <div class="job-subtitle">Two products: Baloo Learning (internal division, sold Mar 2021 &mdash; now <a href="https://www.skillhabit.com/" target="_blank" rel="noopener" class="subtle-link">Skillhabit</a>) and the <a href="https://www.pingpong.se/" target="_blank" rel="noopener" class="subtle-link">PING PONG</a> LMS for schools and public authorities</div>
+      <div class="job-tech">Main technologies: Kotlin, Java, JSP, Vue.js, Vuetify, PWA, PostgreSQL, Dropwizard, Kubernetes, AWS, MongoDB, Prometheus, Grafana</div>
+      <details class="brag">
+        <summary>key achievements</summary>
+        <div class="brag-body">
+          <ul class="brag-list">
+            <li><strong><span class="m">15%</span> AWS cost reduction</strong> <em>(Baloo)</em> &mdash; Through infrastructure optimisation, better caching, and tuned event handling. Also increased event processing throughput.</li>
+            <li><strong>Zero-downtime ownership migration</strong> <em>(Baloo)</em> &mdash; Performed technical due diligence and managed the platform&rsquo;s transition to a new owner in March 2021 without any customer-facing downtime.</li>
+            <li>Organised and configured activity and availability monitors and alerts with Prometheus and Grafana <em>(Baloo)</em>, making the team more confident in their operations.</li>
+            <li>Designed and implemented features that improved system compatibility with other LMS products and opened the public procurement market <em>(Baloo)</em>: Microsoft Graph AD, BankID, and Microsoft Teams integrations.</li>
+            <li>Started a data analysis project using AI practices to help content creators build more attractive courses <em>(Baloo)</em>.</li>
+            <li><strong><span class="m">100&times;</span> performance improvement</strong> <em>(PingPong)</em> &mdash; Found and resolved a critical backend bottleneck for users with exceptional loads. Response time dropped from seconds to milliseconds.</li>
+            <li><strong>Security hardening</strong> <em>(PingPong)</em> &mdash; Initiated a full vulnerability audit, identified and fixed dozens of XSS vulnerabilities and other security concerns.</li>
+            <li><strong>Accessibility</strong> <em>(PingPong)</em> &mdash; Championed web accessibility improvements. Collaborated with Axess Labs for external testing and drove follow-up remediation.</li>
+            <li>Implemented new UI solutions including interactive charts and a Vuetify-based interface to qualify the product for public procurement <em>(PingPong)</em>. Updated the outdated Android app to a Trusted Web Application and published it on the Play Store, restoring mobility for thousands of users.</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+
+    <!-- Tradedoubler -->
+    <div class="job">
+      <div class="job-location">Stockholm, Sweden</div>
+      <div class="job-row">
+        <span class="job-role">Software Engineer</span>
+        <span class="job-company"><a href="https://www.tradedoubler.com/" target="_blank" rel="noopener" class="subtle-link">Tradedoubler</a></span>
+        <span class="job-dates">Dec 2017&mdash;May 2019</span>
+      </div>
+      <div class="job-subtitle">High load tracking system for affiliate advertisements</div>
+      <div class="job-tech">Main technologies: Java, Dropwizard, Docker, Kubernetes, GKE, Prometheus</div>
+      <details class="brag">
+        <summary>key achievements</summary>
+        <div class="brag-body">
+          <ul class="brag-list">
+            <li>Modularised the system by containerising components with Docker &mdash; development cycle from several days to several minutes.</li>
+            <li>Introduced Kubernetes orchestration and Prometheus metrics with alerts for monitoring.</li>
+            <li>Transferred a large portion of the product to GKE, reducing operational costs by several times.</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+
+    <!-- Positive Technologies -->
+    <div class="job">
+      <div class="job-location">Saint Petersburg, Russia; Stockholm, Sweden</div>
+      <div class="job-row">
+        <span class="job-role">Software Engineer</span>
+        <span class="job-company">Positive Technologies</span>
+        <span class="job-dates">Jun 2015&mdash;Dec 2017</span>
+      </div>
+      <div class="job-subtitle">Source code analysis tool for detecting Java web application vulnerabilities &mdash; <a href="https://global.ptsecurity.com/en/products/ai/" target="_blank" rel="noopener" class="subtle-link">PT Application Inspector</a></div>
+      <div class="job-tech">Main technologies: Java, static analysis, compilers, code protection, web application security</div>
+      <details class="brag">
+        <summary>key achievements</summary>
+        <div class="brag-body">
+          <ul class="brag-list">
+            <li>Designed and implemented Java 8 language level support, significantly expanding the product&rsquo;s addressable market.</li>
+            <li>Added support for major enterprise web technologies: JavaServer Faces, Apache Struts, JAX-RS, JSP tag libraries.</li>
+            <li>Implemented code protection mechanisms &mdash; both hardware dongle-based and software-based &mdash; to prevent licence circumvention.</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+
+    <!-- SMTDP -->
+    <div class="job">
+      <div class="job-location">Saint Petersburg, Russia</div>
+      <div class="job-row">
+        <span class="job-role">Lead Software Engineer</span>
+        <span class="job-company">SMTDP</span>
+        <span class="job-dates">Dec 2014&mdash;May 2015</span>
+      </div>
+      <div class="job-subtitle">Machine vision web service for detecting document manipulations</div>
+      <details class="brag">
+        <summary>details</summary>
+        <div class="brag-body">
+          <ul class="brag-list">
+            <li>Designed and implemented a web service that inspects documents for modifications made with any graphics editor.</li>
+            <li>Led a small team as technical lead. First experience working in a startup with a very tight schedule.</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+
+    <!-- Oracle -->
+    <div class="job">
+      <div class="job-location">Saint Petersburg, Russia</div>
+      <div class="job-row">
+        <span class="job-role">Software Engineer</span>
+        <span class="job-company">Oracle</span>
+        <span class="job-dates">Jun 2012&mdash;Nov 2014</span>
+      </div>
+      <div class="job-subtitle">Java ME Embedded runtime development and porting to different hardware boards</div>
+      <details class="brag">
+        <summary>details</summary>
+        <div class="brag-body">
+          <ul class="brag-list">
+            <li>Significantly decreased runtime memory footprint by introducing a new application management system.</li>
+            <li>Implemented a Java ME Embedded properties tool for managing VM and runtime properties from both the device and an external host.</li>
+            <li>Implemented mbed64 board auto-detection for the Java ME Embedded SDK.</li>
+            <li>Ported <a href="https://docs.oracle.com/javame/8.0/api/dio/api/overview-summary.html" target="_blank" rel="noopener" class="subtle-link">DIO API</a> to RTX and Raspberry Pi boards. Improved <a href="https://docs.oracle.com/javame/config/cldc/opt-pkgs/api/meep/api/javax/microedition/io/IMCConnection.html" target="_blank" rel="noopener" class="subtle-link">Inter-MIDlet Communication</a> protocol.</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+
+    <!-- EMC -->
+    <div class="job">
+      <div class="job-location">Saint Petersburg, Russia</div>
+      <div class="job-row">
+        <span class="job-role">Software Engineer</span>
+        <span class="job-company">EMC</span>
+        <span class="job-dates">Jul 2010&mdash;Jun 2012</span>
+      </div>
+      <div class="job-subtitle">Automated testing for <a href="https://www.dell.com/en-us/dt/data-protection/recoverpoint.htm" target="_blank" rel="noopener" class="subtle-link">RecoverPoint</a> &mdash; continuous replication across Symmetrix and CLARiiON disk arrays</div>
+      <details class="brag">
+        <summary>details</summary>
+        <div class="brag-body">
+          <ul class="brag-list">
+            <li>Developed and maintained the automated testing system for RecoverPoint. Worked across disk arrays (Symmetrix, CLARiiON), VMware virtualisation, network connectivity, and the replication system itself.</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+
+  </section>
+
+  <!-- ── EDUCATION ───────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">Education</h2>
+      <hr class="section-rule">
+    </div>
+    <div class="edu-row">
+      <div>
+        <div class="edu-name">Mathematician &amp; Teacher &mdash; Saint Petersburg State University</div>
+        <div class="edu-inst">Mathematics and Mechanics Department &mdash; Specialist degree (MSc equivalent); thesis in number theory</div>
+      </div>
+      <div class="edu-years">2005&mdash;2010</div>
+    </div>
+    <div class="edu-row">
+      <div>
+        <div class="edu-name">Software Engineering &mdash; Academy of Modern Software Development</div>
+        <div class="edu-inst">Java, algorithms, data structures, JVM internals &mdash; taught by engineers who went on to shape the wider software industry</div>
+      </div>
+      <div class="edu-years">2008&mdash;2009</div>
+    </div>
+    <div class="edu-row">
+      <div>
+        <div class="edu-name">Philosophy of Technology and Design &mdash; University of Twente</div>
+      </div>
+      <div class="edu-years">2021</div>
+    </div>
+  </section>
+
+  <!-- ── OTHER ───────────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">Other experience</h2>
+      <hr class="section-rule">
+    </div>
+    <ul class="other-list">
+      <li><strong>External mentor</strong> at <a href="https://www.linkedin.com/posts/epidemic-sound_changers-hub-mentorship-program-activity-7265635192646627328-aQzi" target="_blank" rel="noopener" class="subtle-link">Changers Hub</a> in collaboration with Epidemic Sound&rsquo;s mentorship programme (2024).</li>
+      <li><strong>Student Instructor</strong> at Saint Petersburg State University of Film and Television and Saint Petersburg State University (2009, 2011) &mdash; conducted algebra seminars for students.</li>
+      <li><strong>Adjunct school teacher</strong> (2006&mdash;2010) &mdash; led multi-week wilderness expeditions for high school students across Northern Russia: the <a href="https://serg.vlassiev.info/share/NUral/239" target="_blank" rel="noopener" class="subtle-link">Urals</a>, <a href="https://serg.vlassiev.info/share/Lovozero10/47" target="_blank" rel="noopener" class="subtle-link">Kola Peninsula</a> above the Arctic Circle, and the <a href="https://serg.vlassiev.info/share/Karelia2007/48" target="_blank" rel="noopener" class="subtle-link">forests of Karelia</a> and the Leningrad district. Up to three weeks fully disconnected from civilisation.</li>
+      <li><strong>Honeymoon on the Tibetan Plateau</strong> (2011) &mdash; completed the 52km Kailash kora, crossing the Dolma La at 5,630m. <a href="https://e3yk.livejournal.com/" target="_blank" rel="noopener" class="subtle-link">Travel posts.</a></li>
+    </ul>
+  </section>
+
+  <footer class="footer">
+    under construction with the help of an unnamed agent
+  </footer>
+
+</div>
+
+<script>
+  function toggleTheme() {
+    const html = document.documentElement;
+    const btn  = document.getElementById('theme-toggle');
+    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    btn.textContent = next === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem('cv-theme', next); } catch(e) {}
+  }
+
+  try {
+    const saved = localStorage.getItem('cv-theme');
+    if (saved) {
+      document.documentElement.setAttribute('data-theme', saved);
+      document.getElementById('theme-toggle').textContent = saved === 'dark' ? 'light' : 'dark';
+    }
+  } catch(e) {}
+
+  window.addEventListener('beforeprint', function () {
+    document.querySelectorAll('details').forEach(function (d) { d.open = true; });
+  });
+  window.addEventListener('afterprint', function () {
+    document.querySelectorAll('details').forEach(function (d) { d.removeAttribute('open'); });
+  });
+</script>
+
+</body>
+</html>
