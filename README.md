@@ -70,6 +70,10 @@ kubectl get managedcertificates
 
 Provisioning takes ~10-15 minutes after first apply. Status goes from `Provisioning` → `Active`.
 
+## CV
+
+A personal CV page is served at [serg.vlassiev.info/cv/](https://serg.vlassiev.info/cv/). Source in `cv/index.html` — self-contained HTML with Computer Modern font, dark/light theme toggle, and Open Graph meta tags for social sharing.
+
 ## Sharing
 
 Each photo preview page has a "Поделиться" (Share) link. On mobile it opens the native share sheet, on desktop it copies the share URL to clipboard.
