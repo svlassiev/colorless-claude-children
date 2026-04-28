@@ -1,0 +1,28 @@
+# Defensive — the corpus and its derived artefacts must never enter this public repo.
+# Default cache location is ~/.cache/log-search/ (outside the repo), but if anything
+# slips into the module dir, these patterns catch it.
+
+# Build narrative — kept local only, not published.
+# README.md (public) describes the system; PLAN.md (private) describes the build.
+/PLAN.md
+
+# Index artefacts
+index/
+*.npz
+*.embeddings.json
+chunks.jsonl
+chunks_meta.jsonl
+
+# Local secrets and env
+.env
+.env.*
+
+# Python build / venv
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.uv/
+
+# Streamlit cache
+.streamlit/secrets.toml
