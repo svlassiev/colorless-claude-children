@@ -8,6 +8,7 @@ Run: uv run python -m log_search.server
 
 from __future__ import annotations
 
+import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -18,6 +19,7 @@ from fastapi.responses import HTMLResponse
 from google import genai
 from pydantic import BaseModel, field_validator
 
+from log_search.cloud_cache import pull_from_gcs
 from log_search.paths import LOCATION, MAX_K, PROJECT
 from log_search.qa import generate, retrieve
 from log_search.retriever import load_index
@@ -29,6 +31,12 @@ _state: dict[str, Any] = {}
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    # Pull cache from the private GCS bucket if remote is newer than local
+    # (or local is missing entirely). No-op for warm-laptop case.
+    n = pull_from_gcs()
+    if n:
+        print(f"pulled {n} cache file(s) from GCS", file=sys.stderr)
+
     _state["client"] = genai.Client(vertexai=True, project=PROJECT, location=LOCATION)
     vectors, metas, texts = load_index()
     _state["vectors"] = vectors
