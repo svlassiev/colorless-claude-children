@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>log search</title>
+<style>
+body {
+    background-color: #FFFFFF;
+    font: 10pt/14pt verdana;
+    color: black;
+    max-width: 720px;
+    margin: 24px auto;
+    padding: 0 16px;
+}
+h1 {
+    font-family: 'SF Mono', Menlo, Monaco, 'Cascadia Mono', 'DejaVu Sans Mono', Consolas, 'Liberation Mono', monospace;
+    font-size: 22px;
+    font-weight: 500;
+    color: #0000CC;
+    text-align: center;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    margin: 8px 0 24px;
+}
+h1::before { content: '> '; opacity: 0.5; }
+a { color: #0000CC; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+form {
+    text-align: center;
+    margin: 16px 0 24px;
+}
+input[type=text] {
+    font: 10pt verdana;
+    width: 60%;
+    padding: 4px 6px;
+    border: 1px solid #999;
+}
+button {
+    font: 10pt verdana;
+    padding: 4px 14px;
+    border: 1px solid #999;
+    background: #f7f7f7;
+    cursor: pointer;
+}
+button:hover { background: #ececec; }
+button:disabled { color: #999; cursor: default; }
+
+.opts {
+    text-align: center;
+    font-size: 9pt;
+    color: #666;
+    margin-top: 6px;
+}
+
+#answer {
+    margin: 16px 0;
+    white-space: pre-wrap;
+}
+
+.citations {
+    font-size: 9pt;
+    color: #555;
+    margin-top: 24px;
+    border-top: 1px dashed #999;
+    padding-top: 12px;
+}
+.citations h2 {
+    font: 10pt verdana;
+    font-weight: bold;
+    color: black;
+    margin: 0 0 8px;
+}
+.citations details {
+    margin: 4px 0;
+}
+.citations summary {
+    cursor: pointer;
+    color: #0000CC;
+    font-size: 9pt;
+}
+.citations summary:hover { text-decoration: underline; }
+.citations pre {
+    background: #f7f7f7;
+    padding: 8px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 6px 0 6px 16px;
+    font: 9pt/13pt verdana;
+    color: black;
+    border-left: 2px solid #0000CC;
+}
+
+.meta {
+    font-family: 'SF Mono', Menlo, Monaco, 'Cascadia Mono', 'DejaVu Sans Mono', Consolas, 'Liberation Mono', monospace;
+    font-size: 9px;
+    color: #999;
+    text-align: right;
+    margin-top: 12px;
+    letter-spacing: 0;
+}
+
+.error {
+    color: #cc0000;
+}
+.loading {
+    color: #999;
+    font-style: italic;
+    text-align: center;
+}
+</style>
+</head>
+<body>
+
+<h1>log search</h1>
+
+<form id="ask-form">
+    <input type="text" id="query" placeholder="ask the journal..." autofocus autocomplete="off" />
+    <button type="submit" id="ask-btn">ask</button>
+    <div class="opts">
+        <label><input type="checkbox" id="retrieve-only" /> retrieve only (free)</label>
+    </div>
+</form>
+
+<div id="result"></div>
+
+<script>
+const form = document.getElementById('ask-form');
+const queryEl = document.getElementById('query');
+const btnEl = document.getElementById('ask-btn');
+const retrieveOnlyEl = document.getElementById('retrieve-only');
+const resultEl = document.getElementById('result');
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const q = queryEl.value.trim();
+    if (!q) return;
+
+    btnEl.disabled = true;
+    resultEl.innerHTML = '<div class="loading">thinking...</div>';
+
+    try {
+        const res = await fetch('/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: q, retrieve_only: retrieveOnlyEl.checked })
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+            throw new Error(err.detail || `HTTP ${res.status}`);
+        }
+        const data = await res.json();
+        renderResult(data);
+    } catch (err) {
+        resultEl.innerHTML = '<div class="error">error: ' + esc(err.message) + '</div>';
+    } finally {
+        btnEl.disabled = false;
+    }
+});
+
+function renderResult(data) {
+    let html = '';
+    if (data.answer) {
+        html += '<div id="answer">' + esc(data.answer) + '</div>';
+    }
+    if (data.citations && data.citations.length) {
+        html += '<div class="citations"><h2>citations</h2>';
+        for (const c of data.citations) {
+            const date = c.date_iso || '-';
+            const summary = '[' + c.rank + '] ' + esc(c.file) + ' :: ' + esc(c.heading_path) + ' :: ' + date + ' (score ' + c.score.toFixed(3) + ')';
+            html += '<details><summary>' + summary + '</summary><pre>' + esc(c.text) + '</pre></details>';
+        }
+        html += '</div>';
+    }
+    if (data.cost != null) {
+        html += '<div class="meta">tokens in=' + data.tokens_in + ' out=' + data.tokens_out + ' &middot; cost ~$' + data.cost.toFixed(4) + '</div>';
+    }
+    if (data.date_filter) {
+        html += '<div class="meta">date filter: ' + esc(data.date_filter) + '</div>';
+    }
+    if (data.session_queries > 0) {
+        html += '<div class="meta">session: ' + data.session_queries + ' ' + (data.session_queries === 1 ? 'query' : 'queries') + ' &middot; total ~$' + data.session_cost.toFixed(4) + '</div>';
+    }
+    if (!html) {
+        html = '<div class="loading">no matches.</div>';
+    }
+    resultEl.innerHTML = html;
+}
+
+function esc(s) {
+    return String(s).replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[ch]));
+}
+</script>
+
+</body>
+</html>

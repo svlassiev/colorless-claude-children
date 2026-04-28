@@ -1,0 +1,129 @@
+"""FastAPI server: serves the UI + a /ask JSON endpoint.
+
+Bind to 127.0.0.1 only — Phase 4 is local-only by design. Phase 5 (deploy)
+will add auth before binding to anything reachable from the network.
+
+Run: uv run python -m log_search.server
+"""
+
+from __future__ import annotations
+
+from contextlib import asynccontextmanager
+from pathlib import Path
+from typing import Any
+
+import uvicorn
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
+from google import genai
+from pydantic import BaseModel
+
+from log_search.paths import LOCATION, PROJECT
+from log_search.qa import generate, retrieve
+from log_search.retriever import load_index
+
+INDEX_HTML = (Path(__file__).parent / "static" / "index.html").read_text()
+
+_state: dict[str, Any] = {}
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    _state["client"] = genai.Client(vertexai=True, project=PROJECT, location=LOCATION)
+    vectors, metas, texts = load_index()
+    _state["vectors"] = vectors
+    _state["metas"] = metas
+    _state["texts"] = texts
+    _state["session_cost"] = 0.0
+    _state["session_queries"] = 0
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+
+
+class AskRequest(BaseModel):
+    query: str
+    k: int = 5
+    retrieve_only: bool = False
+
+
+class CitationOut(BaseModel):
+    rank: int
+    score: float
+    file: str
+    date_iso: str | None
+    heading_path: str
+    text: str
+
+
+class AskResponse(BaseModel):
+    answer: str | None = None
+    citations: list[CitationOut] = []
+    tokens_in: int = 0
+    tokens_out: int = 0
+    cost: float | None = None
+    date_filter: str | None = None
+    session_cost: float = 0.0
+    session_queries: int = 0
+
+
+@app.get("/", response_class=HTMLResponse)
+async def index() -> str:
+    return INDEX_HTML
+
+
+@app.post("/ask", response_model=AskResponse)
+async def ask(req: AskRequest) -> AskResponse:
+    q = req.query.strip()
+    if not q:
+        raise HTTPException(status_code=400, detail="empty query")
+
+    hits, (date_lo, date_hi) = retrieve(
+        q,
+        _state["client"],
+        _state["vectors"],
+        _state["metas"],
+        _state["texts"],
+        k=req.k,
+    )
+
+    date_filter = None
+    if date_lo:
+        date_filter = f"{date_lo} .. {date_hi}"
+
+    citations = [CitationOut(**h.__dict__) for h in hits]
+    _state["session_queries"] += 1
+
+    def _envelope(**fields) -> AskResponse:
+        return AskResponse(
+            session_cost=_state["session_cost"],
+            session_queries=_state["session_queries"],
+            date_filter=date_filter,
+            **fields,
+        )
+
+    if not hits:
+        return _envelope(answer="no matching entries found.")
+
+    if req.retrieve_only:
+        return _envelope(citations=citations)
+
+    answer, usage = generate(q, hits, _state["client"])
+    if usage["cost"] is not None:
+        _state["session_cost"] += usage["cost"]
+    return _envelope(
+        answer=answer,
+        citations=citations,
+        tokens_in=usage["tokens_in"],
+        tokens_out=usage["tokens_out"],
+        cost=usage["cost"],
+    )
+
+
+def main() -> None:
+    uvicorn.run(app, host="127.0.0.1", port=8080, log_level="info")
+
+
+if __name__ == "__main__":
+    main()

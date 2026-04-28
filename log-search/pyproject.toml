@@ -3,10 +3,11 @@ name = "log-search"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
+    "fastapi>=0.136.1",
     "google-cloud-aiplatform>=1.149.0",
     "google-genai>=1.73.1",
     "numpy>=2.4.4",
     "pydantic>=2.13.3",
     "pytest>=9.0.3",
-    "streamlit>=1.56.0",
+    "uvicorn>=0.46.0",
 ]

@@ -62,8 +62,8 @@ query ── embed ── top-k ── Gemini 2.5 Pro ── answer + citations
 | Index | In-memory NumPy + cosine similarity      | 1 k chunks × 768-dim ≈ 6 MB — trivially fits |
 | Retrieval | Top-k (k=5) + optional date-range filter | Date metadata enables temporal queries without re-embedding |
 | Generation | Gemini 2.5 Pro                           | Long context, strong synthesis over multiple chunks |
-| UI (MVP) | Streamlit, `localhost:8501` only         | Private, single-user, no auth needed |
-| UI (stretch) | Authed `serg.vlassiev.info/log`          | See PLAN Phase 5 — three deployment options ranked |
+| UI (MVP) | FastAPI + vanilla HTML, `127.0.0.1:8080` only | Visually consistent with the rest of `serg.vlassiev.info` (Verdana, retro palette). Localhost-only, single-user, no auth |
+| UI (stretch) | Same FastAPI app, authed at `serg.vlassiev.info/log` | Phase 5 — three deployment options ranked, decision deferred |
 
 ## Running locally
 
@@ -116,6 +116,17 @@ uv run python -m log_search.ask --retrieve-only "anything about hiring"
 
 The CLI prints the grounded answer to stdout, citations + per-query token cost to stderr. Pipe stdout to a file if you want only the answer.
 
+### Web UI (localhost only)
+
+```bash
+uv run python -m log_search.server
+# open http://127.0.0.1:8080
+```
+
+The server binds to `127.0.0.1:8080` only — never reachable from the network. Same retro visual style as the rest of `serg.vlassiev.info`. Includes a **"retrieve only (free)"** checkbox for cheap iteration on retrieval quality without calling Gemini.
+
+Per-query cost is shown in the page footer for transparency. Stop the server with Ctrl-C; idle = $0.
+
 ### Cost summary
 
 | Operation | Approx cost | Notes |
@@ -125,6 +136,7 @@ The CLI prints the grounded answer to stdout, citations + per-query token cost t
 | `embedder` (incremental, ~10 changed chunks) | <$0.001 | Cache hits skip the API call |
 | `ask` (full Gemini) | ~$0.005–$0.01 per query | Bounded by `usage_metadata`, printed to stderr |
 | `ask --retrieve-only` | ~$0.0001 per query | One embed call for the query, nothing else |
+| `server` (POST /ask) | Same as `ask` CLI | Identical cost surface — same code path |
 | Idle | $0 | No deployed services, no recurring infra |
 
 ### Resetting / clearing the index

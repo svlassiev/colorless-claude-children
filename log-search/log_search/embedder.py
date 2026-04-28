@@ -13,8 +13,7 @@ import sys
 import time
 
 import numpy as np
-import vertexai
-from vertexai.language_models import TextEmbeddingModel
+from google import genai
 
 from log_search.paths import (
     CHUNKS_PATH,
@@ -35,14 +34,14 @@ def _cosine(a: np.ndarray, b: np.ndarray) -> float:
     return float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b)))
 
 
-def _sanity_check(model: TextEmbeddingModel) -> None:
+def _sanity_check(client: genai.Client) -> None:
     pair = [
         "We deployed the new feature to production after the code review.",
         "The pull request was merged once it passed all tests in CI.",
     ]
-    embs = model.get_embeddings(pair)
-    a = np.array(embs[0].values, dtype=np.float32)
-    b = np.array(embs[1].values, dtype=np.float32)
+    result = client.models.embed_content(model=EMBED_MODEL, contents=pair)
+    a = np.array(result.embeddings[0].values, dtype=np.float32)
+    b = np.array(result.embeddings[1].values, dtype=np.float32)
     sim = _cosine(a, b)
     print(f"sanity: cosine(close pair) = {sim:.3f}", file=sys.stderr)
     if sim < 0.5:
@@ -83,11 +82,10 @@ def main() -> int:
     print(f"model: {EMBED_MODEL}, region: {LOCATION}")
     print()
 
-    vertexai.init(project=PROJECT, location=LOCATION)
-    model = TextEmbeddingModel.from_pretrained(EMBED_MODEL)
+    client = genai.Client(vertexai=True, project=PROJECT, location=LOCATION)
 
     if to_embed_idx:
-        _sanity_check(model)
+        _sanity_check(client)
 
     vectors = np.zeros((n, EMBED_DIM), dtype=np.float32)
     for i, c in enumerate(chunks):
@@ -104,7 +102,7 @@ def main() -> int:
 
             for attempt in range(5):
                 try:
-                    resp = model.get_embeddings(batch_texts)
+                    result = client.models.embed_content(model=EMBED_MODEL, contents=batch_texts)
                     break
                 except Exception as e:  # noqa: BLE001
                     msg = str(e)
@@ -115,7 +113,7 @@ def main() -> int:
                         continue
                     raise
 
-            for k, emb in enumerate(resp):
+            for k, emb in enumerate(result.embeddings):
                 vectors[batch_idx[k]] = np.array(emb.values, dtype=np.float32)
 
             done = batch_start + len(batch_idx)
