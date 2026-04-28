@@ -16,9 +16,9 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from google import genai
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
-from log_search.paths import LOCATION, PROJECT
+from log_search.paths import LOCATION, MAX_K, PROJECT
 from log_search.qa import generate, retrieve
 from log_search.retriever import load_index
 
@@ -46,6 +46,13 @@ class AskRequest(BaseModel):
     query: str
     k: int = 5
     retrieve_only: bool = False
+
+    @field_validator("k")
+    @classmethod
+    def _clamp_k(cls, v: int) -> int:
+        """Silently clamp to [1, MAX_K]. Belt-and-suspenders with the
+        UI's preset buttons (8/12/20) — guards direct API callers."""
+        return min(max(v, 1), MAX_K)
 
 
 class CitationOut(BaseModel):

@@ -13,6 +13,8 @@ EMBED_MODEL = "text-embedding-005"
 GENERATE_MODEL = "gemini-2.5-pro"
 EMBED_DIM = 768
 
+MAX_K = 20  # hard cap on retrieval depth — enforced in server / CLI / retriever
+
 
 def ensure_cache_dir() -> Path:
     CACHE_ROOT.mkdir(parents=True, exist_ok=True)
