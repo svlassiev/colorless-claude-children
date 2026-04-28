@@ -1,0 +1,27 @@
+# Defensive — ingest/index artefacts and venv stay out of the repo.
+# Default cache location is ~/.cache/photo-search/ (outside the repo), but if
+# anything slips into the module dir, these patterns catch it.
+
+# Build narrative — kept local only, not published.
+# README.md (public) describes the system; PLAN.md (private) describes the build.
+/PLAN.md
+
+# Ingest / index artefacts
+index/
+*.npz
+*.embeddings.json
+manifest.jsonl
+manifest_meta.jsonl
+caption_cache/
+caption_cache.jsonl
+
+# Local secrets and env
+.env
+.env.*
+
+# Python build / venv
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.uv/

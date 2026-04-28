@@ -27,8 +27,10 @@ photos in GCS
      └── embed   ── multimodalembedding@001  ──▶ 1408-dim vector
                                                        │
                                                        ▼
+                            gs://cdc-search-cache/photo-search/   (authoritative store)
+                                                       │
+                                                       ▼ (server pulls on startup)
                                         in-memory NumPy + cosine similarity
-                                        (cached to ~/.cache/photo-search/index.npz)
                                                        │
 query ── embed ── top-k + sha-dedup + date filter ── Gemini 2.5 Pro (reads images) ── narrative + thumbnails
 ```
@@ -181,13 +183,34 @@ Each extra image adds 258 input tokens to Gemini Pro ($1.25/1M input, $10/1M out
 | `ask --retrieve-only` | ~$0.0002 per query | One text-side embedding call; no Gemini |
 | Idle | $0 | No deployed services, no Vector Search endpoint, no Cloud Run |
 
-### Resetting / clearing the index
+### Cache (authoritative store: GCS)
+
+The index lives in a private GCS bucket. `~/.cache/photo-search/` is just a transient local working copy — the server pulls from GCS on startup, and the indexer/embedder/dedup push back to GCS at end of each run.
 
 ```bash
-rm -rf ~/.cache/photo-search/   # forces a clean rebuild (re-bills indexer + embedder)
+# Manual sync (auto-push at end of indexer/embedder/dedup already covers most cases):
+uv run python -m photo_search.cloud_cache push   # local → bucket
+uv run python -m photo_search.cloud_cache pull   # bucket → local (only newer remote)
 ```
 
-Keep the `*.bak` files alone — they're the dedup script's safety net for the existing index.
+The server's `lifespan()` calls `pull_from_gcs()` at startup automatically — no-op if local is already fresh.
+
+Files synced: `index.npz`, `manifest.jsonl`, `manifest_meta.jsonl`, `caption_cache.jsonl`.
+
+Bucket: `gs://cdc-search-cache/photo-search/` — UBLA + `publicAccessPrevention=enforced` + versioning enabled + 7-day soft-delete. Never public; overwrites are recoverable.
+
+Cost: ~$0.001/month for the ~37 MB cache; Class A/B ops effectively $0.
+
+### Rebuilding the index
+
+If you've added photos to `gs://colorless-days-children/` and want the index to reflect them:
+
+```bash
+uv run python -m photo_search.indexer --workers 10  # ~$1.62 for ~6.5k photos, path-cached
+uv run python -m photo_search.embedder --workers 4  # ~$1.30 for ~6.5k photos, sha-cached
+uv run python -m photo_search.dedup                 # local file processing only
+# all three auto-push the updated artefacts to GCS at the end
+```
 
 ## Known follow-ups
 
