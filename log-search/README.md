@@ -45,8 +45,10 @@ This module is **never published as a public demo**. It is for personal use and 
         └── embed    ── text-embedding-005 (Vertex AI)
                                     │
                                     ▼
+                  gs://cdc-search-cache/log-search/   (authoritative store)
+                                    │
+                                    ▼ (server pulls on startup)
                        in-memory NumPy + cosine similarity
-                       (cached to ~/.cache/log-search/index.npz)
                                     │
 query ── embed ── top-k ── Gemini 2.5 Pro ── answer + citations
 ```
@@ -165,9 +167,27 @@ Gemini 2.5 Pro: $1.25/1M input, $10/1M output (≤200k context). Each extra chun
 | `ask --retrieve-only` | ~$0.0001 per query | One embedding call for the query; no Gemini |
 | Idle | $0 | No deployed services, no recurring infra |
 
-### Resetting / clearing the index
+### Cache (authoritative store: GCS)
+
+The index lives in a private GCS bucket. `~/.cache/log-search/` is just a transient local working copy — the server pulls from GCS on startup, the embedder pushes back to GCS at end of run.
 
 ```bash
-rm -rf ~/.cache/log-search/   # forces a clean re-chunk + re-embed on the next run
+# Manual sync (auto-push at end of embedder run already covers most cases):
+uv run python -m log_search.cloud_cache push   # local → bucket
+uv run python -m log_search.cloud_cache pull   # bucket → local (only newer remote)
+```
+
+The server's `lifespan()` calls `pull_from_gcs()` at startup automatically — no-op if local is already fresh. Class A/B op costs are effectively $0; storage is <$0.001/month.
+
+Bucket: `gs://cdc-search-cache/log-search/` — UBLA + `publicAccessPrevention=enforced` + versioning enabled + 7-day soft-delete. Never public; overwrites are recoverable.
+
+### Rebuilding the index
+
+If you've edited the journal and want the index to reflect the new content:
+
+```bash
+uv run python -m log_search.chunker     # free; re-chunks ~/projects/log
+uv run python -m log_search.embedder    # ~$0.025 full corpus, sha-cached on incremental
+# embedder auto-pushes the updated index to GCS at the end
 ```
 

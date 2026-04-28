@@ -131,6 +131,18 @@ def main() -> int:
     print(f"wrote {INDEX_PATH} ({vectors.nbytes / 1024:.1f} KiB)")
     print(f"wrote {META_PATH}")
     print(f"this-run cost: ~${new_cost:.4f}")
+
+    # Auto-push updated artefacts to the private GCS bucket. Class A ops at
+    # $0.005/1k → effectively $0 for our handful of files. Idempotent — no-op
+    # if remote is already up to date.
+    try:
+        from log_search.cloud_cache import push_to_gcs
+
+        pushed = push_to_gcs()
+        if pushed:
+            print(f"pushed {pushed} cache file(s) to GCS", file=sys.stderr)
+    except Exception as e:  # noqa: BLE001
+        print(f"warning: cloud-cache push failed: {e}", file=sys.stderr)
     return 0
 
 
