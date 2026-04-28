@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from log_search.paths import CHUNKS_PATH, INDEX_PATH, META_PATH
+from log_search.paths import CHUNKS_PATH, INDEX_PATH, MAX_K, META_PATH
 
 _YEAR_RE = re.compile(r"\b(20\d{2})\b")
 _QUARTER_RE = re.compile(r"\bQ([1-4])\s*(20\d{2})\b", re.IGNORECASE)
@@ -63,6 +63,8 @@ def search(
     date_lo: str | None = None,
     date_hi: str | None = None,
 ) -> list[Hit]:
+    # Defensive cap (last line of defense; server + CLI also clamp).
+    k = min(max(k, 1), MAX_K)
     norms = np.linalg.norm(vectors, axis=1) * np.linalg.norm(query_vec)
     sims = (vectors @ query_vec) / np.maximum(norms, 1e-9)
 

@@ -7,7 +7,7 @@ import sys
 
 from google import genai
 
-from log_search.paths import LOCATION, PROJECT
+from log_search.paths import LOCATION, MAX_K, PROJECT
 from log_search.qa import generate, retrieve
 from log_search.retriever import Hit, load_index
 
@@ -19,10 +19,15 @@ def _print_citations(hits: list[Hit]) -> None:
         print(f"  [{h.rank}] score={h.score:.3f}  {date}  {h.file} :: {h.heading_path}", file=sys.stderr)
 
 
+def _clamp_k(s: str) -> int:
+    """argparse type-callable: clamp -k to [1, MAX_K] silently."""
+    return min(max(int(s), 1), MAX_K)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(prog="log-search")
     parser.add_argument("query", nargs="+", help="natural-language query")
-    parser.add_argument("-k", type=int, default=5, help="top-k chunks to retrieve")
+    parser.add_argument("-k", type=_clamp_k, default=5, help=f"top-k results to retrieve (clamped to 1..{MAX_K})")
     parser.add_argument("--retrieve-only", action="store_true", help="skip Gemini generation")
     args = parser.parse_args()
 
