@@ -54,7 +54,7 @@ def generate(
     gen_client: genai.Client,
     storage_client: storage.Client,
     *,
-    max_output_tokens: int = 2000,
+    max_output_tokens: int | None = None,
 ) -> tuple[str, dict]:
     """Pass query + retrieved images (with date+caption metadata) to Gemini.
 
@@ -64,13 +64,16 @@ def generate(
     bandwidth (~1-2 MB per image; 5-10 MB per 5-image query).
 
     `max_output_tokens` caps Gemini's TOTAL output (thinking + visible).
-    Default 2000 leaves room for ~1500 thinking tokens AND ~500 visible
-    tokens (≈ 4 paragraphs). Gemini 2.5 Pro is a reasoning model — thinking
-    tokens count toward this budget and toward billing. A lower cap (e.g.
-    500) starves the visible answer because thinking goes first.
+    When None, scales with retrieval depth: 250 * len(hits). At k=8 → 2000
+    (the prior fixed default); at k=20 → 5000, so the visible answer isn't
+    starved when the model has more photos to summarize. Gemini 2.5 Pro is
+    a reasoning model — thinking tokens count toward this budget and toward
+    billing.
 
     Returns (answer_text, usage_dict).
     """
+    if max_output_tokens is None:
+        max_output_tokens = 250 * max(1, len(hits))
     contents: list = []
     bucket = storage_client.bucket(BUCKET)
     for h in hits:

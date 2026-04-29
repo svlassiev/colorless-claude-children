@@ -48,6 +48,11 @@ SKIP_NAME_PREFIXES = ("1_",)  # old-album thumbnails on the static site
 # Stems ending in _<size> or _thumbnail are downsized variants of an original.
 # Sizes seen in the bucket: 256, 512, 800, 1024, 2048. Originals lack the suffix.
 SIZE_VARIANT_RE = re.compile(r"_(256|512|800|1024|2048|thumbnail)$", re.IGNORECASE)
+# Stems ending in _<single-digit> (e.g. pohod33_1.JPG, ~3KB) — these are
+# tiny thumbnail variants of the un-suffixed original. Treated as a variant
+# only when the un-suffixed sibling is also in the bucket (pair-aware), so a
+# legitimate numbered series like img_2.jpg without a sibling stays indexed.
+DIGIT_SUFFIX_RE = re.compile(r"_[0-9]$")
 
 CAPTION_PROMPT = (
     "Describe this photo in 2 short sentences. Cover: people count, indoor/outdoor/"
@@ -72,7 +77,7 @@ def _sha(content: bytes) -> str:
     return hashlib.sha256(content).hexdigest()[:16]
 
 
-def _is_photo(blob_name: str) -> bool:
+def _is_photo(blob_name: str, all_names: set[str] | None = None) -> bool:
     if not blob_name.lower().endswith((".jpg", ".jpeg")):
         return False
     stem = blob_name.rsplit("/", 1)[-1].rsplit(".", 1)[0]
@@ -80,6 +85,18 @@ def _is_photo(blob_name: str) -> bool:
         return False
     if SIZE_VARIANT_RE.search(stem):
         return False
+    # Pair-aware: drop _<digit> thumbnails only when un-suffixed sibling exists.
+    if all_names and DIGIT_SUFFIX_RE.search(stem):
+        prefix = blob_name.rsplit("/", 1)[0] + "/" if "/" in blob_name else ""
+        ext = blob_name.rsplit(".", 1)[1]
+        sibling_stem = stem[:-2]
+        # Tolerate ext-case mismatch (.JPG vs .jpg both seen in this bucket).
+        if (
+            f"{prefix}{sibling_stem}.{ext}" in all_names
+            or f"{prefix}{sibling_stem}.{ext.lower()}" in all_names
+            or f"{prefix}{sibling_stem}.{ext.upper()}" in all_names
+        ):
+            return False
     return True
 
 
@@ -205,12 +222,13 @@ def main() -> int:
 
     print("listing bucket...", file=sys.stderr)
     all_blobs = list(bucket.list_blobs())
-    blobs = [b for b in all_blobs if _is_photo(b.name)]
+    all_names = {b.name for b in all_blobs}
+    blobs = [b for b in all_blobs if _is_photo(b.name, all_names)]
     print(f"bucket: {len(all_blobs)} blobs total, {len(blobs)} eligible originals", file=sys.stderr)
 
     if args.count_only:
         # Show a few examples of what's filtered vs kept.
-        skipped = [b for b in all_blobs if not _is_photo(b.name)][:5]
+        skipped = [b for b in all_blobs if not _is_photo(b.name, all_names)][:5]
         kept = blobs[:5]
         summary = {
             "blobs_total": len(all_blobs),

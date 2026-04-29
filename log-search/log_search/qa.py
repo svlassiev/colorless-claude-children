@@ -62,15 +62,18 @@ def generate(
     hits: list[Hit],
     client: Client,
     *,
-    max_output_tokens: int = 2000,
+    max_output_tokens: int | None = None,
 ) -> tuple[str, dict]:
     """Run Gemini generation over the hits. Returns (answer_text, usage_dict).
 
     `max_output_tokens` caps Gemini's TOTAL output (thinking + visible).
-    Default 2000 leaves room for ~1500 thinking tokens AND ~500 visible
-    tokens (≈ 4 paragraphs). Gemini 2.5 Pro is a reasoning model — thinking
-    tokens count toward this budget and toward billing.
+    When None, scales with retrieval depth: 250 * len(hits). At k=8 → 2000
+    (the prior fixed default); at k=20 → 5000, so the visible answer isn't
+    starved when more chunks are summarised. Gemini 2.5 Pro is a reasoning
+    model — thinking tokens count toward this budget and toward billing.
     """
+    if max_output_tokens is None:
+        max_output_tokens = 250 * max(1, len(hits))
     excerpts = format_excerpts(hits)
     prompt = PROMPT_TEMPLATE.format(query=query, excerpts=excerpts)
     resp = client.models.generate_content(
