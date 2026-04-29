@@ -45,6 +45,34 @@ spec:
                 name: hiking-api
                 port:
                   name: http
+          - path: /explore
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: explore-proxy
+                port:
+                  name: http
+          - path: /explore/*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: explore-proxy
+                port:
+                  name: http
+          - path: /__/auth/*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: explore-proxy
+                port:
+                  name: http
+          - path: /__/firebase/*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: explore-proxy
+                port:
+                  name: http
           - path: /hiking
             pathType: ImplementationSpecific
             backend:

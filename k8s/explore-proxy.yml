@@ -1,0 +1,142 @@
+# nginx-proxy pod that forwards serg.vlassiev.info/explore/* → Cloud Run service.
+# Lives on the existing e2-small node — ~10MB memory footprint.
+# Forwards path as-is (no rewrite); explore service expects /explore/* prefix.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: explore-proxy-conf
+data:
+  nginx.conf: |
+    worker_processes 1;
+    events { worker_connections 256; }
+    http {
+      log_format auth_diag '$remote_addr "$request" $status '
+                           'ua="$http_user_agent" '
+                           'ref="$http_referer" '
+                           'ups=$upstream_response_time';
+      access_log /dev/stdout auth_diag;
+      server_tokens off;
+
+      server {
+        listen 80;
+
+        # Liveness probe target — kubernetes hits this directly on the pod IP.
+        location = /healthz {
+          return 200 "ok";
+          add_header Content-Type text/plain;
+        }
+
+        # Forward /explore/* to Cloud Run with no path rewrite.
+        # Cloud Run cert is for *.run.app — must set Host + SNI accordingly.
+        location /explore/ {
+          proxy_pass https://explore-y4tpnsrvaa-ez.a.run.app;
+          proxy_set_header Host explore-y4tpnsrvaa-ez.a.run.app;
+          proxy_set_header X-Forwarded-For $remote_addr;
+          proxy_set_header X-Forwarded-Proto https;
+          proxy_pass_request_headers on;
+          proxy_ssl_server_name on;
+          proxy_http_version 1.1;
+          proxy_read_timeout 90s;
+          proxy_connect_timeout 10s;
+        }
+
+        # Same-origin Firebase Auth proxy. Mirrors what Firebase Hosting does
+        # automatically — serves /__/auth/* and /__/firebase/init.json from
+        # our domain so the browser sees auth state as first-party. Without
+        # this, mobile browsers' storage partitioning swallows the redirect
+        # result. Required for FIREBASE_CONFIG.authDomain = serg.vlassiev.info.
+        location /__/auth/ {
+          proxy_pass https://thematic-acumen-225120.firebaseapp.com;
+          proxy_set_header Host thematic-acumen-225120.firebaseapp.com;
+          proxy_ssl_server_name on;
+          proxy_ssl_name thematic-acumen-225120.firebaseapp.com;
+          proxy_http_version 1.1;
+          proxy_set_header X-Forwarded-For $remote_addr;
+          proxy_set_header X-Forwarded-Proto https;
+          proxy_read_timeout 30s;
+          proxy_connect_timeout 10s;
+          # Strip upstream cache-control so every browser hit lands in our
+          # logs (Firebase sets max-age=1800; that hides visibility).
+          proxy_hide_header Cache-Control;
+          add_header Cache-Control "no-store, no-cache, must-revalidate" always;
+        }
+        location = /__/firebase/init.json {
+          proxy_pass https://thematic-acumen-225120.firebaseapp.com;
+          proxy_set_header Host thematic-acumen-225120.firebaseapp.com;
+          proxy_ssl_server_name on;
+          proxy_ssl_name thematic-acumen-225120.firebaseapp.com;
+          proxy_http_version 1.1;
+          proxy_read_timeout 10s;
+          proxy_connect_timeout 5s;
+        }
+      }
+    }
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: explore-proxy
+  labels:
+    app: explore-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: explore-proxy
+  template:
+    metadata:
+      labels:
+        app: explore-proxy
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27-alpine
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+          volumeMounts:
+            - name: conf
+              mountPath: /etc/nginx
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 30
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 2
+            periodSeconds: 10
+      volumes:
+        - name: conf
+          configMap:
+            name: explore-proxy-conf
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: explore-proxy
+  labels:
+    app: explore-proxy
+spec:
+  type: NodePort
+  selector:
+    app: explore-proxy
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

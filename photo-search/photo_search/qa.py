@@ -53,6 +53,8 @@ def generate(
     hits: list[Hit],
     gen_client: genai.Client,
     storage_client: storage.Client,
+    *,
+    max_output_tokens: int = 2000,
 ) -> tuple[str, dict]:
     """Pass query + retrieved images (with date+caption metadata) to Gemini.
 
@@ -60,6 +62,12 @@ def generate(
     URIs. This bypasses Vertex's service-agent → GCS access path, which
     requires one-time provisioning that can fail on first use. Cost: local
     bandwidth (~1-2 MB per image; 5-10 MB per 5-image query).
+
+    `max_output_tokens` caps Gemini's TOTAL output (thinking + visible).
+    Default 2000 leaves room for ~1500 thinking tokens AND ~500 visible
+    tokens (≈ 4 paragraphs). Gemini 2.5 Pro is a reasoning model — thinking
+    tokens count toward this budget and toward billing. A lower cap (e.g.
+    500) starves the visible answer because thinking goes first.
 
     Returns (answer_text, usage_dict).
     """
@@ -77,16 +85,24 @@ def generate(
             contents.append(f"Auto-generated caption: {h.caption}")
     contents.append("\n\n" + GENERATION_PROMPT.format(n=len(hits), query=query))
 
-    resp = gen_client.models.generate_content(model=GENERATE_MODEL, contents=contents)
+    resp = gen_client.models.generate_content(
+        model=GENERATE_MODEL,
+        contents=contents,
+        config=types.GenerateContentConfig(max_output_tokens=max_output_tokens),
+    )
 
-    usage: dict = {"tokens_in": 0, "tokens_out": 0, "cost": None}
+    usage: dict = {"tokens_in": 0, "tokens_out": 0, "tokens_thoughts": 0, "cost": None}
     meta = getattr(resp, "usage_metadata", None)
     if meta is not None:
         in_tok = getattr(meta, "prompt_token_count", 0) or 0
-        out_tok = getattr(meta, "candidates_token_count", 0) or 0
-        # Gemini 2.5 Pro: $1.25/1M input (≤200k context), $10/1M output
+        visible_out = getattr(meta, "candidates_token_count", 0) or 0
+        thoughts = getattr(meta, "thoughts_token_count", 0) or 0
+        # Gemini 2.5 Pro: $1.25/1M input (≤200k context), $10/1M output.
+        # Output billing covers thinking + visible — bill on the sum.
+        billable_out = visible_out + thoughts
         usage["tokens_in"] = in_tok
-        usage["tokens_out"] = out_tok
-        usage["cost"] = in_tok * 1.25 / 1_000_000 + out_tok * 10 / 1_000_000
+        usage["tokens_out"] = visible_out
+        usage["tokens_thoughts"] = thoughts
+        usage["cost"] = in_tok * 1.25 / 1_000_000 + billable_out * 10 / 1_000_000
 
     return (resp.text or "").strip(), usage

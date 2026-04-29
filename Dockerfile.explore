@@ -1,0 +1,35 @@
+# Container for the /explore Cloud Run service.
+# Build context: repo root (so we can COPY all four packages).
+# Build:   docker build -f Dockerfile.explore -t europe-west4-docker.pkg.dev/thematic-acumen-225120/explore/explore:v1 .
+# Push:    docker push europe-west4-docker.pkg.dev/thematic-acumen-225120/explore/explore:v1
+# Deploy:  gcloud run deploy explore --image=...  (see deploy script)
+
+FROM python:3.11-slim
+
+RUN pip install --no-cache-dir uv
+
+WORKDIR /app
+
+# Sibling packages — uv path-deps reference these directories.
+COPY search-common/ ./search-common/
+COPY photo-search/ ./photo-search/
+COPY log-search/ ./log-search/
+COPY explore/ ./explore/
+
+# albums.json + albums-files.json live at the repo root and are read at runtime
+# by photo_search.site.site_url_for(). Without them, every citation's site_url
+# would be null and links fall back to raw GCS URLs.
+COPY albums.json albums-files.json ./
+
+WORKDIR /app/explore
+RUN uv sync --frozen --no-dev
+
+# Cloud Run injects PORT; HOST=0.0.0.0 makes uvicorn listen on all interfaces
+# (Cloud Run's network policy is the boundary, not bind addr).
+ENV HOST=0.0.0.0 \
+    PORT=8080 \
+    PYTHONUNBUFFERED=1
+
+EXPOSE 8080
+
+CMD ["uv", "run", "--no-sync", "python", "-m", "explore.server"]

@@ -1,0 +1,32 @@
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Credentials — never commit
+*-key.json
+*.json.bak
+service-account*.json
+service_account*.json
+firebase-adminsdk-*.json
+credentials.json
+*-credentials.json
+.env
+.env.*
+
+# Python build artefacts
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+.pytest_cache/
+.coverage
+
+# Per-package build narrative (gitignored at root level too — defensive;
+# each package may also have its own /PLAN.md gitignore)
+PLAN.md
+HIKING-PLAN.md
+
+# Stray photos dropped at repo root during testing
+/photo_*.jpg
+/photo_*.png
