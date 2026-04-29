@@ -159,6 +159,30 @@ button:disabled { color: #999; cursor: default; }
     padding: 0 2px;
 }
 
+/* Log-corpus citation list — collapsible details with the source excerpt. */
+.citations { margin-top: 16px; }
+.citations details {
+    border-top: 1px dashed #ddd;
+    padding: 8px 0;
+}
+.citations summary {
+    font: 10px/1.4 'SF Mono', Menlo, Monaco, monospace;
+    color: #666;
+    cursor: pointer;
+    list-style: none;
+}
+.citations summary:hover { text-decoration: underline; }
+.citations pre {
+    font: 10pt/15pt verdana;
+    color: #333;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 8px 0 0;
+    padding: 8px 12px;
+    background: #fafafa;
+    border-left: 2px solid #ccc;
+}
+
 .meta {
     font-family: 'SF Mono', Menlo, Monaco, monospace;
     font-size: 9px;
@@ -377,21 +401,31 @@ function renderResult(data) {
     if (data.answer) html += '<div id="answer">' + esc(data.answer) + '</div>';
 
     if (data.citations && data.citations.length) {
-        html += '<div class="photo-grid">';
-        for (const c of data.citations) {
-            const date = c.date_iso || '';
-            const cap = c.caption ? c.caption.slice(0, 140) : '';
-            const linkHref = c.site_url || (GCS_BASE + '/' + encodeURI(c.blob_path));
-            const imgSrc = GCS_BASE + '/' + encodeURI(c.blob_path);
-            html += '<div class="photo">';
-            html += '<a href="' + esc(linkHref) + '" target="_blank" rel="noopener">';
-            html += '<img loading="lazy" src="' + esc(imgSrc) + '" alt="' + esc(cap) + '">';
-            html += '</a>';
-            html += '<div class="meta-line">[' + c.rank + '] ' + c.score.toFixed(3) + ' · ' + esc(date) + '</div>';
-            if (cap) html += '<div class="caption-line">' + esc(cap) + '</div>';
+        if (data.corpus === 'log') {
+            html += '<div class="citations">';
+            for (const c of data.citations) {
+                const date = c.date_iso || '-';
+                const summary = '[' + c.rank + '] ' + esc(c.file || '') + ' :: ' + esc(c.heading_path || '') + ' :: ' + esc(date) + ' (score ' + c.score.toFixed(3) + ')';
+                html += '<details><summary>' + summary + '</summary><pre>' + esc(c.text || '') + '</pre></details>';
+            }
+            html += '</div>';
+        } else {
+            html += '<div class="photo-grid">';
+            for (const c of data.citations) {
+                const date = c.date_iso || '';
+                const cap = c.caption ? c.caption.slice(0, 140) : '';
+                const linkHref = c.site_url || (GCS_BASE + '/' + encodeURI(c.blob_path));
+                const imgSrc = GCS_BASE + '/' + encodeURI(c.blob_path);
+                html += '<div class="photo">';
+                html += '<a href="' + esc(linkHref) + '" target="_blank" rel="noopener">';
+                html += '<img loading="lazy" src="' + esc(imgSrc) + '" alt="' + esc(cap) + '">';
+                html += '</a>';
+                html += '<div class="meta-line">[' + c.rank + '] ' + c.score.toFixed(3) + ' · ' + esc(date) + '</div>';
+                if (cap) html += '<div class="caption-line">' + esc(cap) + '</div>';
+                html += '</div>';
+            }
             html += '</div>';
         }
-        html += '</div>';
     }
     if (data.cost != null) {
         html += '<div class="meta">tokens in=' + data.tokens_in + ' out=' + data.tokens_out + ' · cost ~$' + data.cost.toFixed(4) + '</div>';

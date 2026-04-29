@@ -23,6 +23,9 @@ from google.cloud import firestore, storage
 from pydantic import BaseModel, Field, field_validator
 from vertexai.vision_models import MultiModalEmbeddingModel
 
+from log_search import qa as log_qa
+from log_search.cloud_cache import pull_from_gcs as log_pull
+from log_search.retriever import load_index as load_log_index
 from photo_search import qa as photo_qa
 from photo_search.cloud_cache import pull_from_gcs as photo_pull
 from photo_search.paths import EMBED_MODEL as PHOTO_EMBED_MODEL
@@ -59,8 +62,14 @@ async def lifespan(_: FastAPI):
     print(f"explore: loaded photo index — {len(metas)} vectors", file=sys.stderr)
 
     if settings.log_tab_enabled:
-        # Wired in a follow-up phase. For now this branch is unreachable.
-        print("explore: log_tab_enabled=true but log dispatch not yet wired", file=sys.stderr)
+        n = log_pull()
+        if n:
+            print(f"explore: pulled {n} log cache file(s) from GCS", file=sys.stderr)
+        lvecs, lmetas, ltexts = load_log_index()
+        _state["log_vectors"] = lvecs
+        _state["log_metas"] = lmetas
+        _state["log_texts"] = ltexts
+        print(f"explore: loaded log index — {len(lmetas)} chunks", file=sys.stderr)
 
     yield
 
@@ -122,12 +131,17 @@ class AskRequest(BaseModel):
 class CitationOut(BaseModel):
     rank: int
     score: float
+    date_iso: Optional[str] = None
+    # Photo-citation fields
     blob_path: Optional[str] = None
     gcs_uri: Optional[str] = None
     site_url: Optional[str] = None
-    date_iso: Optional[str] = None
     caption: str = ""
     sha: Optional[str] = None
+    # Log-citation fields
+    file: Optional[str] = None
+    heading_path: Optional[str] = None
+    text: Optional[str] = None
 
 
 class AskResponse(BaseModel):
@@ -196,37 +210,57 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
         f"authed:{subject.email}" if isinstance(subject, AuthedSubject) else "anon"
     )
 
-    if req.corpus != "photo":
-        # log corpus is gated upstream; this branch only runs after the feature flag flips
-        raise HTTPException(status_code=503, detail="log corpus dispatch not yet wired")
-
-    embed_model = _state["embed_model"]
-    vectors = _state["photo_vectors"]
-    metas = _state["photo_metas"]
-
-    hits, (date_lo, date_hi) = photo_qa.retrieve(
-        req.query, embed_model, vectors, metas, k=req.k
-    )
-    date_filter = f"{date_lo} .. {date_hi}" if date_lo else None
-
-    citations = [
-        CitationOut(
-            rank=h.rank,
-            score=h.score,
-            blob_path=h.blob_path,
-            gcs_uri=h.gcs_uri,
-            site_url=site_url_for(h.blob_path),
-            date_iso=h.date_iso,
-            caption=h.caption,
-            sha=h.sha,
+    # Retrieve — corpus-specific
+    if req.corpus == "photo":
+        hits, (date_lo, date_hi) = photo_qa.retrieve(
+            req.query,
+            _state["embed_model"],
+            _state["photo_vectors"],
+            _state["photo_metas"],
+            k=req.k,
         )
-        for h in hits
-    ]
+        citations = [
+            CitationOut(
+                rank=h.rank,
+                score=h.score,
+                blob_path=h.blob_path,
+                gcs_uri=h.gcs_uri,
+                site_url=site_url_for(h.blob_path),
+                date_iso=h.date_iso,
+                caption=h.caption,
+                sha=h.sha,
+            )
+            for h in hits
+        ]
+        empty_msg = "no matching photos found."
+    else:  # corpus == "log"
+        hits, (date_lo, date_hi) = log_qa.retrieve(
+            req.query,
+            _state["gen_client"],
+            _state["log_vectors"],
+            _state["log_metas"],
+            _state["log_texts"],
+            k=req.k,
+        )
+        citations = [
+            CitationOut(
+                rank=h.rank,
+                score=h.score,
+                date_iso=h.date_iso,
+                file=h.file,
+                heading_path=h.heading_path,
+                text=h.text,
+            )
+            for h in hits
+        ]
+        empty_msg = "no matching journal entries found."
+
+    date_filter = f"{date_lo} .. {date_hi}" if date_lo else None
 
     if not hits:
         remaining, cap = get_remaining(subject, db)
         return AskResponse(
-            answer="no matching photos found.",
+            answer=empty_msg,
             corpus=req.corpus,
             date_filter=date_filter,
             auth_state=auth_label,
@@ -254,9 +288,12 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
     # Layer 2: dispatch-time corpus re-check (defense-in-depth)
     authorize_corpus(req.corpus, subject)
 
-    answer, usage = photo_qa.generate(
-        req.query, hits, _state["gen_client"], _state["storage_client"]
-    )
+    if req.corpus == "photo":
+        answer, usage = photo_qa.generate(
+            req.query, hits, _state["gen_client"], _state["storage_client"]
+        )
+    else:
+        answer, usage = log_qa.generate(req.query, hits, _state["gen_client"])
 
     remaining, cap = get_remaining(subject, db)
     return AskResponse(
