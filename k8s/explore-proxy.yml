@@ -29,6 +29,8 @@ data:
 
         # Forward /explore/* to Cloud Run with no path rewrite.
         # Cloud Run cert is for *.run.app — must set Host + SNI accordingly.
+        # proxy_read_timeout slightly exceeds Cloud Run's own timeout so we
+        # surface the upstream's 504 instead of nginx pre-empting at 90s.
         location /explore/ {
           proxy_pass https://explore-y4tpnsrvaa-ez.a.run.app;
           proxy_set_header Host explore-y4tpnsrvaa-ez.a.run.app;
@@ -37,38 +39,8 @@ data:
           proxy_pass_request_headers on;
           proxy_ssl_server_name on;
           proxy_http_version 1.1;
-          proxy_read_timeout 90s;
+          proxy_read_timeout 130s;
           proxy_connect_timeout 10s;
-        }
-
-        # Same-origin Firebase Auth proxy. Mirrors what Firebase Hosting does
-        # automatically — serves /__/auth/* and /__/firebase/init.json from
-        # our domain so the browser sees auth state as first-party. Without
-        # this, mobile browsers' storage partitioning swallows the redirect
-        # result. Required for FIREBASE_CONFIG.authDomain = serg.vlassiev.info.
-        location /__/auth/ {
-          proxy_pass https://thematic-acumen-225120.firebaseapp.com;
-          proxy_set_header Host thematic-acumen-225120.firebaseapp.com;
-          proxy_ssl_server_name on;
-          proxy_ssl_name thematic-acumen-225120.firebaseapp.com;
-          proxy_http_version 1.1;
-          proxy_set_header X-Forwarded-For $remote_addr;
-          proxy_set_header X-Forwarded-Proto https;
-          proxy_read_timeout 30s;
-          proxy_connect_timeout 10s;
-          # Strip upstream cache-control so every browser hit lands in our
-          # logs (Firebase sets max-age=1800; that hides visibility).
-          proxy_hide_header Cache-Control;
-          add_header Cache-Control "no-store, no-cache, must-revalidate" always;
-        }
-        location = /__/firebase/init.json {
-          proxy_pass https://thematic-acumen-225120.firebaseapp.com;
-          proxy_set_header Host thematic-acumen-225120.firebaseapp.com;
-          proxy_ssl_server_name on;
-          proxy_ssl_name thematic-acumen-225120.firebaseapp.com;
-          proxy_http_version 1.1;
-          proxy_read_timeout 10s;
-          proxy_connect_timeout 5s;
         }
       }
     }

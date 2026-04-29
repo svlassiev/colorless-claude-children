@@ -70,12 +70,19 @@ a:hover { text-decoration: underline; }
 .tab.hidden { display: none; }
 
 form {
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     margin: 16px 0 24px;
 }
-input[type=text] {
+.search-row {
+    display: flex;
+    width: 85%;
+    gap: 4px;
+}
+.search-row input[type=text] {
+    flex: 1;
     font: 10pt verdana;
-    width: 60%;
     padding: 4px 6px;
     border: 1px solid #999;
 }
@@ -90,32 +97,42 @@ button:hover { background: #ececec; }
 button:disabled { color: #999; cursor: default; }
 
 .opts {
-    text-align: center;
     font-size: 9pt;
     color: #666;
     margin-top: 6px;
+    width: 85%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.opts > label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .k-presets {
     display: inline-flex;
-    gap: 4px;
-    margin-left: 4px;
+    align-items: center;
+    gap: 8px;
 }
 .k-btn {
-    font: 9pt verdana;
-    padding: 2px 9px;
-    border: 1px solid #ccc;
-    background: #f7f7f7;
-    color: #555;
+    font: inherit;
+    color: #888;
     cursor: pointer;
+    padding: 0;
+    border: 0;
+    background: none;
     user-select: none;
 }
 .k-btn input { display: none; }
-.k-btn:hover { background: #ececec; }
+.k-btn:hover { color: #333; }
 .k-btn:has(input:checked) {
-    background: #0000CC;
-    color: white;
-    border-color: #0000CC;
+    color: #0000CC;
+    text-decoration: underline;
+    font-weight: bold;
 }
 
 #answer {
@@ -223,8 +240,10 @@ button:disabled { color: #999; cursor: default; }
 </div>
 
 <form id="ask-form">
-    <input type="text" id="query" placeholder="describe a photo..." autofocus autocomplete="off" />
-    <button type="submit" id="ask-btn">explore</button>
+    <div class="search-row">
+        <input type="text" id="query" placeholder="describe a photo..." autofocus autocomplete="off" />
+        <button type="submit" id="ask-btn">explore</button>
+    </div>
     <div class="opts">
         <label><input type="checkbox" id="retrieve-only" /> retrieve only (free)</label>
         &nbsp;&middot;&nbsp;
