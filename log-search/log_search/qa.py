@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 from google.genai import Client
+from google.genai import types
 
 from log_search.paths import EMBED_MODEL, GENERATE_MODEL
 from log_search.retriever import Hit, parse_date_filter, search
@@ -56,20 +57,39 @@ def retrieve(
     return hits, (date_lo, date_hi)
 
 
-def generate(query: str, hits: list[Hit], client: Client) -> tuple[str, dict]:
-    """Run Gemini generation over the hits. Returns (answer_text, usage_dict)."""
+def generate(
+    query: str,
+    hits: list[Hit],
+    client: Client,
+    *,
+    max_output_tokens: int = 2000,
+) -> tuple[str, dict]:
+    """Run Gemini generation over the hits. Returns (answer_text, usage_dict).
+
+    `max_output_tokens` caps Gemini's TOTAL output (thinking + visible).
+    Default 2000 leaves room for ~1500 thinking tokens AND ~500 visible
+    tokens (≈ 4 paragraphs). Gemini 2.5 Pro is a reasoning model — thinking
+    tokens count toward this budget and toward billing.
+    """
     excerpts = format_excerpts(hits)
     prompt = PROMPT_TEMPLATE.format(query=query, excerpts=excerpts)
-    resp = client.models.generate_content(model=GENERATE_MODEL, contents=prompt)
+    resp = client.models.generate_content(
+        model=GENERATE_MODEL,
+        contents=prompt,
+        config=types.GenerateContentConfig(max_output_tokens=max_output_tokens),
+    )
 
-    usage: dict = {"tokens_in": 0, "tokens_out": 0, "cost": None}
+    usage: dict = {"tokens_in": 0, "tokens_out": 0, "tokens_thoughts": 0, "cost": None}
     meta = getattr(resp, "usage_metadata", None)
     if meta is not None:
         in_tok = getattr(meta, "prompt_token_count", 0) or 0
-        out_tok = getattr(meta, "candidates_token_count", 0) or 0
-        # Gemini 2.5 Pro: $1.25/1M input (≤200k context), $10/1M output
+        visible_out = getattr(meta, "candidates_token_count", 0) or 0
+        thoughts = getattr(meta, "thoughts_token_count", 0) or 0
+        # Output billing covers thinking + visible — bill on the sum.
+        billable_out = visible_out + thoughts
         usage["tokens_in"] = in_tok
-        usage["tokens_out"] = out_tok
-        usage["cost"] = in_tok * 1.25 / 1_000_000 + out_tok * 10 / 1_000_000
+        usage["tokens_out"] = visible_out
+        usage["tokens_thoughts"] = thoughts
+        usage["cost"] = in_tok * 1.25 / 1_000_000 + billable_out * 10 / 1_000_000
 
     return (resp.text or "").strip(), usage

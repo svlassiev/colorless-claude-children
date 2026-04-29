@@ -93,6 +93,20 @@ albums.json         — album metadata (96 albums)
 albums-files.json   — file lists for camera-filename albums
 nginx.conf          — gzip, cache headers, /healthz endpoint
 Dockerfile          — nginx:alpine + static files
+Dockerfile.explore  — image for the /explore Cloud Run service (see Subprojects)
 k8s/                — Kubernetes manifests (deployment, service, ingress, managed certs)
 .github/workflows/  — GitHub Actions CI/CD
 ```
+
+## Subprojects
+
+The repo also hosts a small set of Python packages that power `serg.vlassiev.info/explore` — a search/RAG companion to the static gallery. They live as siblings here so they can share types and be built into one image:
+
+| Package | Purpose |
+|---|---|
+| [`photo-search/`](photo-search/README.md) | Multimodal RAG over the public photo bucket (Vertex AI multimodal embeddings + Gemini 2.5 Pro). |
+| [`log-search/`](log-search/README.md) | Text RAG over a private working journal — code public, corpus and index never enter the repo. |
+| [`search-common/`](search-common/README.md) | Shared library — auth (Firebase ID token verification + email allow-list), Firestore-backed rate limiting, env-driven settings. |
+| [`explore/`](explore/README.md) | FastAPI service that wraps both corpora behind a single `/explore/api/ask` endpoint. Deployed to Cloud Run; reached via the existing GKE Ingress through an nginx-proxy pod (`k8s/explore-proxy.yml`). |
+
+The `/explore` route on `serg.vlassiev.info` is path-mounted onto the same Ingress as the static site (no separate subdomain). Auth uses Firebase Auth (Google sign-in, popup mode) with an email allow-list — anonymous queries against the public photo corpus work without sign-in.

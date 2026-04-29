@@ -1,0 +1,69 @@
+# =================================================================
+# Credentials — MUST NOT enter the build context. Belt-and-suspenders
+# defence — Dockerfile.explore uses specific COPYs, but if anyone ever
+# adds `COPY . .`, these patterns prevent silent secret leakage.
+# =================================================================
+**/*-key.json
+**/service-account*.json
+**/service_account*.json
+**/firebase-adminsdk-*.json
+**/credentials.json
+**/*-credentials.json
+**/.env
+**/.env.*
+
+# =================================================================
+# Build artefacts and ephemeral state — never want in any image.
+# =================================================================
+**/.venv/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.cache/
+**/*.bak
+*.bak
+**/coverage/
+.coverage
+
+# =================================================================
+# Editor / IDE / VCS metadata.
+# =================================================================
+.git/
+.gitignore
+.idea/
+.vscode/
+.DS_Store
+
+# =================================================================
+# Repo content unrelated to the /explore image. The explore Dockerfile
+# only COPYs four package dirs + albums*.json — everything else here
+# is for the static colorless-days site, hiking-ui assets, k8s mani-
+# fests, build narrative, the user's CV, etc. Excluding them shrinks
+# the build context dramatically.
+# =================================================================
+/CLAUDE.md
+/HIKING-PLAN.md
+/PLAN.md
+/README.md
+/Dockerfile
+/.github/
+/.dockerignore
+/all.html
+/app.js
+/colorless-days/
+/cv/
+/folderIndex.html
+/google*.html
+/icon.png
+/index.html
+/k8s/
+/nginx.conf
+/preview.html
+/styles.css
+/photo_*.jpg
+/photo_*.png
+
+# =================================================================
+# Per-package PLAN.md (gitignored anyway; defensive).
+# =================================================================
+**/PLAN.md
