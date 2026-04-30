@@ -1,8 +1,13 @@
 # =================================================================
-# Credentials — MUST NOT enter the build context. Belt-and-suspenders
-# defence — Dockerfile.explore uses specific COPYs, but if anyone ever
-# adds `COPY . .`, these patterns prevent silent secret leakage.
+# Common .dockerignore — applied to ANY `docker build` from repo root
+# whose Dockerfile does NOT have a sibling `<Dockerfile>.dockerignore`.
+# Image-specific exclusions live in `<Dockerfile>.dockerignore` (e.g.
+# Dockerfile.explore.dockerignore) so each image's build context is
+# right-sized without breaking the others.
 # =================================================================
+
+# Credentials — MUST NOT enter any build context. Belt-and-suspenders
+# defence: even if a Dockerfile uses `COPY . .` these never leak.
 **/*-key.json
 **/service-account*.json
 **/service_account*.json
@@ -12,9 +17,7 @@
 **/.env
 **/.env.*
 
-# =================================================================
-# Build artefacts and ephemeral state — never want in any image.
-# =================================================================
+# Build artefacts and ephemeral state.
 **/.venv/
 **/__pycache__/
 **/*.pyc
@@ -25,45 +28,12 @@
 **/coverage/
 .coverage
 
-# =================================================================
 # Editor / IDE / VCS metadata.
-# =================================================================
 .git/
 .gitignore
 .idea/
 .vscode/
 .DS_Store
 
-# =================================================================
-# Repo content unrelated to the /explore image. The explore Dockerfile
-# only COPYs four package dirs + albums*.json — everything else here
-# is for the static colorless-days site, hiking-ui assets, k8s mani-
-# fests, build narrative, the user's CV, etc. Excluding them shrinks
-# the build context dramatically.
-# =================================================================
-/CLAUDE.md
-/HIKING-PLAN.md
-/PLAN.md
-/README.md
-/Dockerfile
-/.github/
-/.dockerignore
-/all.html
-/app.js
-/colorless-days/
-/cv/
-/folderIndex.html
-/google*.html
-/icon.png
-/index.html
-/k8s/
-/nginx.conf
-/preview.html
-/styles.css
-/photo_*.jpg
-/photo_*.png
-
-# =================================================================
 # Per-package PLAN.md (gitignored anyway; defensive).
-# =================================================================
 **/PLAN.md

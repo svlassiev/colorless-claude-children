@@ -1,0 +1,64 @@
+# =================================================================
+# Explore-image-specific exclusions. Auto-picked by BuildKit when
+# building with `-f Dockerfile.explore`. Common patterns (credentials,
+# build artefacts, editor noise) live in the root `.dockerignore` and
+# are NOT duplicated here — BuildKit reads only the matching sibling
+# file when one exists, so we have to inline the common patterns too.
+# =================================================================
+
+# --- Common patterns (mirror of .dockerignore) ---
+**/*-key.json
+**/service-account*.json
+**/service_account*.json
+**/firebase-adminsdk-*.json
+**/credentials.json
+**/*-credentials.json
+**/.env
+**/.env.*
+
+**/.venv/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.cache/
+**/*.bak
+*.bak
+**/coverage/
+.coverage
+
+.git/
+.gitignore
+.idea/
+.vscode/
+.DS_Store
+
+**/PLAN.md
+
+# =================================================================
+# Repo content unrelated to the explore image. The explore Dockerfile
+# only COPYs four package dirs (photo-search, log-search, search-common,
+# explore) plus albums*.json — everything else here belongs to the
+# colorless-days static site, hiking-ui assets, k8s manifests, etc.
+# Excluding them shrinks the build context dramatically.
+# =================================================================
+/CLAUDE.md
+/HIKING-PLAN.md
+/PLAN.md
+/README.md
+/Dockerfile
+/.github/
+/.dockerignore
+/all.html
+/app.js
+/colorless-days/
+/cv/
+/folderIndex.html
+/google*.html
+/icon.png
+/index.html
+/k8s/
+/nginx.conf
+/preview.html
+/styles.css
+/photo_*.jpg
+/photo_*.png
