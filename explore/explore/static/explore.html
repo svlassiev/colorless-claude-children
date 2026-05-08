@@ -200,6 +200,14 @@ button:disabled { color: #999; cursor: default; }
     border-left: 2px solid #ccc;
 }
 
+/* Faded for citations the model didn't summarise (or that scored well
+   below the top similarity match when no rerank ran). Hover restores
+   full opacity so users can still inspect them. */
+.photo.low-relevance,
+.citations details.low-relevance { opacity: 0.4; transition: opacity 0.2s; }
+.photo.low-relevance:hover,
+.citations details.low-relevance:hover { opacity: 1; }
+
 .meta {
     font-family: 'SF Mono', Menlo, Monaco, monospace;
     font-size: 9px;
@@ -208,6 +216,15 @@ button:disabled { color: #999; cursor: default; }
     margin-top: 12px;
 }
 .error { color: #cc0000; text-align: center; margin: 16px 0; }
+.notice {
+    margin: 16px 0 12px;
+    padding: 8px 12px;
+    background: #fff8e1;
+    border-left: 2px solid #cc8800;
+    color: #663300;
+    font-size: 9pt;
+    line-height: 1.45;
+}
 
 .loading-spinner {
     width: 48px;
@@ -417,15 +434,31 @@ form.addEventListener('submit', async (e) => {
 
 function renderResult(data) {
     let html = '';
-    if (data.answer) html += '<div id="answer">' + esc(data.answer) + '</div>';
+    if (data.answer) {
+        html += '<div id="answer">' + esc(data.answer) + '</div>';
+    } else if (data.answer_error) {
+        html += '<div class="notice">' + esc(data.answer_error) + '</div>';
+    }
 
     if (data.citations && data.citations.length) {
+        // Fade signal: when the reranker ran (photo corpus, depth ≥ threshold)
+        // trust its in_generation flag — Pro only saw those. Otherwise fall
+        // back to the score-fade baseline for both corpora: anything below
+        // FADE_THRESHOLD * top_score gets faded out.
+        const FADE_THRESHOLD = 0.5;
+        const topScore = data.citations[0].score || 0;
+        const isLowRelevance = (c) => {
+            if (data.rerank_used) return c.in_generation === false;
+            return topScore > 0 && c.score < FADE_THRESHOLD * topScore;
+        };
+
         if (data.corpus === 'log') {
             html += '<div class="citations">';
             for (const c of data.citations) {
                 const date = c.date_iso || '-';
                 const summary = '[' + c.rank + '] ' + esc(c.file || '') + ' :: ' + esc(c.heading_path || '') + ' :: ' + esc(date) + ' (score ' + c.score.toFixed(3) + ')';
-                html += '<details><summary>' + summary + '</summary><pre>' + esc(c.text || '') + '</pre></details>';
+                const cls = isLowRelevance(c) ? ' class="low-relevance"' : '';
+                html += '<details' + cls + '><summary>' + summary + '</summary><pre>' + esc(c.text || '') + '</pre></details>';
             }
             html += '</div>';
         } else {
@@ -435,7 +468,8 @@ function renderResult(data) {
                 const cap = c.caption ? c.caption.slice(0, 140) : '';
                 const linkHref = c.site_url || (GCS_BASE + '/' + encodeURI(c.blob_path));
                 const imgSrc = GCS_BASE + '/' + encodeURI(c.blob_path);
-                html += '<div class="photo">';
+                const cls = isLowRelevance(c) ? 'photo low-relevance' : 'photo';
+                html += '<div class="' + cls + '">';
                 html += '<a href="' + esc(linkHref) + '" target="_blank" rel="noopener">';
                 html += '<img loading="lazy" src="' + esc(imgSrc) + '" alt="' + esc(cap) + '">';
                 html += '</a>';
