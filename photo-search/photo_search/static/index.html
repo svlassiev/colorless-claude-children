@@ -126,6 +126,11 @@ button:disabled { color: #999; cursor: default; }
     text-align: left;
     padding: 0 2px;
 }
+/* Faded for citations the model didn't summarise (or that scored well
+   below the top similarity match when no rerank ran). Hover restores
+   full opacity so users can still inspect them. */
+.photo.low-relevance { opacity: 0.4; transition: opacity 0.2s; }
+.photo.low-relevance:hover { opacity: 1; }
 
 .meta {
     font-family: 'SF Mono', Menlo, Monaco, 'Cascadia Mono', 'DejaVu Sans Mono', Consolas, monospace;
@@ -150,6 +155,15 @@ button:disabled { color: #999; cursor: default; }
     to   { transform: rotate(360deg); }
 }
 .error { color: #cc0000; text-align: center; margin: 16px 0; }
+.notice {
+    margin: 16px 0 12px;
+    padding: 8px 12px;
+    background: #fff8e1;
+    border-left: 2px solid #cc8800;
+    color: #663300;
+    font-size: 9pt;
+    line-height: 1.45;
+}
 </style>
 </head>
 <body>
@@ -212,15 +226,28 @@ function renderResult(data) {
     let html = '';
     if (data.answer) {
         html += '<div id="answer">' + esc(data.answer) + '</div>';
+    } else if (data.answer_error) {
+        html += '<div class="notice">' + esc(data.answer_error) + '</div>';
     }
     if (data.citations && data.citations.length) {
+        // Fade signal: when the reranker ran, trust its in_generation flag
+        // (Pro only saw those photos). Otherwise fall back to the score-fade
+        // baseline — fade anything below FADE_THRESHOLD * top_score.
+        const FADE_THRESHOLD = 0.5;
+        const topScore = data.citations[0].score || 0;
+        const isLowRelevance = (c) => {
+            if (data.rerank_used) return c.in_generation === false;
+            return topScore > 0 && c.score < FADE_THRESHOLD * topScore;
+        };
+
         html += '<div class="photo-grid">';
         for (const c of data.citations) {
             const date = c.date_iso || '';
             const cap = c.caption ? c.caption.slice(0, 140) : '';
             const linkHref = c.site_url || (GCS_BASE + '/' + encodeURI(c.blob_path));
             const imgSrc = GCS_BASE + '/' + encodeURI(c.blob_path);
-            html += '<div class="photo">';
+            const cls = isLowRelevance(c) ? 'photo low-relevance' : 'photo';
+            html += '<div class="' + cls + '">';
             html += '  <a href="' + esc(linkHref) + '" target="_blank" rel="noopener">';
             html += '    <img loading="lazy" src="' + esc(imgSrc) + '" alt="' + esc(cap) + '">';
             html += '  </a>';

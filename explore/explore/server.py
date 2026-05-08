@@ -29,10 +29,12 @@ from log_search.retriever import load_index as load_log_index
 from photo_search import qa as photo_qa
 from photo_search.cloud_cache import pull_from_gcs as photo_pull
 from photo_search.paths import EMBED_MODEL as PHOTO_EMBED_MODEL
-from photo_search.paths import MAX_K
+from photo_search.paths import MAX_K, RERANK_KEEP, RERANK_THRESHOLD_K
+from photo_search.rerank import rerank_hits as photo_rerank_hits
 from photo_search.retriever import load_index as load_photo_index
 from photo_search.site import site_url_for
 from search_common.auth import AnonSubject, AuthedSubject, Subject, get_subject
+from search_common.generation import safe_generate
 from search_common.rate_limit import enforce_rate_limit, get_remaining
 from search_common.settings import settings
 
@@ -142,11 +144,23 @@ class CitationOut(BaseModel):
     file: Optional[str] = None
     heading_path: Optional[str] = None
     text: Optional[str] = None
+    # True when this citation was passed to the generator. The frontend
+    # uses this (with rerank_used) to fade citations that didn't inform
+    # the answer.
+    in_generation: bool = True
 
 
 class AskResponse(BaseModel):
     answer: Optional[str] = None
+    # Set when retrieval succeeded but the LLM call failed/timed out — the
+    # frontend renders citations regardless and surfaces this inline so the
+    # user knows why the summary is missing.
+    answer_error: Optional[str] = None
     citations: list[CitationOut] = Field(default_factory=list)
+    # True when the Flash reranker actually influenced citation order. The
+    # frontend uses this to choose between in_generation-based fading and
+    # the score-fade baseline.
+    rerank_used: bool = False
     tokens_in: int = 0
     tokens_out: int = 0
     cost: Optional[float] = None
@@ -219,19 +233,6 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
             _state["photo_metas"],
             k=req.k,
         )
-        citations = [
-            CitationOut(
-                rank=h.rank,
-                score=h.score,
-                blob_path=h.blob_path,
-                gcs_uri=h.gcs_uri,
-                site_url=site_url_for(h.blob_path),
-                date_iso=h.date_iso,
-                caption=h.caption,
-                sha=h.sha,
-            )
-            for h in hits
-        ]
         empty_msg = "no matching photos found."
     else:  # corpus == "log"
         hits, (date_lo, date_hi) = log_qa.retrieve(
@@ -242,7 +243,27 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
             _state["log_texts"],
             k=req.k,
         )
-        citations = [
+        empty_msg = "no matching journal entries found."
+
+    date_filter = f"{date_lo} .. {date_hi}" if date_lo else None
+
+    def _build_citations(ordered_hits, gen_shas: set[str]) -> list[CitationOut]:
+        if req.corpus == "photo":
+            return [
+                CitationOut(
+                    rank=h.rank,
+                    score=h.score,
+                    blob_path=h.blob_path,
+                    gcs_uri=h.gcs_uri,
+                    site_url=site_url_for(h.blob_path),
+                    date_iso=h.date_iso,
+                    caption=h.caption,
+                    sha=h.sha,
+                    in_generation=h.sha in gen_shas,
+                )
+                for h in ordered_hits
+            ]
+        return [
             CitationOut(
                 rank=h.rank,
                 score=h.score,
@@ -250,12 +271,11 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                 file=h.file,
                 heading_path=h.heading_path,
                 text=h.text,
+                # Log corpus has no rerank yet — every retrieved chunk goes
+                # to Pro, so in_generation stays at its default True.
             )
-            for h in hits
+            for h in ordered_hits
         ]
-        empty_msg = "no matching journal entries found."
-
-    date_filter = f"{date_lo} .. {date_hi}" if date_lo else None
 
     if not hits:
         remaining, cap = get_remaining(subject, db)
@@ -273,7 +293,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
         # No Gemini call → no rate-limit increment (cost is just the query embed)
         remaining, cap = get_remaining(subject, db)
         return AskResponse(
-            citations=citations,
+            citations=_build_citations(hits, {getattr(h, "sha", "") for h in hits}),
             corpus=req.corpus,
             date_filter=date_filter,
             auth_state=auth_label,
@@ -288,22 +308,53 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
     # Layer 2: dispatch-time corpus re-check (defense-in-depth)
     authorize_corpus(req.corpus, subject)
 
-    if req.corpus == "photo":
-        answer, usage = photo_qa.generate(
+    # Rerank only kicks in for the photo corpus past the threshold.
+    rerank_used = False
+    photo_bytes_by_sha: dict[str, bytes] = {}
+    if req.corpus == "photo" and req.k >= RERANK_THRESHOLD_K:
+        outcome_rr = await photo_rerank_hits(
             req.query, hits, _state["gen_client"], _state["storage_client"]
         )
+        hits = outcome_rr.hits
+        photo_bytes_by_sha = outcome_rr.bytes_by_sha
+        rerank_used = outcome_rr.used
+
+    # At/above the photo rerank threshold we always trim Pro's input — even
+    # when rerank fell back to similarity order — so wall time stays bounded.
+    if req.corpus == "photo" and req.k >= RERANK_THRESHOLD_K:
+        gen_hits = hits[:RERANK_KEEP]
     else:
-        answer, usage = log_qa.generate(req.query, hits, _state["gen_client"])
+        gen_hits = hits
+
+    # Rate-limit was already charged above. If generation now times out or
+    # fails we still return the citations the retriever produced — the user
+    # gets a partial response with answer_error explaining why the summary
+    # is missing, rather than a 500 that wipes the whole result.
+    if req.corpus == "photo":
+        outcome = await safe_generate(
+            photo_qa.generate,
+            req.query,
+            gen_hits,
+            _state["gen_client"],
+            _state["storage_client"],
+            prefetched_bytes=photo_bytes_by_sha or None,
+        )
+    else:
+        outcome = await safe_generate(
+            log_qa.generate, req.query, gen_hits, _state["gen_client"]
+        )
 
     remaining, cap = get_remaining(subject, db)
     return AskResponse(
-        answer=answer,
-        citations=citations,
+        answer=outcome.answer,
+        answer_error=outcome.error,
+        citations=_build_citations(hits, {getattr(h, "sha", "") for h in gen_hits}),
+        rerank_used=rerank_used,
         corpus=req.corpus,
         date_filter=date_filter,
-        tokens_in=usage["tokens_in"],
-        tokens_out=usage["tokens_out"],
-        cost=usage["cost"],
+        tokens_in=outcome.usage["tokens_in"],
+        tokens_out=outcome.usage["tokens_out"],
+        cost=outcome.usage["cost"],
         auth_state=auth_label,
         quota_used=quota_used,
         quota_remaining=remaining,
