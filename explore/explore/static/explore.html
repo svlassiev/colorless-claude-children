@@ -225,6 +225,28 @@ button:disabled { color: #999; cursor: default; }
     font-size: 9pt;
     line-height: 1.45;
 }
+/* Inline indicator shown above the photo grid while Pro is still generating
+   the answer text (citations have already arrived via the first SSE event). */
+.generating {
+    margin: 16px 0 12px;
+    padding: 8px 12px;
+    background: #f0f0f0;
+    border-left: 2px solid #888;
+    color: #555;
+    font-size: 9pt;
+    line-height: 1.45;
+}
+.generating .dots::after {
+    content: '';
+    animation: dots 1.4s steps(4, end) infinite;
+}
+@keyframes dots {
+    0%   { content: ''; }
+    25%  { content: '.'; }
+    50%  { content: '..'; }
+    75%  { content: '...'; }
+    100% { content: ''; }
+}
 
 .loading-spinner {
     width: 48px;
@@ -399,13 +421,20 @@ form.addEventListener('submit', async (e) => {
     if (!q) return;
 
     btnEl.disabled = true;
-    resultEl.innerHTML = '<div class="loading-spinner" aria-label="loading"></div>';
+
+    // Slot layout: each SSE event updates exactly one slot, so we set up
+    // the skeleton once and then do targeted replacements as events land.
+    resultEl.innerHTML =
+        '<div id="answer-slot"><div class="loading-spinner" aria-label="loading"></div></div>' +
+        '<div id="citations-slot"></div>' +
+        '<div id="meta-slot"></div>';
 
     const headers = { 'Content-Type': 'application/json' };
     const token = await getIdToken();
     if (token) headers['Authorization'] = 'Bearer ' + token;
 
     const k = parseInt(document.querySelector('input[name="k"]:checked').value, 10) || 8;
+    const isRetrieveOnly = retrieveOnlyEl.checked;
 
     try {
         const res = await fetch('/explore/api/ask', {
@@ -414,80 +443,161 @@ form.addEventListener('submit', async (e) => {
             body: JSON.stringify({
                 query: q,
                 corpus: activeTab,
-                retrieve_only: retrieveOnlyEl.checked,
+                retrieve_only: isRetrieveOnly,
                 k
             })
         });
+        // Auth / quota / corpus failures are still regular JSON 4xx — they
+        // surface here, before any stream events.
         if (!res.ok) {
             const err = await res.json().catch(() => ({ detail: 'HTTP ' + res.status }));
             throw new Error(err.detail || ('HTTP ' + res.status));
         }
-        const data = await res.json();
-        renderResult(data);
-        fetchAuthStatus();  // refresh quota line
+        await streamSSE(res, (event) => {
+            if (event.name === 'citations') renderCitations(event.data, isRetrieveOnly);
+            else if (event.name === 'answer') renderAnswer(event.data);
+            else if (event.name === 'answer_error') renderAnswerError(event.data);
+            else if (event.name === 'done') fetchAuthStatus();
+        });
     } catch (err) {
-        resultEl.innerHTML = '<div class="error">error: ' + esc(err.message) + '</div>';
+        // Stream torn mid-flight (or pre-stream HTTP error). If citations
+        // already rendered, leave them; replace the answer slot with a
+        // visible error so the user knows the answer won't be coming.
+        const slot = document.getElementById('answer-slot');
+        if (slot) slot.innerHTML = '<div class="error">error: ' + esc(err.message) + '</div>';
     } finally {
         btnEl.disabled = false;
     }
 });
 
-function renderResult(data) {
-    let html = '';
-    if (data.answer) {
-        html += '<div id="answer">' + esc(data.answer) + '</div>';
-    } else if (data.answer_error) {
-        html += '<div class="notice">' + esc(data.answer_error) + '</div>';
-    }
-
-    if (data.citations && data.citations.length) {
-        // Fade signal: when the reranker ran (photo corpus, depth ≥ threshold)
-        // trust its in_generation flag — Pro only saw those. Otherwise fall
-        // back to the score-fade baseline for both corpora: anything below
-        // FADE_THRESHOLD * top_score gets faded out.
-        const FADE_THRESHOLD = 0.5;
-        const topScore = data.citations[0].score || 0;
-        const isLowRelevance = (c) => {
-            if (data.rerank_used) return c.in_generation === false;
-            return topScore > 0 && c.score < FADE_THRESHOLD * topScore;
-        };
-
-        if (data.corpus === 'log') {
-            html += '<div class="citations">';
-            for (const c of data.citations) {
-                const date = c.date_iso || '-';
-                const summary = '[' + c.rank + '] ' + esc(c.file || '') + ' :: ' + esc(c.heading_path || '') + ' :: ' + esc(date) + ' (score ' + c.score.toFixed(3) + ')';
-                const cls = isLowRelevance(c) ? ' class="low-relevance"' : '';
-                html += '<details' + cls + '><summary>' + summary + '</summary><pre>' + esc(c.text || '') + '</pre></details>';
-            }
-            html += '</div>';
-        } else {
-            html += '<div class="photo-grid">';
-            for (const c of data.citations) {
-                const date = c.date_iso || '';
-                const cap = c.caption ? c.caption.slice(0, 140) : '';
-                const linkHref = c.site_url || (GCS_BASE + '/' + encodeURI(c.blob_path));
-                const imgSrc = GCS_BASE + '/' + encodeURI(c.blob_path);
-                const cls = isLowRelevance(c) ? 'photo low-relevance' : 'photo';
-                html += '<div class="' + cls + '">';
-                html += '<a href="' + esc(linkHref) + '" target="_blank" rel="noopener">';
-                html += '<img loading="lazy" src="' + esc(imgSrc) + '" alt="' + esc(cap) + '">';
-                html += '</a>';
-                html += '<div class="meta-line">[' + c.rank + '] ' + c.score.toFixed(3) + ' · ' + esc(date) + '</div>';
-                if (cap) html += '<div class="caption-line">' + esc(cap) + '</div>';
-                html += '</div>';
-            }
-            html += '</div>';
+// Read the response body as a stream of SSE frames. Each frame is two
+// lines (`event:` + `data:`) terminated by a blank line. We accumulate
+// into `buffer`, slice on `\n\n`, and pass parsed events to onEvent.
+async function streamSSE(response, onEvent) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let idx;
+        while ((idx = buffer.indexOf('\n\n')) >= 0) {
+            const frame = buffer.slice(0, idx);
+            buffer = buffer.slice(idx + 2);
+            const event = parseSSE(frame);
+            if (event) onEvent(event);
         }
     }
-    if (data.cost != null) {
-        html += '<div class="meta">tokens in=' + data.tokens_in + ' out=' + data.tokens_out + ' · cost ~$' + data.cost.toFixed(4) + '</div>';
-    }
-    if (data.date_filter) html += '<div class="meta">date filter: ' + esc(data.date_filter) + '</div>';
-    html += '<div class="meta">' + esc(data.auth_state) + ' · ' + data.quota_used + '/' + data.quota_cap + ' used today</div>';
+}
 
-    if (!html) html = '<div class="meta" style="text-align:center;color:#999">no matches.</div>';
-    resultEl.innerHTML = html;
+function parseSSE(frame) {
+    let name = 'message';
+    let data = '';
+    for (const line of frame.split('\n')) {
+        if (line.startsWith('event:')) name = line.slice(6).trim();
+        else if (line.startsWith('data:')) data += line.slice(5).trim();
+    }
+    if (!data) return null;
+    try { return { name, data: JSON.parse(data) }; }
+    catch (e) { return null; }
+}
+
+function renderCitations(data, isRetrieveOnly) {
+    // Citations land first. Replace the global spinner with either a
+    // short-lived "generating answer..." indicator (full path) or nothing
+    // (retrieve_only — no answer event will follow).
+    const answerSlot = document.getElementById('answer-slot');
+    if (isRetrieveOnly) {
+        answerSlot.innerHTML = '';
+    } else {
+        answerSlot.innerHTML =
+            '<div class="generating">generating answer<span class="dots"></span></div>';
+    }
+
+    document.getElementById('citations-slot').innerHTML = renderCitationsHtml(data);
+
+    // Meta slot now holds date filter + a snapshot of the quota counter.
+    // The header bar shows the live quota; this is the per-query record.
+    let metaHtml = '';
+    if (data.date_filter) {
+        metaHtml += '<div class="meta">date filter: ' + esc(data.date_filter) + '</div>';
+    }
+    if (data.auth_state) {
+        metaHtml += '<div class="meta">' + esc(data.auth_state) +
+            (data.quota_used != null ? ' · ' + data.quota_used + ' used today' : '') +
+            '</div>';
+    }
+    document.getElementById('meta-slot').innerHTML = metaHtml;
+}
+
+function renderCitationsHtml(data) {
+    if (!data.citations || !data.citations.length) return '';
+    // Fade signal: when the reranker ran (photo corpus, depth ≥ threshold)
+    // trust its in_generation flag — Pro only saw those. Otherwise fall
+    // back to the score-fade baseline for both corpora: anything below
+    // FADE_THRESHOLD * top_score gets faded out.
+    const FADE_THRESHOLD = 0.5;
+    const topScore = data.citations[0].score || 0;
+    const isLowRelevance = (c) => {
+        if (data.rerank_used) return c.in_generation === false;
+        return topScore > 0 && c.score < FADE_THRESHOLD * topScore;
+    };
+
+    let html = '';
+    if (data.corpus === 'log') {
+        html += '<div class="citations">';
+        for (const c of data.citations) {
+            const date = c.date_iso || '-';
+            const summary = '[' + c.rank + '] ' + esc(c.file || '') + ' :: ' + esc(c.heading_path || '') + ' :: ' + esc(date) + ' (score ' + c.score.toFixed(3) + ')';
+            const cls = isLowRelevance(c) ? ' class="low-relevance"' : '';
+            html += '<details' + cls + '><summary>' + summary + '</summary><pre>' + esc(c.text || '') + '</pre></details>';
+        }
+        html += '</div>';
+    } else {
+        html += '<div class="photo-grid">';
+        for (const c of data.citations) {
+            const date = c.date_iso || '';
+            const cap = c.caption ? c.caption.slice(0, 140) : '';
+            const linkHref = c.site_url || (GCS_BASE + '/' + encodeURI(c.blob_path));
+            const imgSrc = GCS_BASE + '/' + encodeURI(c.blob_path);
+            const cls = isLowRelevance(c) ? 'photo low-relevance' : 'photo';
+            html += '<div class="' + cls + '">';
+            html += '<a href="' + esc(linkHref) + '" target="_blank" rel="noopener">';
+            html += '<img loading="lazy" src="' + esc(imgSrc) + '" alt="' + esc(cap) + '">';
+            html += '</a>';
+            html += '<div class="meta-line">[' + c.rank + '] ' + c.score.toFixed(3) + ' · ' + esc(date) + '</div>';
+            if (cap) html += '<div class="caption-line">' + esc(cap) + '</div>';
+            html += '</div>';
+        }
+        html += '</div>';
+    }
+    return html;
+}
+
+function renderAnswer(data) {
+    document.getElementById('answer-slot').innerHTML =
+        '<div id="answer">' + esc(data.answer || '') + '</div>';
+    appendUsageLine(data);
+}
+
+function renderAnswerError(data) {
+    document.getElementById('answer-slot').innerHTML =
+        '<div class="notice">' + esc(data.error || 'generation failed') + '</div>';
+    appendUsageLine(data);
+}
+
+function appendUsageLine(data) {
+    if (data.cost == null) return;
+    const meta = document.getElementById('meta-slot');
+    if (!meta) return;
+    const line = document.createElement('div');
+    line.className = 'meta';
+    line.textContent =
+        'tokens in=' + (data.tokens_in || 0) +
+        ' out=' + (data.tokens_out || 0) +
+        ' · cost ~$' + data.cost.toFixed(4);
+    meta.insertBefore(line, meta.firstChild);
 }
 
 function esc(s) {
