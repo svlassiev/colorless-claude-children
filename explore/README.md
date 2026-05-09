@@ -81,11 +81,16 @@ event: done
 data: {"quota_used":3,"quota_remaining":17,"quota_cap":20}
 ```
 
-`retrieve_only=true` skips the Pro call entirely — the stream emits `citations` then `done`, no rate-limit charge. Empty results emit `citations` (with empty list) + `answer` (with the empty-result message) + `done`.
+`retrieve_only=true` skips the Pro call entirely — the stream emits `citations` then `done`, no rate-limit charge. Empty results emit `citations` (with empty list) + `answer` (with the empty-result message — `{"answer": "no matching photos found."}`, no token/cost fields since no Pro call ran) + `done`.
 
 A few load-bearing details:
 
-**Lifespan startup.** [`server.py:lifespan`](explore/server.py) pulls the vector index from the private `cdc-search-cache` bucket if remote is newer than local, then loads the photo index (~6k vectors) and (when enabled) the log index into memory. The `MultiModalEmbeddingModel` and `genai.Client` are also constructed once and reused — embedding a query at request time is a single Vertex round-trip.
+**Lifespan startup.** [`server.py:lifespan`](explore/server.py) pulls the vector index from the private `cdc-search-cache` bucket if remote is newer than local, then loads the photo index (~6k vectors) and (when enabled) the log index into memory. Four long-lived clients are constructed once and reused across requests:
+
+- `MultiModalEmbeddingModel` (Vertex AI) — embeds the photo query at request time (`multimodalembedding@001`).
+- `genai.Client` (Vertex AI) — embeds the log query (`text-embedding-005`), and runs Flash rerank + Pro generation.
+- `storage.Client` (GCS) — pulls per-photo JPEG bytes for the rerank + generation steps.
+- `firestore.Client` — reads/increments the daily rate-limit counter.
 
 **Retrieval.** Cosine top-k over the in-memory index plus an optional EXIF / folder-name date filter parsed out of the query (`"summer 2017"`, `"2014"`). For the log corpus, embeddings come from `text-embedding-005`; for photos, from `multimodalembedding@001`.
 
@@ -97,13 +102,13 @@ A few load-bearing details:
 
 ## Routes
 
-| Method | Path | Purpose |
-|---|---|---|
-| GET | `/explore/` | The HTML page. |
-| GET | `/explore` | 307 redirect to `/explore/`. |
-| GET | `/explore/healthz` | Liveness; returns `{"status":"ok","vectors_loaded":<n>}`. |
-| GET | `/explore/api/auth/status` | Read-only; returns auth state + remaining quota for the UI. |
-| POST | `/explore/api/ask` | Cost-causing endpoint: retrieval (+ rerank + generation). |
+| Method | Path | Response | Purpose |
+|---|---|---|---|
+| GET | `/explore/` | `text/html` | The HTML page. |
+| GET | `/explore` | 307 redirect | Trailing-slash canonicaliser. |
+| GET | `/explore/healthz` | JSON | Liveness; returns `{"status":"ok","vectors_loaded":<n>}`. |
+| GET | `/explore/api/auth/status` | JSON | Read-only; returns auth state + remaining quota for the UI. |
+| POST | `/explore/api/ask` | `text/event-stream` | Cost-causing endpoint: retrieval (+ rerank + generation). Streams SSE — see [Request lifecycle](#request-lifecycle-post-exploreapiask). |
 
 FastAPI's auto `/docs`, `/redoc`, `/openapi.json` are explicitly disabled — the JSON shapes only need to match what `static/explore.html` consumes.
 
@@ -121,15 +126,22 @@ The rate-limit increment fires **after** retrieval and **before** generation. Re
 
 | Failure | Handling |
 |---|---|
-| Gemini call slow / timed out | `safe_generate` returns citations + `answer_error="generation timed out (>60s) — showing matches only"`. Pro's rate-limit unit was already charged (we don't know if upstream billed). |
-| Gemini call raised | Same as timeout, with a generic `"generation failed — showing matches only"`. Full exception logged server-side; not surfaced to the client. |
+| Gemini call slow / timed out | Citations event already on the client. Server emits `answer_error` event with `"generation timed out (>60s) — showing matches only"`, then `done`. Pro's rate-limit unit was already charged before the stream began (we don't know if upstream actually billed). |
+| Gemini call raised | Same as timeout, but with a generic `"generation failed — showing matches only"`. Full exception logged server-side; not surfaced to the client. |
 | Flash rerank batch failed | Logged to stderr. Other batches continue. If every batch fails, we fall back to similarity order; if a subset fails, missing hits sink to the bottom. **Pro still receives top-10** either way. |
-| Byte download for rerank failed | Skip rerank entirely; Pro receives the cosine-top-10. |
-| Firestore unreachable | 5xx. We treat rate-limit infra as required — failing open would leak quota. |
-| Firebase Admin verification failed | 401, no token-introspection details surfaced. |
+| Byte download for rerank failed | Skip rerank entirely; Pro receives the cosine-top-10 (still trimmed because depth ≥ threshold). |
+| Firestore unreachable | Pre-stream 5xx (no events sent). We treat rate-limit infra as required — failing open would leak quota. |
+| Firebase Admin verification failed | Pre-stream 401 with no token-introspection details surfaced. |
+| Client disconnects mid-stream | Async generator is cancelled, no further events written. Rate-limit was charged at stream start so it stands; the in-flight Pro call (if any) keeps running in its worker thread until it returns and the result is discarded. |
 | Cloud Run cold start | First request takes ~3–5 s to load the vector index from local cache. Cache miss adds another 1–2 s of GCS reads. |
 
-Front-end mirrors the backend: `answer_error` renders as a small amber `.notice`; citations render unconditionally when present; `rerank_used` toggles between "fade by `in_generation`" and "fade by score-vs-top" baselines.
+Front-end mirrors the backend per event:
+- `citations` → render the photo grid / log details, plus an inline "generating answer..." indicator above it (or nothing, if `retrieve_only=true`).
+- `answer` → replace the indicator with the answer text.
+- `answer_error` → replace the indicator with a small amber `.notice`. Citations stay rendered.
+- `done` → refresh the live quota counter in the auth bar.
+
+`rerank_used` toggles between two fade strategies: trust the server's `in_generation` flag when the reranker actually ran, otherwise fall back to "fade citations whose score is below 50% of the top score."
 
 ## Configuration
 
@@ -178,6 +190,12 @@ docker push "$IMAGE"
 gcloud run deploy explore --image="$IMAGE" --region=europe-west4 --project=thematic-acumen-225120
 ```
 
-Reached on the public domain via the small nginx-proxy pod on the existing GKE cluster ([`k8s/explore-proxy.yml`](../k8s/explore-proxy.yml) + the `/explore` paths in [`k8s/ingress.yml`](../k8s/ingress.yml)). The proxy forwards path-as-is, sets the SNI/Host header for Cloud Run's `*.run.app` certificate, and bumps `proxy_read_timeout` to 130 s so we surface upstream 504s instead of pre-empting at nginx's default 90 s. Cloud Run's URL is hidden behind the Ingress — no DNS change required.
+Reached on the public domain via the small nginx-proxy pod on the existing GKE cluster ([`k8s/explore-proxy.yml`](../k8s/explore-proxy.yml) + the `/explore` paths in [`k8s/ingress.yml`](../k8s/ingress.yml)). The proxy:
+
+- Forwards `/explore/*` path-as-is (no rewrite); sets SNI + `Host` for Cloud Run's `*.run.app` certificate.
+- Bumps `proxy_read_timeout` to **130 s** so we surface upstream 504s instead of pre-empting at nginx's default 90 s — covers the worst-case Pro generation tail.
+- Sets **`proxy_buffering off`** + **`proxy_cache off`** so SSE frames from `/explore/api/ask` flush in real time rather than coalescing into a single buffered response. The FastAPI handler also sets `Cache-Control: no-cache` and `X-Accel-Buffering: no` per response (`server.py:217-220`) as belt-and-suspenders, so the streaming UX survives even if a non-bypassed proxy sits in the path.
+
+Cloud Run's URL is hidden behind the Ingress — no DNS change required.
 
 Idle = $0 (Cloud Run scale-to-zero). See `photo-search/PLAN.md` (private; build narrative) for the full architecture log.
