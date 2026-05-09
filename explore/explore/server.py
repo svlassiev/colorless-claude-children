@@ -8,19 +8,20 @@ Run locally: uv run --directory explore python -m explore.server
 
 from __future__ import annotations
 
+import json
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, AsyncGenerator, Optional
 
 import uvicorn
 import vertexai
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from google import genai
 from google.cloud import firestore, storage
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, field_validator
 from vertexai.vision_models import MultiModalEmbeddingModel
 
 from log_search import qa as log_qa
@@ -150,26 +151,12 @@ class CitationOut(BaseModel):
     in_generation: bool = True
 
 
-class AskResponse(BaseModel):
-    answer: Optional[str] = None
-    # Set when retrieval succeeded but the LLM call failed/timed out — the
-    # frontend renders citations regardless and surfaces this inline so the
-    # user knows why the summary is missing.
-    answer_error: Optional[str] = None
-    citations: list[CitationOut] = Field(default_factory=list)
-    # True when the Flash reranker actually influenced citation order. The
-    # frontend uses this to choose between in_generation-based fading and
-    # the score-fade baseline.
-    rerank_used: bool = False
-    tokens_in: int = 0
-    tokens_out: int = 0
-    cost: Optional[float] = None
-    date_filter: Optional[str] = None
-    corpus: CorpusName = "photo"
-    auth_state: str = "anon"
-    quota_used: int = 0
-    quota_remaining: int = 0
-    quota_cap: int = 0
+# Note: there's no monolithic AskResponse model anymore. /explore/api/ask
+# streams Server-Sent Events (`citations` → `answer`|`answer_error` → `done`)
+# whose union of payload fields covers what AskResponse used to carry. The
+# event payloads are constructed inline in the handler so the JSON shape
+# travels with the code that produces it. CitationOut above remains the
+# authoritative per-citation schema.
 
 
 # All routes live under /explore/. The nginx proxy on GKE forwards as-is
@@ -214,8 +201,44 @@ async def auth_status(subject: Subject = Depends(get_subject)):
     }
 
 
-@app.post("/explore/api/ask", response_model=AskResponse)
+def _sse(event: str, data: dict) -> str:
+    """Format one Server-Sent Events frame.
+
+    SSE is plain text: `event: <name>\\ndata: <payload>\\n\\n`. Two newlines
+    terminate the frame. We JSON-encode the payload so the client can parse
+    it uniformly across event types.
+    """
+    return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+
+
+# `Cache-Control: no-cache` keeps proxies from coalescing events.
+# `X-Accel-Buffering: no` is the standard hint to nginx (and to Cloud Run's
+# front-end proxy) to flush each chunk as it's written instead of buffering.
+_SSE_HEADERS = {
+    "Cache-Control": "no-cache",
+    "X-Accel-Buffering": "no",
+}
+
+
+@app.post("/explore/api/ask")
 async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
+    """Stream the retrieval pipeline as SSE so the client can render
+    citations as soon as they're known and append the answer when Pro
+    finishes — instead of waiting ~15-20 s for everything at once.
+
+    Event sequence:
+      - `citations` — emitted after retrieve (+ rerank). Always first when
+        we have anything to retrieve. Carries the full citation list,
+        rerank_used, corpus, date_filter, current quota.
+      - `answer` *or* `answer_error` — emitted after Pro succeeds or
+        soft-fails. Skipped when `retrieve_only=true`.
+      - `done` — last event. Carries refreshed quota numbers (post Pro
+        increment).
+
+    Auth + corpus + rate-limit failures happen *before* the stream begins
+    and still surface as regular 4xx JSON responses — never as a partial
+    stream. That keeps client error handling simple.
+    """
     # Layer 1: route-handler corpus authorisation
     authorize_corpus(req.corpus, subject)
 
@@ -224,7 +247,8 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
         f"authed:{subject.email}" if isinstance(subject, AuthedSubject) else "anon"
     )
 
-    # Retrieve — corpus-specific
+    # Retrieve — corpus-specific. Sync; runs before streaming starts so
+    # any embed/index failure is a regular 5xx, not a torn stream.
     if req.corpus == "photo":
         hits, (date_lo, date_hi) = photo_qa.retrieve(
             req.query,
@@ -247,7 +271,10 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
 
     date_filter = f"{date_lo} .. {date_hi}" if date_lo else None
 
-    def _build_citations(ordered_hits, gen_shas: set[str]) -> list[CitationOut]:
+    def _build_citations(ordered_hits, gen_shas: set[str]) -> list[dict]:
+        """Return list[dict] (already JSON-serialisable) so we can drop the
+        results straight into an SSE frame without an extra model_dump pass.
+        """
         if req.corpus == "photo":
             return [
                 CitationOut(
@@ -260,7 +287,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                     caption=h.caption,
                     sha=h.sha,
                     in_generation=h.sha in gen_shas,
-                )
+                ).model_dump()
                 for h in ordered_hits
             ]
         return [
@@ -273,92 +300,159 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                 text=h.text,
                 # Log corpus has no rerank yet — every retrieved chunk goes
                 # to Pro, so in_generation stays at its default True.
-            )
+            ).model_dump()
             for h in ordered_hits
         ]
 
+    # Cost-free paths charge no rate-limit; quota is read-only.
     if not hits:
-        remaining, cap = get_remaining(subject, db)
-        return AskResponse(
-            answer=empty_msg,
-            corpus=req.corpus,
-            date_filter=date_filter,
-            auth_state=auth_label,
-            quota_used=cap - remaining,
-            quota_remaining=remaining,
-            quota_cap=cap,
+
+        async def gen_empty() -> AsyncGenerator[str, None]:
+            remaining, cap = get_remaining(subject, db)
+            yield _sse(
+                "citations",
+                {
+                    "citations": [],
+                    "rerank_used": False,
+                    "corpus": req.corpus,
+                    "date_filter": date_filter,
+                    "auth_state": auth_label,
+                    "quota_used": cap - remaining,
+                    "quota_remaining": remaining,
+                    "quota_cap": cap,
+                },
+            )
+            yield _sse("answer", {"answer": empty_msg})
+            yield _sse("done", {})
+
+        return StreamingResponse(
+            gen_empty(), media_type="text/event-stream", headers=_SSE_HEADERS
         )
 
     if req.retrieve_only:
-        # No Gemini call → no rate-limit increment (cost is just the query embed)
-        remaining, cap = get_remaining(subject, db)
-        return AskResponse(
-            citations=_build_citations(hits, {getattr(h, "sha", "") for h in hits}),
-            corpus=req.corpus,
-            date_filter=date_filter,
-            auth_state=auth_label,
-            quota_used=cap - remaining,
-            quota_remaining=remaining,
-            quota_cap=cap,
+
+        async def gen_retrieve_only() -> AsyncGenerator[str, None]:
+            remaining, cap = get_remaining(subject, db)
+            yield _sse(
+                "citations",
+                {
+                    "citations": _build_citations(
+                        hits, {getattr(h, "sha", "") for h in hits}
+                    ),
+                    "rerank_used": False,
+                    "corpus": req.corpus,
+                    "date_filter": date_filter,
+                    "auth_state": auth_label,
+                    "quota_used": cap - remaining,
+                    "quota_remaining": remaining,
+                    "quota_cap": cap,
+                },
+            )
+            yield _sse("done", {})
+
+        return StreamingResponse(
+            gen_retrieve_only(),
+            media_type="text/event-stream",
+            headers=_SSE_HEADERS,
         )
 
-    # Cost-causing path: rate-limit BEFORE Gemini. Raises 429 at cap.
+    # Cost-causing path: rate-limit BEFORE the stream starts. Raises 429 at
+    # cap, surfaces as a normal HTTP error rather than a partial stream.
     quota_used = enforce_rate_limit(subject, db)
 
     # Layer 2: dispatch-time corpus re-check (defense-in-depth)
     authorize_corpus(req.corpus, subject)
 
-    # Rerank only kicks in for the photo corpus past the threshold.
-    rerank_used = False
-    photo_bytes_by_sha: dict[str, bytes] = {}
-    if req.corpus == "photo" and req.k >= RERANK_THRESHOLD_K:
-        outcome_rr = await photo_rerank_hits(
-            req.query, hits, _state["gen_client"], _state["storage_client"]
-        )
-        hits = outcome_rr.hits
-        photo_bytes_by_sha = outcome_rr.bytes_by_sha
-        rerank_used = outcome_rr.used
+    async def gen_full() -> AsyncGenerator[str, None]:
+        # Step 1: rerank (photo corpus, depth ≥ threshold).
+        rerank_used = False
+        photo_bytes_by_sha: dict[str, bytes] = {}
+        local_hits = hits
+        if req.corpus == "photo" and req.k >= RERANK_THRESHOLD_K:
+            outcome_rr = await photo_rerank_hits(
+                req.query,
+                local_hits,
+                _state["gen_client"],
+                _state["storage_client"],
+            )
+            local_hits = outcome_rr.hits
+            photo_bytes_by_sha = outcome_rr.bytes_by_sha
+            rerank_used = outcome_rr.used
 
-    # At/above the photo rerank threshold we always trim Pro's input — even
-    # when rerank fell back to similarity order — so wall time stays bounded.
-    if req.corpus == "photo" and req.k >= RERANK_THRESHOLD_K:
-        gen_hits = hits[:RERANK_KEEP]
-    else:
-        gen_hits = hits
+        # At/above the photo rerank threshold we always trim Pro's input —
+        # even when rerank fell back to similarity order — so wall time
+        # stays bounded.
+        if req.corpus == "photo" and req.k >= RERANK_THRESHOLD_K:
+            gen_hits = local_hits[:RERANK_KEEP]
+        else:
+            gen_hits = local_hits
 
-    # Rate-limit was already charged above. If generation now times out or
-    # fails we still return the citations the retriever produced — the user
-    # gets a partial response with answer_error explaining why the summary
-    # is missing, rather than a 500 that wipes the whole result.
-    if req.corpus == "photo":
-        outcome = await safe_generate(
-            photo_qa.generate,
-            req.query,
-            gen_hits,
-            _state["gen_client"],
-            _state["storage_client"],
-            prefetched_bytes=photo_bytes_by_sha or None,
-        )
-    else:
-        outcome = await safe_generate(
-            log_qa.generate, req.query, gen_hits, _state["gen_client"]
+        # Event 1: citations — render now, even though Pro hasn't started.
+        yield _sse(
+            "citations",
+            {
+                "citations": _build_citations(
+                    local_hits, {getattr(h, "sha", "") for h in gen_hits}
+                ),
+                "rerank_used": rerank_used,
+                "corpus": req.corpus,
+                "date_filter": date_filter,
+                "auth_state": auth_label,
+                "quota_used": quota_used,
+            },
         )
 
-    remaining, cap = get_remaining(subject, db)
-    return AskResponse(
-        answer=outcome.answer,
-        answer_error=outcome.error,
-        citations=_build_citations(hits, {getattr(h, "sha", "") for h in gen_hits}),
-        rerank_used=rerank_used,
-        corpus=req.corpus,
-        date_filter=date_filter,
-        tokens_in=outcome.usage["tokens_in"],
-        tokens_out=outcome.usage["tokens_out"],
-        cost=outcome.usage["cost"],
-        auth_state=auth_label,
-        quota_used=quota_used,
-        quota_remaining=remaining,
-        quota_cap=cap,
+        # Step 2: generate.
+        if req.corpus == "photo":
+            outcome = await safe_generate(
+                photo_qa.generate,
+                req.query,
+                gen_hits,
+                _state["gen_client"],
+                _state["storage_client"],
+                prefetched_bytes=photo_bytes_by_sha or None,
+            )
+        else:
+            outcome = await safe_generate(
+                log_qa.generate, req.query, gen_hits, _state["gen_client"]
+            )
+
+        # Event 2: answer or answer_error. Citations are already on the
+        # client at this point; on failure they stay rendered.
+        if outcome.error:
+            yield _sse(
+                "answer_error",
+                {
+                    "error": outcome.error,
+                    "tokens_in": outcome.usage["tokens_in"],
+                    "tokens_out": outcome.usage["tokens_out"],
+                    "cost": outcome.usage["cost"],
+                },
+            )
+        else:
+            yield _sse(
+                "answer",
+                {
+                    "answer": outcome.answer,
+                    "tokens_in": outcome.usage["tokens_in"],
+                    "tokens_out": outcome.usage["tokens_out"],
+                    "cost": outcome.usage["cost"],
+                },
+            )
+
+        # Event 3: done — refreshed quota after Pro's increment.
+        remaining, cap = get_remaining(subject, db)
+        yield _sse(
+            "done",
+            {
+                "quota_used": quota_used,
+                "quota_remaining": remaining,
+                "quota_cap": cap,
+            },
+        )
+
+    return StreamingResponse(
+        gen_full(), media_type="text/event-stream", headers=_SSE_HEADERS
     )
 
 

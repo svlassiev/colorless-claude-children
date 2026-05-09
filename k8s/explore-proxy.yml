@@ -31,6 +31,11 @@ data:
         # Cloud Run cert is for *.run.app — must set Host + SNI accordingly.
         # proxy_read_timeout slightly exceeds Cloud Run's own timeout so we
         # surface the upstream's 504 instead of nginx pre-empting at 90s.
+        # proxy_buffering off is required for SSE on /explore/api/ask:
+        # without it nginx coalesces upstream chunks into ~4KB+ buffers
+        # before flushing, which would defeat the streaming UX. The
+        # backend also sets `X-Accel-Buffering: no` as a per-response
+        # belt-and-suspenders.
         location /explore/ {
           proxy_pass https://explore-y4tpnsrvaa-ez.a.run.app;
           proxy_set_header Host explore-y4tpnsrvaa-ez.a.run.app;
@@ -41,6 +46,8 @@ data:
           proxy_http_version 1.1;
           proxy_read_timeout 130s;
           proxy_connect_timeout 10s;
+          proxy_buffering off;
+          proxy_cache off;
         }
       }
     }
