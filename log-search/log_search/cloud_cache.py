@@ -23,13 +23,17 @@ from log_search.paths import (
     CHUNKS_PATH,
     GCS_CACHE_BUCKET,
     GCS_CACHE_PREFIX,
+    IMAGE_CAPTION_CACHE,
     INDEX_PATH,
     META_PATH,
     PROJECT,
     ensure_cache_dir,
 )
 
-SYNC_FILES: list[Path] = [INDEX_PATH, META_PATH, CHUNKS_PATH]
+# IMAGE_CAPTION_CACHE rides along so a fresh checkout/clone doesn't have
+# to re-pay Pro for captions that have already been generated. Mirrors
+# the photo-search caption_cache.jsonl convention.
+SYNC_FILES: list[Path] = [INDEX_PATH, META_PATH, CHUNKS_PATH, IMAGE_CAPTION_CACHE]
 
 
 def _bucket() -> storage.Bucket:
