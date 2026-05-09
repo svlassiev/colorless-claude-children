@@ -243,7 +243,7 @@ function renderResult(data) {
         html += '<div class="photo-grid">';
         for (const c of data.citations) {
             const date = c.date_iso || '';
-            const cap = c.caption ? c.caption.slice(0, 140) : '';
+            const cap = c.caption || '';
             const linkHref = c.site_url || (GCS_BASE + '/' + encodeURI(c.blob_path));
             const imgSrc = GCS_BASE + '/' + encodeURI(c.blob_path);
             const cls = isLowRelevance(c) ? 'photo low-relevance' : 'photo';
