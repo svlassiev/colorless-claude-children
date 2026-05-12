@@ -1,0 +1,470 @@
+{
+  "_meta": {
+    "version": 1,
+    "stage": "Stage -1 (random no-GPS) + manual corrections",
+    "description": "Per-album place labels resolved at bake time by place_baker.py. n is 1-indexed in the album's alphabetically-sorted file list (matches preview.html). A range entry's n can mix singletons (42) and inclusive pairs ([25, 42]). First matching range wins; album default is the fallback. Albums absent here, or photos in albums whose ranges/default don't cover them, are left without place fields (strict policy).",
+    "field_notes": {
+      "place_names": "Canonical Cyrillic where applicable. List ordered specific-first (e.g., ['Гоуджекит', 'Байкал']). Empty list = unlabeled.",
+      "place_detail": "Free-text sub-location. Not used for matching; surfaces in citations/answer prompts.",
+      "approximate": "True when the label is a best-guess ('next to X', '~near Y', 'possibly Z'). Defaults to false.",
+      "context": "Album-level prose. Copied verbatim to every photo in the album as place_context."
+    }
+  },
+  "albums": {
+    "Hibiny9": {
+      "context": "school hiking trip, end of March 2009 (Russian school spring holidays)",
+      "default": {
+        "place_names": ["Хибины"],
+        "place_detail": "Khibiny Mountains area, Murmansk Oblast"
+      },
+      "ranges": [
+        {
+          "n": [[1, 18]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "lake near Saint Petersburg (prep day trip ~1 month prior)",
+          "approximate": true
+        },
+        {
+          "n": [[19, 21]],
+          "place_names": ["Ладожский вокзал", "Санкт-Петербург"],
+          "place_detail": "Ладожский вокзал (Ladoga railway station)"
+        },
+        {
+          "n": [[22, 24]],
+          "place_names": ["Хибины"],
+          "place_detail": "en route to Хибины area"
+        },
+        {
+          "n": [[25, 42], 137, 138],
+          "place_names": ["Апатиты"],
+          "place_detail": "around Апатиты, Murmansk Oblast",
+          "approximate": true
+        },
+        {
+          "n": [43],
+          "place_names": ["Хибины"],
+          "place_detail": "next to Хибины station, Murmansk Oblast",
+          "approximate": true
+        }
+      ]
+    },
+    "school": {
+      "context": "school album, mostly Saint Petersburg locations around школа 239",
+      "default": {
+        "place_names": ["школа 239"],
+        "place_detail": "around школа 239, Saint Petersburg",
+        "approximate": true
+      },
+      "ranges": [
+        {
+          "n": [61],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Ковенский переулок 5"
+        },
+        {
+          "n": [[62, 66]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "former Zenit store, corner of Кирочная улица × Суворовский проспект"
+        },
+        {
+          "n": [[67, 68]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Кирочная улица next to Таврический Сад",
+          "approximate": true
+        },
+        {
+          "n": [[69, 75]],
+          "place_names": ["Ладожский вокзал", "Санкт-Петербург"],
+          "place_detail": "Ладожский вокзал (Ladoga railway station)"
+        },
+        {
+          "n": [[76, 83]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "around 'Квартал четырёх дураков'",
+          "approximate": true
+        }
+      ]
+    },
+    "5tradmay": {
+      "context": "May 2009 spring tradition trip (5th iteration)",
+      "default": {
+        "place_names": ["Заходское", "Кирилловское"],
+        "place_detail": "Ленинградская область, NW of Saint Petersburg — lake area between Заходское and Кирилловское stations",
+        "approximate": true
+      },
+      "ranges": [
+        {
+          "n": [[1, 2]],
+          "place_names": ["Финляндский вокзал", "Санкт-Петербург"],
+          "place_detail": "Финляндский вокзал (Finland railway station)"
+        }
+      ]
+    },
+    "New2009": {
+      "context": "New Year 2008→2009 celebration",
+      "default": {
+        "place_names": ["Маршала Блюхера"],
+        "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home)"
+      },
+      "ranges": [
+        {
+          "n": [43],
+          "place_names": ["Маршала Блюхера"],
+          "place_detail": "проспект Маршала Блюхера, Saint Petersburg (different spot — outdoors)"
+        }
+      ]
+    },
+    "Baikal": {
+      "context": "school hiking trip, July 2004 (Saint Petersburg → Moscow → Trans-Siberian → Северобайкальск → 110km hiking route)",
+      "default": {
+        "place_names": ["Байкал"],
+        "place_detail": "110km hiking route NW of Северобайкальск, border of Бурятия / Иркутская область"
+      },
+      "ranges": [
+        {
+          "n": [[1, 4]],
+          "place_names": ["Московский вокзал", "Санкт-Петербург"],
+          "place_detail": "Московский вокзал (Moscow railway station)"
+        },
+        {
+          "n": [[5, 8]],
+          "place_names": ["Москва"],
+          "place_detail": "central Moscow"
+        },
+        {
+          "n": [9, 10, 14, 15],
+          "place_names": [],
+          "place_detail": "Trans-Siberian railway (en route)"
+        },
+        {
+          "n": [11, 12],
+          "place_names": ["Екатеринбург"]
+        },
+        {
+          "n": [13],
+          "place_names": ["Омск"]
+        },
+        {
+          "n": [16],
+          "place_names": ["Северобайкальск"]
+        },
+        {
+          "n": [23, 24, 25, 26, 27, 32, 35, 36],
+          "place_names": ["Гоуджекит", "Байкал"],
+          "place_detail": "Lake Baikal shore at Гоуджекит"
+        },
+        {
+          "n": [[17, 22], [28, 31], [33, 34], 37],
+          "place_names": ["Гоуджекит"],
+          "place_detail": "mineral waters / hot springs at Гоуджекит"
+        },
+        {
+          "n": [38],
+          "place_names": ["Байкал"],
+          "place_detail": "Lake Baikal"
+        }
+      ]
+    },
+    "photo": {
+      "context": "mixed: Алёховщина (Зуёво) + Saint Petersburg (Vasilyevsky Island, Smolensky bridge, ВШМ СПбГУ). No EXIF dates.",
+      "default": {
+        "place_names": ["Санкт-Петербург"],
+        "place_detail": "Vasilyevsky Island area"
+      },
+      "ranges": [
+        {
+          "n": [1, 2, 3, 7, 8, 9],
+          "place_names": ["Алёховщина"],
+          "place_detail": "Зуёвская улица 1, Зуёво (Leningrad Oblast)"
+        },
+        {
+          "n": [[4, 6]],
+          "place_names": ["Алёховщина"],
+          "place_detail": "Зуёвская улица 3, Зуёво (Leningrad Oblast)"
+        },
+        {
+          "n": [[10, 11]],
+          "place_names": ["Алёховщина"],
+          "place_detail": "центр Алёховщины"
+        },
+        {
+          "n": [[12, 17]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Василеостровская metro exit"
+        },
+        {
+          "n": [18],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Средний проспект, Vasilyevsky Island"
+        },
+        {
+          "n": [19],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Смоленский мост"
+        },
+        {
+          "n": [[20, 25]],
+          "place_names": ["СПбГУ", "Санкт-Петербург"],
+          "place_detail": "старое здание ВШМ СПбГУ"
+        },
+        {
+          "n": [[26, 31]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Vasilyevsky Island area",
+          "approximate": true
+        }
+      ]
+    },
+    "ksjushapack": {
+      "context": "dedicated to one person; many photos duplicate from other albums (Saint Petersburg + intersections)",
+      "ranges": [
+        {
+          "n": [75, [79, 86], 224],
+          "place_names": ["Купчино", "Санкт-Петербург"],
+          "place_detail": "Купчино"
+        },
+        {
+          "n": [[87, 99], [216, 223], [225, 228]],
+          "place_names": ["Маршала Блюхера"],
+          "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home)"
+        },
+        {
+          "n": [[100, 102]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Невский проспект near Площадь Александра Невского"
+        },
+        {
+          "n": [[213, 215]],
+          "place_names": ["ПУНК"],
+          "place_detail": "Мат-Мех"
+        },
+        {
+          "n": [182, [188, 193]],
+          "place_names": ["Яппиля"],
+          "place_detail": "Яппиля station, Ленинградская область"
+        },
+        {
+          "n": [183, [185, 187]],
+          "place_names": ["Яппиля"],
+          "place_detail": "Яппиля, Ленинградская область (off-station)",
+          "approximate": true
+        }
+      ]
+    },
+    "moskow": {
+      "context": "August 2006 trip; tourist sightseeing in central Moscow",
+      "default": {
+        "place_names": ["Москва"],
+        "place_detail": "central Moscow",
+        "approximate": true
+      },
+      "ranges": [
+        {
+          "n": [70],
+          "place_names": ["Москва"],
+          "place_detail": "Нулевой Километр (Zero Kilometer), next to the Kremlin"
+        }
+      ]
+    },
+    "summer2006": {
+      "context": "August 2006. Pictures 1-122 not yet labeled (Stage 0 candidate). 123-320 are Алёховщина / Зуёво with three sub-locations.",
+      "ranges": [
+        {
+          "n": [316, 317],
+          "place_names": ["Алёховщина"],
+          "place_detail": "Оять river, Зуёво (Leningrad Oblast)"
+        },
+        {
+          "n": [234, 250, 251, 297, 298],
+          "place_names": ["Алёховщина"],
+          "place_detail": "Зуёвская улица 3, Зуёво (Leningrad Oblast)"
+        },
+        {
+          "n": [[123, 233], [235, 249], [252, 296], [299, 315], [318, 320]],
+          "place_names": ["Алёховщина"],
+          "place_detail": "Зуёвская улица 1, Зуёво (Leningrad Oblast)"
+        }
+      ]
+    },
+    "cumpl": {
+      "context": "birthday party celebration around Блюхера, June 2007",
+      "default": {
+        "place_names": ["Маршала Блюхера"],
+        "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home area)"
+      },
+      "ranges": [
+        {
+          "n": [[5, 54]],
+          "place_names": ["Полюстрово", "Санкт-Петербург"],
+          "place_detail": "Полюстрово"
+        }
+      ]
+    },
+    "MarchApril10": {
+      "context": "March-April 2010, mixed activities across Saint Petersburg + a Зуёво visit + a ski day at Парголово + СПбГУ life; comprehensive coverage 1-90",
+      "ranges": [
+        {
+          "n": [[1, 5]],
+          "place_names": ["Алёховщина"],
+          "place_detail": "Зуёво (Leningrad Oblast)"
+        },
+        {
+          "n": [[6, 17]],
+          "place_names": ["Парголово", "Санкт-Петербург"],
+          "place_detail": "Парголово (ski day)"
+        },
+        {
+          "n": [[18, 19]],
+          "place_names": ["школа 239", "Санкт-Петербург"],
+          "place_detail": "школа 239"
+        },
+        {
+          "n": [[20, 25]],
+          "place_names": ["Полюстрово", "Санкт-Петербург"],
+          "place_detail": "Красногвардейский район, Полюстрово"
+        },
+        {
+          "n": [[26, 27]],
+          "place_names": ["ПУНК"],
+          "place_detail": "Физфак"
+        },
+        {
+          "n": [[28, 29]],
+          "place_names": ["ПУНК"],
+          "place_detail": "Мат-Мех"
+        },
+        {
+          "n": [30],
+          "place_names": ["Маршала Блюхера"],
+          "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home)"
+        },
+        {
+          "n": [[31, 45]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Васильевский остров around Приморская metro",
+          "approximate": true
+        },
+        {
+          "n": [[46, 61]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Комендантский проспект"
+        },
+        {
+          "n": [[62, 66]],
+          "place_names": ["ПУНК"],
+          "place_detail": "общежития, турнир по преферансу"
+        },
+        {
+          "n": [[67, 81]],
+          "place_names": ["Главное Здание", "СПбГУ"],
+          "place_detail": "бассейн СПбГУ"
+        },
+        {
+          "n": [[82, 89]],
+          "place_names": ["ПУНК"]
+        },
+        {
+          "n": [90],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Южное Кладбище (South Cemetery)"
+        }
+      ]
+    },
+    "AnnsBirthday": {
+      "context": "birthday celebration, June 5, 2010; one-event album",
+      "default": {
+        "place_names": ["Заходское"],
+        "place_detail": "lake in Finland-direction Ленинградская область, ~near Заходское (exact station unknown)",
+        "approximate": true
+      },
+      "ranges": []
+    },
+    "party": {
+      "context": "School 239 graduate party, June 2005",
+      "ranges": [
+        {
+          "n": [[1, 22]],
+          "place_names": ["школа 239", "Санкт-Петербург"],
+          "place_detail": "next to школа 239",
+          "approximate": true
+        },
+        {
+          "n": [[23, 77]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Сенная площадь (Sennaya Square)"
+        }
+      ]
+    },
+    "24092006": {
+      "context": "student's party, 2006-09-24",
+      "default": {
+        "place_names": ["Маршала Блюхера"],
+        "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home)"
+      },
+      "ranges": []
+    },
+    "dacha": {
+      "context": "all 65 pictures are at the family dacha near Дунай station",
+      "default": {
+        "place_names": ["дача"],
+        "place_detail": "дача at Дунай, Ленинградская область"
+      },
+      "ranges": []
+    },
+    "spring9": {
+      "context": "May 2009, central Saint Petersburg",
+      "ranges": [
+        {
+          "n": [[24, 28]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "central Saint Petersburg, possibly канал Грибоедова",
+          "approximate": true
+        }
+      ]
+    },
+    "110": {
+      "context": "January 2010 mixed events around Saint Petersburg",
+      "ranges": [
+        {
+          "n": [[1, 2]],
+          "place_names": ["Маршала Блюхера"],
+          "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home)"
+        },
+        {
+          "n": [[3, 4]],
+          "place_names": ["Янино"],
+          "place_detail": "Янино, Saint Petersburg area"
+        },
+        {
+          "n": [[5, 6]],
+          "place_names": ["ПУНК"],
+          "place_detail": "Мат-Мех"
+        },
+        {
+          "n": [[13, 22]],
+          "place_names": ["Купчино", "Санкт-Петербург"],
+          "place_detail": "Купчино (birthday party)"
+        }
+      ]
+    },
+    "tretij majskij pohod": {
+      "context": "third May hiking trip, end of April / early May 2007; Финляндский вокзал → Заходское and back; main camp at Заходское",
+      "default": {
+        "place_names": ["Заходское"],
+        "place_detail": "Заходское, Ленинградская область"
+      },
+      "ranges": [
+        {
+          "n": [[1, 3]],
+          "place_names": ["Маршала Блюхера"],
+          "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home)"
+        },
+        {
+          "n": [[4, 6]],
+          "place_names": ["Финляндский вокзал", "Санкт-Петербург"],
+          "place_detail": "Финляндский вокзал (Finland railway station)"
+        }
+      ]
+    }
+  }
+}

@@ -1,10 +1,19 @@
-"""Cosine top-k over the photo index, optional EXIF date filter.
+"""Cosine top-k over the photo index, with optional structured filters.
+
+Filters are passed in as a `Filters` bag from `photo_search.tools.base`
+(date + location, either may be None). The cheap deterministic regex
+date parser (`parse_date_filter`) is still exposed for the server to
+use as a fast-path before calling the Flash router.
 
 Date filter recognises:
 - bare 4-digit years: '2014'
 - season + year: 'summer 2017', 'winter 2010', 'autumn 2008' (also 'fall')
 For photos without EXIF date, falls back to a folder-name heuristic
 (e.g. 'summer2005/' → 2005, '10tradfall/' → 2010).
+
+Location filter is a sha-set built by `tools.filter_by_location.execute`
+against indexed `place_names` (Tier 1) + folder names (Tier 2). The
+retriever just AND-masks the candidate pool with it.
 """
 
 from __future__ import annotations
@@ -16,6 +25,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from photo_search.paths import INDEX_PATH, MAX_K, META_PATH
+from photo_search.tools.base import DateFilter, Filters, LocationFilter
 
 _YEAR_RE = re.compile(r"\b(19\d{2}|20\d{2})\b")
 _SEASON_YEAR_RE = re.compile(
@@ -73,7 +83,13 @@ class Hit:
 
 
 def parse_date_filter(query: str) -> tuple[str | None, str | None]:
-    """Extract (lo, hi) ISO-date range from query, or (None, None)."""
+    """Extract (lo, hi) ISO-date range from query, or (None, None).
+
+    Kept as a fast-path the server runs before / instead of asking the
+    Flash router about dates. Cheap, deterministic, and covers the
+    common pattern queries — Flash routing handles the rest when wired
+    in (e.g., 'before the pandemic', 'around when the kids were small').
+    """
     sm = _SEASON_YEAR_RE.search(query)
     if sm:
         season = sm.group(1).lower()
@@ -99,32 +115,60 @@ def load_index() -> tuple[np.ndarray, list[dict]]:
     return arr[mask], [m for m, ok in zip(metas, mask) if ok]
 
 
+def _date_mask(metas: list[dict], df: DateFilter) -> np.ndarray:
+    """Boolean mask, True where the photo's date falls inside `df`.
+
+    Uses EXIF date when present; falls back to a folder-name year
+    heuristic. Photos with neither are kept — don't penalize undatable
+    photos when the user asks for a date range.
+    """
+    out = np.ones(len(metas), dtype=bool)
+    for i, m in enumerate(metas):
+        d = m.get("exif_date_iso") or _infer_date_iso_from_path(m["blob_path"])
+        if d is None:
+            continue
+        if df.start_iso and d < df.start_iso:
+            out[i] = False
+        if df.end_iso and d > df.end_iso:
+            out[i] = False
+    return out
+
+
+def _location_mask(metas: list[dict], lf: LocationFilter) -> np.ndarray:
+    """Boolean mask: True only for shas in `lf.matched_shas`.
+
+    Caller invokes us only when the location was *recognized* (the
+    executor returns None for unrecognized places, which keeps us out
+    of this code path entirely). At that point matched_shas is the
+    authoritative set — including the empty case, which legitimately
+    means 'recognized place, but the corpus has no photos there.'
+    """
+    return np.array([m["sha"] in lf.matched_shas for m in metas], dtype=bool)
+
+
 def search(
     query_vec: np.ndarray,
     vectors: np.ndarray,
     metas: list[dict],
     *,
     k: int = 5,
-    date_lo: str | None = None,
-    date_hi: str | None = None,
+    filters: Filters | None = None,
 ) -> list[Hit]:
     # Defensive cap (last line of defense; server + CLI also clamp).
     k = min(max(k, 1), MAX_K)
     norms = np.linalg.norm(vectors, axis=1) * np.linalg.norm(query_vec)
     sims = (vectors @ query_vec) / np.maximum(norms, 1e-9)
 
-    if date_lo or date_hi:
-        # Use EXIF date when available; fall back to folder-name heuristic.
-        # Photos with neither are kept (don't penalize undatable photos).
+    # Pre-filter by metadata before sort — filtered-out photos lose
+    # eligibility to win the top-k regardless of their cosine score.
+    # This is the core 'metadata gates retrieval, embedding ranks
+    # survivors' design.
+    if filters and not filters.is_empty:
         mask = np.ones(len(metas), dtype=bool)
-        for i, m in enumerate(metas):
-            d = m.get("exif_date_iso") or _infer_date_iso_from_path(m["blob_path"])
-            if d is None:
-                continue
-            if date_lo and d < date_lo:
-                mask[i] = False
-            if date_hi and d > date_hi:
-                mask[i] = False
+        if filters.date is not None:
+            mask &= _date_mask(metas, filters.date)
+        if filters.location is not None:
+            mask &= _location_mask(metas, filters.location)
         sims = np.where(mask, sims, -np.inf)
 
     # Backfill dedup: pull more candidates than k, dedup by content sha,

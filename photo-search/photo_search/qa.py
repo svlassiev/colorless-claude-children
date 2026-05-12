@@ -16,7 +16,8 @@ from google.genai import types
 from vertexai.vision_models import MultiModalEmbeddingModel
 
 from photo_search.paths import BUCKET, GENERATE_MODEL
-from photo_search.retriever import Hit, parse_date_filter, search
+from photo_search.retriever import Hit, search
+from photo_search.tools.base import Filters
 
 GENERATION_PROMPT = """\
 You are answering a question about Sergey's personal photo collection.
@@ -43,11 +44,18 @@ def retrieve(
     metas: list[dict],
     *,
     k: int = 5,
-) -> tuple[list[Hit], tuple[str | None, str | None]]:
+    filters: Filters | None = None,
+) -> list[Hit]:
+    """Embed the query and run filtered cosine top-k.
+
+    `filters` is composed upstream by the server from the Flash routing
+    layer (`photo_search.routing.route_query`) and the regex date
+    fast-path (`retriever.parse_date_filter`). Passing None is fine —
+    the search becomes pure vector similarity, same as before this
+    layer existed.
+    """
     q_emb = embed_query(query, embed_model)
-    date_lo, date_hi = parse_date_filter(query)
-    hits = search(q_emb, vectors, metas, k=k, date_lo=date_lo, date_hi=date_hi)
-    return hits, (date_lo, date_hi)
+    return search(q_emb, vectors, metas, k=k, filters=filters)
 
 
 def _download_blob_bytes(hit: Hit, storage_client: storage.Client) -> bytes:
