@@ -103,8 +103,15 @@ def _rerank_one_batch(
         config=types.GenerateContentConfig(
             response_mime_type="application/json",
             response_schema=_RerankBatchResponse,
-            # Small budget — we expect O(n) JSON entries, no prose.
-            max_output_tokens=512,
+            # Flash 2.5 is a reasoning model — thinking tokens count
+            # against max_output_tokens. Rerank is a small structured-
+            # output task where thinking adds nothing useful, and at the
+            # old 512 budget the model burned ~300 tokens thinking and
+            # then truncated mid-JSON, producing JSONDecodeError noise
+            # on roughly every depth-20 query. Disable thinking and give
+            # the visible JSON enough headroom for any plausible batch.
+            thinking_config=types.ThinkingConfig(thinking_budget=0),
+            max_output_tokens=1024,
         ),
     )
 
