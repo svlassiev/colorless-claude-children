@@ -24,16 +24,20 @@ from google.cloud import firestore, storage
 from pydantic import BaseModel, field_validator
 from vertexai.vision_models import MultiModalEmbeddingModel
 
+from dataclasses import replace
+
 from log_search import qa as log_qa
 from log_search.cloud_cache import pull_from_gcs as log_pull
 from log_search.retriever import load_index as load_log_index
 from photo_search import qa as photo_qa
+from photo_search import routing as photo_routing
 from photo_search.cloud_cache import pull_from_gcs as photo_pull
 from photo_search.paths import EMBED_MODEL as PHOTO_EMBED_MODEL
 from photo_search.paths import MAX_K, RERANK_KEEP, RERANK_THRESHOLD_K
 from photo_search.rerank import rerank_hits as photo_rerank_hits
-from photo_search.retriever import load_index as load_photo_index
+from photo_search.retriever import load_index as load_photo_index, parse_date_filter
 from photo_search.site import site_url_for
+from photo_search.tools.base import DateFilter, Filters
 from search_common.auth import AnonSubject, AuthedSubject, Subject, get_subject
 from search_common.generation import safe_generate
 from search_common.rate_limit import enforce_rate_limit, get_remaining
@@ -249,14 +253,38 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
 
     # Retrieve — corpus-specific. Sync; runs before streaming starts so
     # any embed/index failure is a regular 5xx, not a torn stream.
+    photo_filters: Filters = Filters()
     if req.corpus == "photo":
-        hits, (date_lo, date_hi) = photo_qa.retrieve(
+        # Step A: Flash routing. AUTO mode — the model may emit zero,
+        # one, or several parallel filter calls. Soft-fails to empty
+        # Filters() on timeout; retrieval proceeds unfiltered in that case.
+        photo_filters = await photo_routing.route_query(
+            req.query,
+            _state["photo_metas"],
+            _state["gen_client"],
+        )
+        # Step B: cheap deterministic date parser as a fast-path for
+        # patterns the regex handles ('summer 2017', '2014'). Only fills
+        # in when routing didn't already produce a date filter — once a
+        # `filter_by_date_range` tool lands, this becomes a fallback
+        # rather than the primary path.
+        if photo_filters.date is None:
+            date_lo, date_hi = parse_date_filter(req.query)
+            if date_lo or date_hi:
+                photo_filters = replace(
+                    photo_filters,
+                    date=DateFilter(start_iso=date_lo, end_iso=date_hi),
+                )
+        hits = photo_qa.retrieve(
             req.query,
             _state["embed_model"],
             _state["photo_vectors"],
             _state["photo_metas"],
             k=req.k,
+            filters=photo_filters,
         )
+        date_lo = photo_filters.date.start_iso if photo_filters.date else None
+        date_hi = photo_filters.date.end_iso if photo_filters.date else None
         empty_msg = "no matching photos found."
     else:  # corpus == "log"
         hits, (date_lo, date_hi) = log_qa.retrieve(
@@ -269,7 +297,16 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
         )
         empty_msg = "no matching journal entries found."
 
-    date_filter = f"{date_lo} .. {date_hi}" if date_lo else None
+    # SSE display strings for the citations event. Both filters get a
+    # human-readable label so the client can render 'Filtered to Хибины,
+    # summer 2009' without re-parsing JSON shapes.
+    if date_lo or date_hi:
+        date_filter = f"{date_lo or '…'} .. {date_hi or '…'}"
+    else:
+        date_filter = None
+    location_filter = (
+        photo_filters.location.place_name if photo_filters.location else None
+    )
 
     def _build_citations(ordered_hits, gen_shas: set[str]) -> list[dict]:
         """Return list[dict] (already JSON-serialisable) so we can drop the
@@ -316,6 +353,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                     "rerank_used": False,
                     "corpus": req.corpus,
                     "date_filter": date_filter,
+                    "location_filter": location_filter,
                     "auth_state": auth_label,
                     "quota_used": cap - remaining,
                     "quota_remaining": remaining,
@@ -342,6 +380,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                     "rerank_used": False,
                     "corpus": req.corpus,
                     "date_filter": date_filter,
+                    "location_filter": location_filter,
                     "auth_state": auth_label,
                     "quota_used": cap - remaining,
                     "quota_remaining": remaining,

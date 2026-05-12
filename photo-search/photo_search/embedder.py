@@ -214,13 +214,18 @@ def main() -> int:
 
     ensure_cache_dir()
     np.savez_compressed(INDEX_PATH, vectors=vectors)
-    with META_PATH.open("w") as f:
+    # Fields copied from manifest into meta. Place fields (added by
+    # place_baker.py) only land in meta when present on the manifest row;
+    # rows without them stay clean.
+    META_REQUIRED = ("id", "gcs_uri", "blob_path", "exif_date_iso", "exif_gps", "caption", "sha")
+    META_OPTIONAL = ("place_names", "place_detail", "place_approximate", "place_context")
+    with META_PATH.open("w", encoding="utf-8") as f:
         for r in rows:
-            meta = {
-                k: r.get(k)
-                for k in ("id", "gcs_uri", "blob_path", "exif_date_iso", "exif_gps", "caption", "sha")
-            }
-            f.write(json.dumps(meta) + "\n")
+            meta: dict = {k: r.get(k) for k in META_REQUIRED}
+            for k in META_OPTIONAL:
+                if r.get(k) is not None:
+                    meta[k] = r[k]
+            f.write(json.dumps(meta, ensure_ascii=False) + "\n")
 
     print(f"\nwrote {INDEX_PATH} ({vectors.nbytes / 1024:.1f} KiB)", file=sys.stderr)
     print(f"wrote {META_PATH}", file=sys.stderr)

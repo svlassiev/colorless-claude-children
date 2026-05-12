@@ -1,0 +1,135 @@
+{
+  "_meta": {
+    "version": 2,
+    "description": "Query-time alias map for filter_by_location. Canonical Cyrillic place names (matching the values baked into manifest_meta.jsonl's place_names field) → list of variants the model might emit or the user might type. Match is case-insensitive substring in either direction (alias-in-query OR query-in-alias). Aliases are lowercased + NFKC-normalized at load time; the source file may use any case.",
+    "policy": "Canonical is Cyrillic where the place is Russian. Latin transliterations + English names + nicknames + parent-region terms all go in the variants list. Keep variants short; the matcher will substring-find them.",
+    "russian_declension": "For Russian nouns that decline, include a stem variant (the form without the case-ending vowel) so any case matches. Example: 'деревн' matches деревня (nom), деревне (prep), деревню (acc), деревни (gen/pl). Stems are SAFE because they're flanked by non-letter boundaries during folder matching (whole-word check) and by direct substring during place_names matching (place_names are stored as canonical, not declined). Avoid stems shorter than 4 chars — they invite false positives."
+  },
+  "Хибины": [
+    "хибины", "хибин",
+    "khibiny", "hibiny", "khibini", "hibini",
+    "кольский", "кольский полуостров", "kola", "kola peninsula"
+  ],
+  "Заходское": [
+    "заходское", "заходск",
+    "zakhodskoye", "zakhodskoe", "zahodskoe"
+  ],
+  "Кирилловское": [
+    "кирилловское", "кирилловск",
+    "kirillovskoye", "kirillovskoe"
+  ],
+  "Апатиты": [
+    "апатиты", "апатит",
+    "apatity"
+  ],
+  "Ладожский вокзал": [
+    "ладожский вокзал", "ладожский", "ладожск",
+    "ladoga station", "ladozhsky"
+  ],
+  "Финляндский вокзал": [
+    "финляндский вокзал", "финляндский", "финляндск",
+    "finland station", "finlyandsky"
+  ],
+  "Московский вокзал": [
+    "московский вокзал", "московск",
+    "moscow station", "moskovsky"
+  ],
+  "Маршала Блюхера": [
+    "маршала блюхера", "блюхера", "блюхер",
+    "marshala blyukhera", "blyukhera",
+    "home", "дом", "дома",
+    "проспект маршала блюхера"
+  ],
+  "Алёховщина": [
+    "алёховщина", "алеховщина", "алёховщин", "алеховщин",
+    "alyokhovshchina", "aljokhovshchina",
+    "деревня", "деревне", "деревню", "деревни", "деревн",
+    "village",
+    "зуёво", "зуево", "зуёв", "зуев",
+    "zuevo", "zuyovo",
+    "зуёвская улица", "зуевская улица"
+  ],
+  "Купчино": [
+    "купчино", "купчин",
+    "kupchino"
+  ],
+  "Полюстрово": [
+    "полюстрово", "полюстров",
+    "polyustrovo", "polustrovo",
+    "красногвардейский", "красногвардейск", "krasnogvardeysky"
+  ],
+  "Парголово": [
+    "парголово", "парголов",
+    "pargolovo"
+  ],
+  "Янино": [
+    "янино", "янин",
+    "yanino"
+  ],
+  "ПУНК": [
+    "пунк", "punk",
+    "petergof spbsu", "petergof campus", "петергоф", "петергоф спбгу",
+    "мат-мех", "матмех", "матмеха", "матмехе",
+    "matmeh", "math-mech", "matmech",
+    "физфак", "физфаке", "физфака", "fizfak", "physics faculty",
+    "пм-пу", "пмпу", "пм-пу", "pm-pu", "pmpu",
+    "химфак", "химфаке", "химфака",
+    "khimfak", "himfak", "chemistry faculty"
+  ],
+  "Главное Здание": [
+    "главное здание", "главного здания", "главном здании",
+    "main building", "spbgu main", "main building spbgu",
+    "swimming pool spbgu", "бассейн спбгу", "бассейн"
+  ],
+  "СПбГУ": [
+    "спбгу", "spbgu", "saint petersburg state university",
+    "санкт-петербургский государственный университет",
+    "saint-petersburg state university",
+    "университет", "университете"
+  ],
+  "школа 239": [
+    "школа 239", "школу 239", "школе 239", "школы 239",
+    "school 239", "239", "лицей 239", "лицея 239", "лицее 239"
+  ],
+  "Яппиля": [
+    "яппиля", "яппил",
+    "yappilya", "yappilia"
+  ],
+  "Гоуджекит": [
+    "гоуджекит", "гоуджекитe", "гоуджекита",
+    "gouzhekit", "gouzhdekit"
+  ],
+  "Байкал": [
+    "байкал", "байкале", "байкалу", "байкала", "байкалом",
+    "baikal", "lake baikal", "озеро байкал"
+  ],
+  "Северобайкальск": [
+    "северобайкальск", "северобайкальске",
+    "severobaikalsk", "severobaykalsk"
+  ],
+  "Екатеринбург": [
+    "екатеринбург", "екатеринбурге", "екатеринбурга",
+    "yekaterinburg", "ekaterinburg", "ekat"
+  ],
+  "Омск": [
+    "омск", "омске", "омска",
+    "omsk"
+  ],
+  "Москва": [
+    "москва", "москве", "москву", "москвы", "москвой", "москв",
+    "moscow"
+  ],
+  "Санкт-Петербург": [
+    "санкт-петербург", "санкт-петербурге", "санкт-петербурга",
+    "saint petersburg", "st petersburg", "saint-petersburg",
+    "спб", "spb",
+    "питер", "питере", "питеру", "питера",
+    "piter", "petersburg"
+  ],
+  "дача": [
+    "дача", "даче", "дачу", "дачи", "дачей", "дач",
+    "dacha",
+    "дунай", "дунае", "дуная",
+    "dunai", "станция дунай", "dunai station"
+  ]
+}
