@@ -79,8 +79,8 @@
         },
         {
           "n": [[76, 83]],
-          "place_names": ["Санкт-Петербург"],
-          "place_detail": "around 'Квартал четырёх дураков'",
+          "place_names": ["Квартал Четырёх Дураков", "Санкт-Петербург"],
+          "place_detail": "around 'Квартал Четырёх Дураков'",
           "approximate": true
         }
       ]
@@ -736,6 +736,178 @@
           "n": [[1, 8]],
           "place_names": ["Финляндский вокзал", "Санкт-Петербург"],
           "place_detail": "Финляндский вокзал — https://maps.app.goo.gl/ocGgB2RZo6EpLkS58"
+        }
+      ]
+    },
+    "UniversityIVV": {
+      "context": "СПбГУ student life (Мат-Мех undergrad, ПУНК + Главное Здание era + Saint Petersburg + weekend trips), April 2007 – January 2008",
+      "default": {
+        "place_names": ["СПбГУ", "Санкт-Петербург"],
+        "place_detail": "various СПбГУ-related Saint Petersburg locations"
+      },
+      "ranges": [
+        {
+          "n": [[6, 21], [24, 37], [71, 83], [152, 158], [166, 180]],
+          "place_names": ["ПУНК"],
+          "place_detail": "Мат-Мех at ПУНК — https://maps.app.goo.gl/TFs1GHMBoGL5XftR7"
+        },
+        {
+          "n": [23, 47, 48],
+          "place_names": ["ПУНК"],
+          "place_detail": "Физфак at ПУНК — https://maps.app.goo.gl/ZY3maZyaLvW5M8FG7"
+        },
+        {
+          "n": [[60, 63], [146, 151]],
+          "place_names": ["ПУНК"],
+          "place_detail": "ПУНК cafe Мавзолей — https://maps.app.goo.gl/X6sx4Ebes2iERHiE9"
+        },
+        {
+          "n": [[183, 185]],
+          "place_names": ["ПУНК"],
+          "place_detail": "ПУНК dormitories — https://maps.app.goo.gl/2U6ePoebZggJD6U46"
+        },
+        {
+          "n": [[84, 85]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Васильевский остров, Набережная Лейтенанта Шмидта — https://maps.app.goo.gl/odpqMmPkdY5v3BF3A"
+        },
+        {
+          "n": [86],
+          "place_names": ["СПбГУ", "Санкт-Петербург"],
+          "place_detail": "СПбГУ Мат-Мех at Васильевский остров — https://maps.app.goo.gl/MNJkxK4UfSYehd157"
+        },
+        {
+          "n": [[129, 141]],
+          "place_names": ["СПбГУ", "Санкт-Петербург"],
+          "place_detail": "СПбГУ Мат-Мех at Васильевский остров, 10-я линия — https://maps.app.goo.gl/egzZrXyFzEXWwbQd6"
+        },
+        {
+          "n": [[159, 162]],
+          "place_names": ["СПбГУ", "Санкт-Петербург"],
+          "place_detail": "Военная Кафедра СПбГУ at Камская — https://maps.app.goo.gl/qBVkKwj5wbc3uSCPA"
+        },
+        {
+          "n": [39, 54, [87, 95]],
+          "place_names": ["Маршала Блюхера"],
+          "place_detail": "проспект Маршала Блюхера (home) — https://maps.app.goo.gl/7dJ3MFM5DoonqDpc7"
+        },
+        {
+          "n": [[40, 44]],
+          "place_names": ["Заходское"],
+          "place_detail": "Заходское, Озеро Малое Краснопёрское — https://maps.app.goo.gl/9XpBXt9C3v35aZXy6"
+        },
+        {
+          "n": [[50, 52], [55, 58]],
+          "place_names": ["Пушкин"],
+          "place_detail": "Пушкин (Царское Село) — https://maps.app.goo.gl/MGJHXc1UKP4nHpBH6"
+        },
+        {
+          "n": [[65, 67]],
+          "place_names": ["Ласковый Пляж"],
+          "place_detail": "Ласковый Пляж — https://maps.app.goo.gl/1rREemCEwkvXRBUx5"
+        },
+        {
+          "n": [[68, 70]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Лабораторный проспект — https://maps.app.goo.gl/wRWCDEuFrtG1GSS99"
+        },
+        {
+          "n": [[96, 98]],
+          "place_names": ["Алёховщина"],
+          "place_detail": "Зуёвская 1, Алёховщина — https://maps.app.goo.gl/2o6CR3ECTA47TNVs7"
+        },
+        {
+          "n": [[99, 100], [119, 122]],
+          "place_names": ["дача"],
+          "place_detail": "дача at Дунай — https://maps.app.goo.gl/gebm7fZYGzUz5nqr9"
+        },
+        {
+          "n": [[101, 105]],
+          "place_names": ["Репино"],
+          "place_detail": "Репино — https://maps.app.goo.gl/ZRM3ZsFo4JmsU4Vr8"
+        },
+        {
+          "n": [[106, 113]],
+          "place_names": ["школа 239", "Санкт-Петербург"],
+          "place_detail": "школа 239"
+        },
+        {
+          "n": [123],
+          "place_names": ["Финляндский вокзал", "Санкт-Петербург"],
+          "place_detail": "Финляндский вокзал — https://maps.app.goo.gl/3PjBkmAbPWQiTwx88"
+        },
+        {
+          "n": [128],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Среднеохтинский проспект — https://maps.app.goo.gl/4xDTMb7Y71Vv4fyn8"
+        },
+        {
+          "n": [165],
+          "place_names": ["Московский вокзал", "Санкт-Петербург"],
+          "place_detail": "Московский вокзал — https://maps.app.goo.gl/sEaKk4CAThUtqGFe6"
+        }
+      ]
+    },
+    "University0506": {
+      "context": "СПбГУ Мат-Мех student life, March-April 2006",
+      "default": {
+        "place_names": ["СПбГУ", "Санкт-Петербург"],
+        "place_detail": "СПбГУ Мат-Мех"
+      },
+      "ranges": [
+        {
+          "n": [1, [3, 8], [32, 53]],
+          "place_names": ["ПУНК"],
+          "place_detail": "Мат-Мех at ПУНК — https://maps.app.goo.gl/TFs1GHMBoGL5XftR7"
+        },
+        {
+          "n": [2, 54],
+          "place_names": ["ПУНК"],
+          "place_detail": "ПУНК cafe Мавзолей — https://maps.app.goo.gl/cLMeqrZp21jDeJTy5"
+        },
+        {
+          "n": [[9, 12]],
+          "place_names": ["СПбГУ", "Санкт-Петербург"],
+          "place_detail": "СПбГУ Мат-Мех at Васильевский остров — https://maps.app.goo.gl/MNJkxK4UfSYehd157"
+        },
+        {
+          "n": [[13, 27], [30, 31]],
+          "place_names": ["СПбГУ", "Санкт-Петербург"],
+          "place_detail": "СПбГУ Мат-Мех at Васильевский остров, 10-я линия — https://maps.app.goo.gl/egzZrXyFzEXWwbQd6"
+        }
+      ]
+    },
+    "schooladdition": {
+      "context": "school 239 (additional album), winter 2004-2005",
+      "default": {
+        "place_names": ["школа 239", "Санкт-Петербург"],
+        "place_detail": "школа 239"
+      },
+      "ranges": [
+        {
+          "n": [[1, 73], [82, 84], [87, 91]],
+          "place_names": ["школа 239", "Санкт-Петербург"],
+          "place_detail": "inside школа 239 — https://maps.app.goo.gl/HdbQXfZD2tP7Mg8o7"
+        },
+        {
+          "n": [[74, 75]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Лабораторный проспект — https://maps.app.goo.gl/Pzgn9G2vpTG8uav48"
+        },
+        {
+          "n": [[76, 81]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "one of Красноармейская улиц — https://maps.app.goo.gl/31bnELfQKsNeX48E8"
+        },
+        {
+          "n": [[85, 86]],
+          "place_names": ["Маршала Блюхера"],
+          "place_detail": "проспект Маршала Блюхера (home) — https://maps.app.goo.gl/EDR2x2864ohJqEv59"
+        },
+        {
+          "n": [[92, 100]],
+          "place_names": ["Квартал Четырёх Дураков", "Санкт-Петербург"],
+          "place_detail": "Красногвардейский район, around Квартал Четырёх Дураков (Ржевка-Пороховые, intersection of Наставников / Передовиков / Ударников / Энтузиастов) — https://maps.app.goo.gl/KfRFu9WZCcLamDH87"
         }
       ]
     }
