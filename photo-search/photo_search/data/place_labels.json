@@ -465,6 +465,279 @@
           "place_detail": "Финляндский вокзал (Finland railway station)"
         }
       ]
+    },
+    "NUral": {
+      "context": "Saint Petersburg → Northern Ural mountains (border of Perm Krai) and back; June-July 2008 — school 239 graduate hiking expedition with stopovers in Perm, Хохловка, Березники/Соликамск, and Екатеринбург",
+      "default": {
+        "place_names": ["Северный Урал"],
+        "place_detail": "Northern Ural hiking route (border of Perm Krai)"
+      },
+      "ranges": [
+        {
+          "n": [[1, 8]],
+          "place_names": ["школа 239", "Санкт-Петербург"],
+          "place_detail": "around школа 239 (trip preparation) — https://maps.app.goo.gl/kQVSPSodU5m8wWnA7"
+        },
+        {
+          "n": [[9, 15]],
+          "place_names": ["Ладожский вокзал", "Санкт-Петербург"],
+          "place_detail": "Ладожский вокзал — https://maps.app.goo.gl/nTt14enMDBz9BzXC6"
+        },
+        {
+          "n": [[16, 20]],
+          "place_names": [],
+          "place_detail": "Trans-Siberian railway (Saint Petersburg → Perm en route)"
+        },
+        {
+          "n": [28],
+          "place_names": ["Пермь"],
+          "place_detail": "specific spot in Perm — https://maps.app.goo.gl/BoYYoEWj6dEo338W9"
+        },
+        {
+          "n": [32],
+          "place_names": ["Пермь"],
+          "place_detail": "Пермяк Солёные Уши (monument) — https://maps.app.goo.gl/f43qw5gTVMcBnbU5A"
+        },
+        {
+          "n": [[53, 68]],
+          "place_names": ["Хохловка"],
+          "place_detail": "Хохловка architectural-ethnographic museum (excursion from Perm) — https://maps.app.goo.gl/KdF5GcVMFRgeruFP8"
+        },
+        {
+          "n": [[84, 93]],
+          "place_names": ["Березники", "Соликамск"],
+          "place_detail": "salt caves between Березники and Соликамск (excursion from Perm) — https://maps.app.goo.gl/o4HSDz651KDCFiaM6"
+        },
+        {
+          "n": [[21, 27], [29, 31], [33, 52], [69, 83], [94, 95]],
+          "place_names": ["Пермь"],
+          "place_detail": "around Perm — https://maps.app.goo.gl/DVG83EDFwpVEDtuGA"
+        },
+        {
+          "n": [[96, 119]],
+          "place_names": ["Екатеринбург"],
+          "place_detail": "Екатеринбург"
+        },
+        {
+          "n": [[275, 286]],
+          "place_names": ["Кваркуш", "Северный Урал"],
+          "place_detail": "Кваркуш plateau — https://maps.app.goo.gl/EiSVhQaRUpsztb7y7"
+        },
+        {
+          "n": [[295, 296]],
+          "place_names": [],
+          "place_detail": "Trans-Siberian railway (Ural → Saint Petersburg en route)"
+        },
+        {
+          "n": [297],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "back in Saint Petersburg"
+        }
+      ]
+    },
+    "kolvica8": {
+      "context": "school hiking trip to mountains near Колвица on Кольский полуостров, March 2008; folder suffix '8' = 2008",
+      "default": {
+        "place_names": ["Колвица"],
+        "place_detail": "Колвицкие горы (mountain hiking route, next to Колвица village) — https://maps.app.goo.gl/MjQr7DgUZdrr5RDG7"
+      },
+      "ranges": [
+        {
+          "n": [[1, 11]],
+          "place_names": [],
+          "place_detail": "railroad trip Saint Petersburg → Кандалакша — https://maps.app.goo.gl/J9TFVEAGamqRrD316"
+        },
+        {
+          "n": [[12, 28], [127, 130]],
+          "place_names": ["Колвица"],
+          "place_detail": "Колвица village, next to Кандалакшский залив (White Sea) — https://maps.app.goo.gl/ydZfWRmPtEh1xs8b9 / https://maps.app.goo.gl/346esvXJwVveVYh6A"
+        },
+        {
+          "n": [[131, 135]],
+          "place_names": ["Кандалакша"],
+          "place_detail": "Кандалакша — https://maps.app.goo.gl/6geWct2reTpZTi4P9"
+        },
+        {
+          "n": [136],
+          "place_names": ["Ладожский вокзал", "Санкт-Петербург"],
+          "place_detail": "Ладожский вокзал — https://maps.app.goo.gl/VBboyb7nJUfZo3fU9"
+        }
+      ]
+    },
+    "Lovozero10": {
+      "context": "school hiking trip in Ловозёрские Тундры mountains, around lakes Ловозеро and Сейдозеро, March 2010; folder suffix '10' = 2010",
+      "default": {
+        "place_names": ["Ловозёрские Тундры"],
+        "place_detail": "Ловозёрские Тундры (mountain region around lakes Ловозеро and Сейдозеро) — https://maps.app.goo.gl/AwLX7vrYcZW1j2nG9"
+      },
+      "ranges": [
+        {
+          "n": [[1, 9]],
+          "place_names": [],
+          "place_detail": "railroad trip Saint Petersburg → Оленегорск — https://maps.app.goo.gl/AwLX7vrYcZW1j2nG9"
+        },
+        {
+          "n": [[10, 14], [103, 107]],
+          "place_names": ["Оленегорск"],
+          "place_detail": "Оленегорск — https://maps.app.goo.gl/AwLX7vrYcZW1j2nG9"
+        },
+        {
+          "n": [[15, 29]],
+          "place_names": ["Ловозеро"],
+          "place_detail": "at Ловозеро — https://maps.app.goo.gl/zK2QZG5GZmM2oobY6"
+        },
+        {
+          "n": [[30, 38]],
+          "place_names": ["Сейдозеро"],
+          "place_detail": "shore of Сейдозеро — https://maps.app.goo.gl/Es4vSo8Mgvbz17kk6"
+        },
+        {
+          "n": [[39, 60], [73, 102]],
+          "place_names": ["Ловозеро"],
+          "place_detail": "at Ловозеро (different spot) — https://maps.app.goo.gl/HLbjbFaEJsEEbgef6"
+        },
+        {
+          "n": [[61, 72]],
+          "place_names": ["Сейдозеро"],
+          "place_detail": "another shore of Сейдозеро — https://maps.app.goo.gl/hLPo44aYQyGpwBMa6"
+        },
+        {
+          "n": [108],
+          "place_names": ["Ладожский вокзал", "Санкт-Петербург"],
+          "place_detail": "Ладожский вокзал — https://maps.app.goo.gl/mzKFeFLEyruw794i7"
+        }
+      ]
+    },
+    "Lovozero2012": {
+      "context": "school hiking trip around Озеро Сейдозеро in Ловозёрские Тундры, March 2012 — EXIF dates are unreliable (some say 2011); folder name '2012' is authoritative",
+      "default": {
+        "place_names": ["Сейдозеро", "Ловозёрские Тундры"],
+        "place_detail": "Сейдозеро hiking trip (mountain area around the lake)"
+      },
+      "ranges": [
+        {
+          "n": [[1, 2]],
+          "place_names": ["Оленегорск"],
+          "place_detail": "Оленегорск station — https://maps.app.goo.gl/u1cqybzAMPSQYBb66"
+        },
+        {
+          "n": [[3, 8]],
+          "place_names": ["Ловозеро"],
+          "place_detail": "beginning of route, next to Ловозеро — https://maps.app.goo.gl/gaaqybczQgm5UEAL7"
+        },
+        {
+          "n": [[9, 19], 61],
+          "place_names": ["Ловозёрские Тундры"],
+          "place_detail": "Ловозёрские Тундры (n=61 is a date-glitch from earlier in the trip) — https://maps.app.goo.gl/uFKrbwuDct6oTdFPA"
+        },
+        {
+          "n": [[20, 47], 62],
+          "place_names": ["Сейдозеро"],
+          "place_detail": "shore of Сейдозеро (n=62 is a date-glitch from earlier in the trip) — https://maps.app.goo.gl/LUTB1BbzmnEhXDND9"
+        },
+        {
+          "n": [[48, 55]],
+          "place_names": ["Ловозёрские Тундры"],
+          "place_detail": "between Сейдозеро and Ловозеро — https://maps.app.goo.gl/hSGzYVjdMnocHFya8"
+        },
+        {
+          "n": [[56, 60]],
+          "place_names": ["Ловозеро"],
+          "place_detail": "back at Ловозеро — https://maps.app.goo.gl/gaaqybczQgm5UEAL7"
+        }
+      ]
+    },
+    "Karelia2007": {
+      "context": "school hiking trip in Карелия near Ладожское озеро, November 2007",
+      "default": {
+        "place_names": ["Карелия"],
+        "place_detail": "Карелия near Ладожское озеро (approximate) — https://maps.app.goo.gl/K6XGX7pFfsaNnLgw8",
+        "approximate": true
+      },
+      "ranges": []
+    },
+    "ArcticCircleBeyound": {
+      "context": "school hiking traverse Кольский полуостров: Ловозеро → Ловозёрские Тундры → Хибинские Тундры → Хибины station, March-April 2011",
+      "default": {
+        "place_names": ["Ловозёрские Тундры", "Хибины"],
+        "place_detail": "Кольский полуостров traverse trip"
+      },
+      "ranges": [
+        {
+          "n": [[1, 2]],
+          "place_names": ["Оленегорск"],
+          "place_detail": "Оленегорск station — https://maps.app.goo.gl/tpHS1VF6o3M68eMG8"
+        },
+        {
+          "n": [[3, 10]],
+          "place_names": ["Ловозеро", "Ловозёрские Тундры"],
+          "place_detail": "way next to Ловозёрские Тундры and Ловозеро — https://maps.app.goo.gl/uzRf5caukdVDGoDt9"
+        },
+        {
+          "n": [[11, 19]],
+          "place_names": ["Ловозёрские Тундры"],
+          "place_detail": "Ловозёрские Тундры close to Озеро Светлое — https://maps.app.goo.gl/AiRrgF69CdrcLQ6M9"
+        },
+        {
+          "n": [[20, 31]],
+          "place_names": ["Ловозёрские Тундры"],
+          "place_detail": "top of Ловозёрские Тундры — https://maps.app.goo.gl/5geQDza33cBhvyn27"
+        },
+        {
+          "n": [[32, 43]],
+          "place_names": ["Сейдозеро"],
+          "place_detail": "Озеро Сейдозеро — https://maps.app.goo.gl/5geQDza33cBhvyn27"
+        },
+        {
+          "n": [[44, 51]],
+          "place_names": ["Ловозёрские Тундры"],
+          "place_detail": "Ловозёрские Тундры between Сейдозеро and Умбозеро — https://maps.app.goo.gl/oyDjJa3Yndmu7DcW8"
+        },
+        {
+          "n": [[52, 63]],
+          "place_names": ["Умбозеро"],
+          "place_detail": "Озеро Умбозеро — https://maps.app.goo.gl/VuBmEr18zjsomcAW6"
+        },
+        {
+          "n": [[64, 71]],
+          "place_names": ["Хибины"],
+          "place_detail": "Хибины (Хибинские Тундры) — https://maps.app.goo.gl/yGr9JHek2gsuz16p8"
+        },
+        {
+          "n": [[72, 75]],
+          "place_names": ["Хибины"],
+          "place_detail": "Хибины (Хибинские Тундры), next to rescue base — https://maps.app.goo.gl/et5dWahMYsHzcgDD8"
+        },
+        {
+          "n": [[76, 93]],
+          "place_names": ["Хибины"],
+          "place_detail": "core of Хибины (Хибинские Тундры) — https://maps.app.goo.gl/n7vKgVQ5YmsZcHey8"
+        },
+        {
+          "n": [[94, 98]],
+          "place_names": ["Хибины"],
+          "place_detail": "Хибины station — https://maps.app.goo.gl/2R4UKAymvTCH5zHW6"
+        },
+        {
+          "n": [99],
+          "place_names": ["Полярный Круг"],
+          "place_detail": "Полярный Круг station — https://maps.app.goo.gl/XYwqT6iw8XZH9n5g6"
+        }
+      ]
+    },
+    "6tradmay": {
+      "context": "6th May tradition trip (annual May hiking), May 2010 — mostly at Заходское by Озеро Малое Краснопёрское",
+      "default": {
+        "place_names": ["Заходское"],
+        "place_detail": "Озеро Малое Краснопёрское, near Заходское — https://maps.app.goo.gl/QpcZP1K3v7sSRr596"
+      },
+      "ranges": [
+        {
+          "n": [[1, 8]],
+          "place_names": ["Финляндский вокзал", "Санкт-Петербург"],
+          "place_detail": "Финляндский вокзал — https://maps.app.goo.gl/ocGgB2RZo6EpLkS58"
+        }
+      ]
     }
   }
 }

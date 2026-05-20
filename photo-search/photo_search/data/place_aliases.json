@@ -1,26 +1,36 @@
 {
   "_meta": {
-    "version": 2,
-    "description": "Query-time alias map for filter_by_location. Canonical Cyrillic place names (matching the values baked into manifest_meta.jsonl's place_names field) → list of variants the model might emit or the user might type. Match is case-insensitive substring in either direction (alias-in-query OR query-in-alias). Aliases are lowercased + NFKC-normalized at load time; the source file may use any case.",
+    "version": 3,
+    "description": "Query-time alias map for filter_by_location. Canonical Cyrillic place names → list of variants. Match is case-insensitive substring in either direction (alias-in-query OR query-in-alias). Aliases are lowercased + NFKC-normalized at load time; file may use any case.",
     "policy": "Canonical is Cyrillic where the place is Russian. Latin transliterations + English names + nicknames + parent-region terms all go in the variants list. Keep variants short; the matcher will substring-find them.",
-    "russian_declension": "For Russian nouns that decline, include a stem variant (the form without the case-ending vowel) so any case matches. Example: 'деревн' matches деревня (nom), деревне (prep), деревню (acc), деревни (gen/pl). Stems are SAFE because they're flanked by non-letter boundaries during folder matching (whole-word check) and by direct substring during place_names matching (place_names are stored as canonical, not declined). Avoid stems shorter than 4 chars — they invite false positives."
+    "russian_declension": "For Russian nouns that decline, include a stem variant (the form without the case-ending vowel) so any case matches. Example: 'деревн' matches деревня/деревне/деревню/деревни. Stems are SAFE because folder matching uses whole-word boundaries; place_names matching uses exact equality. Avoid stems shorter than 4 chars to prevent false-positive collisions.",
+    "cross_region": "Parent-region terms (кольский / kola peninsula / arctic circle) appear in the variants of MULTIPLE canonicals — that's how a single 'Кольский полуостров' query expands to every Murmansk canonical (Хибины + Колвица + Ловозеро + …) and matches all their photos."
   },
+
   "Хибины": [
-    "хибины", "хибин",
+    "хибины", "хибин", "хибинская", "хибинский", "хибинские",
+    "хибинские тундры", "хибинских тундр", "хибинской", "хибинским",
     "khibiny", "hibiny", "khibini", "hibini",
-    "кольский", "кольский полуостров", "kola", "kola peninsula"
+    "khibiny tundry", "khibinsky",
+    "кольский", "кольский полуостров", "kola", "kola peninsula",
+    "арктика", "arctic", "arctic circle", "за полярным кругом", "полярный круг"
   ],
   "Заходское": [
     "заходское", "заходск",
-    "zakhodskoye", "zakhodskoe", "zahodskoe"
+    "zakhodskoye", "zakhodskoe", "zahodskoe",
+    "малое краснопёрское", "малое красноперское",
+    "малого краснопёрского", "малого красноперского",
+    "krasnoperskoe", "krasnoperskoye"
   ],
   "Кирилловское": [
     "кирилловское", "кирилловск",
     "kirillovskoye", "kirillovskoe"
   ],
   "Апатиты": [
-    "апатиты", "апатит",
-    "apatity"
+    "апатиты", "апатит", "апатитах",
+    "apatity",
+    "кольский", "кольский полуостров", "kola", "kola peninsula",
+    "арктика", "arctic", "arctic circle"
   ],
   "Ладожский вокзал": [
     "ладожский вокзал", "ладожский", "ладожск",
@@ -67,12 +77,11 @@
     "yanino"
   ],
   "ПУНК": [
-    "пунк", "punk",
-    "petergof spbsu", "petergof campus", "петергоф", "петергоф спбгу",
+    "пунк", "punk", "petergof spbsu", "petergof campus", "петергоф", "петергоф спбгу",
     "мат-мех", "матмех", "матмеха", "матмехе",
     "matmeh", "math-mech", "matmech",
     "физфак", "физфаке", "физфака", "fizfak", "physics faculty",
-    "пм-пу", "пмпу", "пм-пу", "pm-pu", "pmpu",
+    "пм-пу", "пмпу", "pm-pu", "pmpu",
     "химфак", "химфаке", "химфака",
     "khimfak", "himfak", "chemistry faculty"
   ],
@@ -131,5 +140,93 @@
     "dacha",
     "дунай", "дунае", "дуная",
     "dunai", "станция дунай", "dunai station"
+  ],
+
+  "Пермь": [
+    "пермь", "перми", "перму", "пермью", "перм",
+    "perm",
+    "пермский край", "perm krai"
+  ],
+  "Северный Урал": [
+    "северный урал", "северного урала", "северному уралу",
+    "сев урал", "сев. урал",
+    "northern ural", "n ural", "severny ural", "severniy ural",
+    "урал", "ural", "уральские горы", "ural mountains"
+  ],
+  "Хохловка": [
+    "хохловка", "хохловке", "хохловку", "хохлов",
+    "khokhlovka"
+  ],
+  "Березники": [
+    "березники", "березниках", "березник",
+    "berezniki"
+  ],
+  "Соликамск": [
+    "соликамск", "соликамске", "соликамска",
+    "solikamsk"
+  ],
+  "Кваркуш": [
+    "кваркуш", "кваркуше", "кваркуша",
+    "kvarkush"
+  ],
+  "Карелия": [
+    "карелия", "карелии", "карелию", "карел",
+    "karelia", "karelian",
+    "ладожское озеро", "ладожского озера", "lake ladoga"
+  ],
+  "Колвица": [
+    "колвица", "колвице", "колвицу", "колвиц",
+    "колвицкие горы", "колвицких гор",
+    "kolvitsa", "kolvitza",
+    "кольский", "кольский полуостров", "kola", "kola peninsula",
+    "арктика", "arctic", "arctic circle"
+  ],
+  "Кандалакша": [
+    "кандалакша", "кандалакше", "кандалакшу", "кандалакш",
+    "кандалакшский залив", "кандалакшского залива",
+    "kandalaksha",
+    "белое море", "white sea",
+    "кольский", "кольский полуостров", "kola", "kola peninsula",
+    "арктика", "arctic", "arctic circle"
+  ],
+  "Ловозеро": [
+    "ловозеро", "ловозере", "ловозеру", "ловозер",
+    "lovozero",
+    "кольский", "кольский полуостров", "kola", "kola peninsula",
+    "арктика", "arctic", "arctic circle"
+  ],
+  "Сейдозеро": [
+    "сейдозеро", "сейдозере", "сейдозер",
+    "seydozero", "seidozero",
+    "кольский", "кольский полуостров", "kola", "kola peninsula",
+    "арктика", "arctic", "arctic circle"
+  ],
+  "Ловозёрские Тундры": [
+    "ловозёрские тундры", "ловозерские тундры",
+    "ловозёрских тундр", "ловозерских тундр",
+    "ловозёрск", "ловозерск",
+    "lovozersky tundry", "lovozero tundra", "lovozerskie",
+    "светлое", "озеро светлое",
+    "кольский", "кольский полуостров", "kola", "kola peninsula",
+    "арктика", "arctic", "arctic circle"
+  ],
+  "Оленегорск": [
+    "оленегорск", "оленегорске", "оленегорска", "оленегор",
+    "olenegorsk",
+    "кольский", "кольский полуостров", "kola", "kola peninsula",
+    "арктика", "arctic", "arctic circle"
+  ],
+  "Умбозеро": [
+    "умбозеро", "умбозере", "умбозер",
+    "umbozero",
+    "кольский", "кольский полуостров", "kola", "kola peninsula",
+    "арктика", "arctic", "arctic circle"
+  ],
+  "Полярный Круг": [
+    "полярный круг", "полярного круга", "полярном круге",
+    "polyarny krug",
+    "arctic circle", "polar circle", "за полярным кругом",
+    "кольский", "кольский полуостров", "kola", "kola peninsula",
+    "арктика", "arctic"
   ]
 }
