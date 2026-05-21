@@ -675,7 +675,7 @@
         },
         {
           "n": [[11, 19]],
-          "place_names": ["Ловозёрские Тундры"],
+          "place_names": ["Ловозёрские Тундры", "Озеро Светлое"],
           "place_detail": "Ловозёрские Тундры close to Озеро Светлое — https://maps.app.goo.gl/AiRrgF69CdrcLQ6M9"
         },
         {
@@ -908,6 +908,108 @@
           "n": [[92, 100]],
           "place_names": ["Квартал Четырёх Дураков", "Санкт-Петербург"],
           "place_detail": "Красногвардейский район, around Квартал Четырёх Дураков (Ржевка-Пороховые, intersection of Наставников / Передовиков / Ударников / Энтузиастов) — https://maps.app.goo.gl/KfRFu9WZCcLamDH87"
+        }
+      ]
+    },
+    "army": {
+      "context": "СПбГУ Военная Кафедра officer training (военные сборы), summer 2009 — воинская часть near Луга, Ленинградская область, administered as part of СПбГУ curriculum",
+      "default": {
+        "place_names": ["Луга", "СПбГУ"],
+        "place_detail": "воинская часть near Луга — Военная Кафедра officer training (СПбГУ curriculum) — https://maps.app.goo.gl/LptZK7NgoMW1rkhZ8"
+      },
+      "ranges": [
+        {
+          "n": [[1, 2]],
+          "place_names": ["Балтийский вокзал", "Санкт-Петербург", "СПбГУ"],
+          "place_detail": "Балтийский вокзал (departure to СПбГУ military training) — https://maps.app.goo.gl/fgwEcvNau7CcagqXA"
+        }
+      ]
+    },
+    "photoalot": {
+      "context": "mixed dump, October 2003 – August 2006: Saint Petersburg (Блюхера + Невский + Квартал Четырёх Дураков), СПбГУ Мат-Мех at ПУНК (incl. dormitories), Гатчина, Алёховщина, central Moscow",
+      "default": {
+        "place_names": ["Санкт-Петербург"],
+        "place_detail": "mixed Saint Petersburg locations (fall-through)"
+      },
+      "ranges": [
+        {
+          "n": [1, [22, 25], [39, 64], [86, 94], [98, 119]],
+          "place_names": ["Маршала Блюхера"],
+          "place_detail": "проспект Маршала Блюхера (home) — https://maps.app.goo.gl/5GvL2sUaAimooqhK7"
+        },
+        {
+          "n": [[5, 14], [26, 38], [65, 66], [95, 97]],
+          "place_names": ["ПУНК"],
+          "place_detail": "Мат-Мех at ПУНК, СПбГУ — https://maps.app.goo.gl/zM7ScaGcXJiAxPGR9"
+        },
+        {
+          "n": [[78, 85]],
+          "place_names": ["ПУНК"],
+          "place_detail": "ПУНК dormitories, СПбГУ — https://maps.app.goo.gl/F2JUH9JVWTnfLzss7"
+        },
+        {
+          "n": [[2, 4]],
+          "place_names": ["Квартал Четырёх Дураков", "Санкт-Петербург"],
+          "place_detail": "Квартал Четырёх Дураков, Красногвардейский район — https://maps.app.goo.gl/6Mgd5givnMDSLL3k8"
+        },
+        {
+          "n": [[15, 21]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Невский проспект — https://maps.app.goo.gl/EyMtaNnhEYLto7Pz9"
+        },
+        {
+          "n": [[67, 77]],
+          "place_names": ["Гатчина"],
+          "place_detail": "Гатчина (Leningrad Oblast, south of Saint Petersburg) — https://maps.app.goo.gl/Yvp6XekFW6oRD7YF7"
+        },
+        {
+          "n": [120, 123],
+          "place_names": ["Алёховщина"],
+          "place_detail": "Зуёвская 1, Алёховщина (Зуёво) — https://maps.app.goo.gl/iVDfT4A39Hkdtsks6"
+        },
+        {
+          "n": [[121, 122]],
+          "place_names": ["Алёховщина", "Озеро Светлое"],
+          "place_detail": "Озеро Светлое near Алёховщина — https://maps.app.goo.gl/gZpgzMjUaTWzrBUE9"
+        },
+        {
+          "n": [[124, 130]],
+          "place_names": ["Москва"],
+          "place_detail": "central Moscow — https://maps.app.goo.gl/UrEmA1EYX1LVVdU56"
+        }
+      ]
+    },
+    "wedKate": {
+      "context": "wedding of Kate, August 2009 — Saint Petersburg ceremony + Алёховщина/Тервиничи country trip",
+      "default": {
+        "place_names": ["Санкт-Петербург"],
+        "place_detail": "wedding event in Saint Petersburg"
+      },
+      "ranges": [
+        {
+          "n": [[1, 39]],
+          "place_names": ["Маршала Блюхера"],
+          "place_detail": "проспект Маршала Блюхера (home) — https://maps.app.goo.gl/5GvL2sUaAimooqhK7"
+        },
+        {
+          "n": [[40, 45]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Дворец Бракосочетаний (Wedding Palace) — https://maps.app.goo.gl/3WmZfhjqUt2tqEjC9"
+        },
+        {
+          "n": [[46, 64]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "wedding party, central Saint Petersburg — https://maps.app.goo.gl/3Fd9B9ZnC52MjgF2A"
+        },
+        {
+          "n": [[65, 69], [90, 101]],
+          "place_names": ["Алёховщина"],
+          "place_detail": "Зуёвская 1, деревня Зуёво, Алёховщина — https://maps.app.goo.gl/iVDfT4A39Hkdtsks6"
+        },
+        {
+          "n": [[70, 89]],
+          "place_names": ["Тервиничи"],
+          "place_detail": "Покрово-Тервенический Женский Монастырь in Тервиничи (next to Алёховщина) — https://maps.app.goo.gl/wqJo45MEDBVTfMvH9"
         }
       ]
     }
