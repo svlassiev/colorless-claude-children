@@ -334,6 +334,32 @@
     "pulkovo", "pulkovo airport", "spb airport", "saint petersburg airport",
     "led", "led airport", "ulli"
   ],
+  "Горьковская": [
+    "горьковская", "горьковской", "горьковскую", "горьковск",
+    "gorkovskaya", "gorky station", "station gorky"
+  ],
+  "ИТМО": [
+    "итмо", "itmo",
+    "университет итмо", "itmo university",
+    "амсе", "amse", "академия современного программирования",
+    "academy of contemporary programming"
+  ],
+  "Петергоф": [
+    "петергоф", "петергофе", "петергофа", "петергофу",
+    "petergof", "peterhof", "peterhoff",
+    "большой петергофский дворец", "петергофские фонтаны",
+    "фонтаны петергофа", "peterhof palace", "peterhof fountains"
+  ],
+  "Политех": [
+    "политех", "политехе", "политеха", "политехнический",
+    "spbpu", "spbstu", "polytech", "polytechnic", "polytechnical",
+    "санкт-петербургский политехнический университет",
+    "saint petersburg polytechnic university"
+  ],
+  "Площадь Калинина": [
+    "площадь калинина", "площади калинина", "площадью калинина",
+    "ploshchad kalinina", "kalinin square"
+  ],
   "Квартал Четырёх Дураков": [
     "квартал четырёх дураков", "квартал четырех дураков",
     "квартала четырёх дураков", "квартала четырех дураков",

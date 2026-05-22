@@ -979,6 +979,75 @@
         }
       ]
     },
+    "June08": {
+      "context": "mixed late spring / early summer 2008 — Saint Petersburg (Блюхера + СПбГУ + ИТМО + landmarks), Петергоф day trip, дача, школа 239 reunion",
+      "default": {
+        "place_names": ["Санкт-Петербург"],
+        "place_detail": "Saint Petersburg (fall-through for unlabeled photos)"
+      },
+      "ranges": [
+        {
+          "n": [[1, 2]],
+          "place_names": ["Горьковская", "ИТМО", "Санкт-Петербург"],
+          "place_detail": "Горьковская metro — AMSE (Академия современного программирования) at ИТМО — https://maps.app.goo.gl/N7qZoWfh3gDSoXsT9"
+        },
+        {
+          "n": [3],
+          "place_names": ["Площадь Искусств", "Санкт-Петербург"],
+          "place_detail": "Площадь Искусств — https://maps.app.goo.gl/3DC6xToHCv4uJAG5A"
+        },
+        {
+          "n": [[5, 8]],
+          "place_names": ["дача"],
+          "place_detail": "дача at Дунай — https://maps.app.goo.gl/ib3XYsmr4dcqBjXM9"
+        },
+        {
+          "n": [9],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Среднеохтинский проспект — https://maps.app.goo.gl/dprJbfVbDzV7apvp9"
+        },
+        {
+          "n": [[10, 13]],
+          "place_names": ["Ласковый Пляж"],
+          "place_detail": "Ласковый Пляж — https://maps.app.goo.gl/8NUmQbW5UnrM1UoAA"
+        },
+        {
+          "n": [[14, 51]],
+          "place_names": ["Маршала Блюхера"],
+          "place_detail": "проспект Маршала Блюхера (home) — https://maps.app.goo.gl/3VKZdzNFe1XkqMwb9"
+        },
+        {
+          "n": [[52, 56], [69, 79]],
+          "place_names": ["ПУНК"],
+          "place_detail": "Мат-Мех at ПУНК, СПбГУ — https://maps.app.goo.gl/W56rNQedQHPyndheA"
+        },
+        {
+          "n": [[57, 59]],
+          "place_names": ["Петергоф"],
+          "place_detail": "Петергоф — one of the most important images in the gallery — https://maps.app.goo.gl/NYa3At7q22dfUwdY7"
+        },
+        {
+          "n": [60],
+          "place_names": ["ПУНК"],
+          "place_detail": "ПУНК dormitory, СПбГУ — same importance as 57-59 — https://maps.app.goo.gl/pGgYyYmVxvoU2s996"
+        },
+        {
+          "n": [[61, 63]],
+          "place_names": ["Политех", "Санкт-Петербург"],
+          "place_detail": "Политех (СПбПУ) — https://maps.app.goo.gl/zBoJW3MRJAxEAJUR9"
+        },
+        {
+          "n": [[64, 68]],
+          "place_names": ["Площадь Калинина", "Санкт-Петербург"],
+          "place_detail": "Площадь Калинина — https://maps.app.goo.gl/4eSYrh2RvaFPogbN7"
+        },
+        {
+          "n": [[81, 85]],
+          "place_names": ["школа 239", "Санкт-Петербург"],
+          "place_detail": "школа 239 — https://maps.app.goo.gl/6P7bZtaZTs8QNqPo8"
+        }
+      ]
+    },
     "VisitToNastya": {
       "context": "trip to visit Nastya in Prague, November-December 2010",
       "default": {
