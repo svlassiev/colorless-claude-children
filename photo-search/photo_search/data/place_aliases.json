@@ -290,7 +290,7 @@
   "Васильевский Остров": [
     "васильевский остров", "васильевского острова", "васильевском острове",
     "васильевский", "васильевск",
-    "в.о.", "в о", "vo",
+    "в.о.",
     "vasilyevsky island", "vasilevsky ostrov", "vasilievsky",
     "стрелка васильевского острова", "стрелка"
   ],
@@ -331,7 +331,8 @@
   ],
   "Пулково": [
     "пулково", "пулкове", "пулкова",
-    "pulkovo", "pulkovo airport", "spb airport", "saint petersburg airport"
+    "pulkovo", "pulkovo airport", "spb airport", "saint petersburg airport",
+    "led", "led airport", "ulli"
   ],
   "Квартал Четырёх Дураков": [
     "квартал четырёх дураков", "квартал четырех дураков",
