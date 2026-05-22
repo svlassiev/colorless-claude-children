@@ -979,6 +979,166 @@
         }
       ]
     },
+    "rodacha": {
+      "context": "all 60 photos at дача at Дунай (different camera or trip from the main 'dacha' album), June 2007",
+      "default": {
+        "place_names": ["дача"],
+        "place_detail": "дача at Дунай, Ленинградская область — https://maps.app.goo.gl/ib3XYsmr4dcqBjXM9"
+      },
+      "ranges": []
+    },
+    "197": {
+      "context": "school year start at школа 239, 1 September 2007 — afternoon walk through Таврический Сад → Площадь Восстания → Солдатский переулок",
+      "default": {
+        "place_names": ["школа 239", "Санкт-Петербург"],
+        "place_detail": "школа 239 (start of school year)"
+      },
+      "ranges": [
+        {
+          "n": [1],
+          "place_names": ["Маршала Блюхера"],
+          "place_detail": "проспект Маршала Блюхера (home) — https://maps.app.goo.gl/3VKZdzNFe1XkqMwb9"
+        },
+        {
+          "n": [[2, 59]],
+          "place_names": ["школа 239", "Санкт-Петербург"],
+          "place_detail": "inside школа 239 (school-year-start ceremonies) — https://maps.app.goo.gl/ngQZAk2nVERPcHEq9"
+        },
+        {
+          "n": [[60, 64]],
+          "place_names": ["Таврический Сад", "Санкт-Петербург"],
+          "place_detail": "Таврический Сад — https://maps.app.goo.gl/ChpJrehJroo6RV797"
+        },
+        {
+          "n": [[65, 83]],
+          "place_names": ["Площадь Восстания", "Санкт-Петербург"],
+          "place_detail": "Площадь Восстания — https://maps.app.goo.gl/8AP5rbhrVKU4qXm86"
+        },
+        {
+          "n": [[84, 94]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Солдатский переулок — https://maps.app.goo.gl/XHLct2ipfTXkJA6S6"
+        }
+      ]
+    },
+    "canoeing11": {
+      "context": "kayaking trip along Шуя river in Карелия, 2-8 July 2011 — photos taken along the route, up- and downstream of the pinned center point",
+      "default": {
+        "place_names": ["Шуя", "Карелия"],
+        "place_detail": "Шуя river kayaking route, Карелия — photos along the river near https://maps.app.goo.gl/9LheAfLhZuTvcZVM7 (up- and downstream of pin)"
+      },
+      "ranges": [
+        {
+          "n": [73],
+          "place_names": ["Шуя", "Карелия"],
+          "place_detail": "exact pinned spot on Шуя river — https://maps.app.goo.gl/9LheAfLhZuTvcZVM7"
+        }
+      ]
+    },
+    "XXth": {
+      "context": "Sergey's 20th autumn — tour of central Saint Petersburg landmarks, СПбГУ life, weekend trips; September–November 2007",
+      "default": {
+        "place_names": ["Санкт-Петербург"],
+        "place_detail": "central Saint Petersburg (fall-through)"
+      },
+      "ranges": [
+        {
+          "n": [1, 14],
+          "place_names": ["Маршала Блюхера"],
+          "place_detail": "проспект Маршала Блюхера (home) — https://maps.app.goo.gl/3VKZdzNFe1XkqMwb9"
+        },
+        {
+          "n": [2, 3, 92],
+          "place_names": ["школа 239", "Санкт-Петербург"],
+          "place_detail": "школа 239 — https://maps.app.goo.gl/ngQZAk2nVERPcHEq9"
+        },
+        {
+          "n": [4],
+          "place_names": ["СПбГУ", "Санкт-Петербург"],
+          "place_detail": "СПбГУ Мат-Мех at Васильевский остров — https://maps.app.goo.gl/udPmMaa4yE5PTaLR9"
+        },
+        {
+          "n": [[5, 8]],
+          "place_names": ["Алёховщина"],
+          "place_detail": "Алёховщина — https://maps.app.goo.gl/CJQme6JM1yxjZi95A"
+        },
+        {
+          "n": [[9, 10]],
+          "place_names": ["Площадь Искусств", "Санкт-Петербург"],
+          "place_detail": "памятник Пушкину at Площадь Искусств — https://maps.app.goo.gl/jZ9XRyFy9ATJctTNA"
+        },
+        {
+          "n": [[11, 13]],
+          "place_names": ["Смольный Собор", "Санкт-Петербург"],
+          "place_detail": "Смольный Собор — https://maps.app.goo.gl/tc9Yj5JprhL4zEn56"
+        },
+        {
+          "n": [15, [40, 43]],
+          "place_names": ["Дворцовая Площадь", "Санкт-Петербург"],
+          "place_detail": "Дворцовая Площадь — https://maps.app.goo.gl/6nV8Da4WdsXXvzXm7"
+        },
+        {
+          "n": [[16, 19]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Сампсониевский Сад — https://maps.app.goo.gl/jSRhvbwMKBgDJrvQ9"
+        },
+        {
+          "n": [[20, 21]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Свердловская Набережная — https://maps.app.goo.gl/MHH2fBA3hshCZVRX7"
+        },
+        {
+          "n": [[22, 23]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Смоленский Мост — https://maps.app.goo.gl/tzqUeUZQb23jSkd7A"
+        },
+        {
+          "n": [[24, 27]],
+          "place_names": ["Васильевский Остров", "Санкт-Петербург"],
+          "place_detail": "Васильевский Остров — https://maps.app.goo.gl/dnHnPMYrTEL8zn27A"
+        },
+        {
+          "n": [28, [59, 66], [81, 83]],
+          "place_names": ["Петроградка", "Санкт-Петербург"],
+          "place_detail": "Петроградка (Петроградский район) — https://maps.app.goo.gl/bUGLwQK7mWTgEf4L7"
+        },
+        {
+          "n": [[29, 33]],
+          "place_names": ["Санкт-Петербург"],
+          "place_detail": "Румянцевский Сад — https://maps.app.goo.gl/JnCN4YsLMoKBPReD8"
+        },
+        {
+          "n": [[34, 39], [48, 58], [70, 74]],
+          "place_names": ["Главное Здание", "СПбГУ", "Санкт-Петербург"],
+          "place_detail": "Главное Здание СПбГУ — https://maps.app.goo.gl/jZiAjUdVTcybYjwV7"
+        },
+        {
+          "n": [[44, 47], 68],
+          "place_names": ["Финляндский вокзал", "Санкт-Петербург"],
+          "place_detail": "Финляндский вокзал — https://maps.app.goo.gl/p6gyCvG65AfDodhSA"
+        },
+        {
+          "n": [[76, 77]],
+          "place_names": ["Марсово Поле", "Санкт-Петербург"],
+          "place_detail": "Марсово Поле — https://maps.app.goo.gl/551HyBXNszoiNtuT6"
+        },
+        {
+          "n": [[84, 89]],
+          "place_names": ["Карелия"],
+          "place_detail": "Ладожское Озеро, Карелия — https://maps.app.goo.gl/qUhWe2bQ19BZ8GDi7"
+        },
+        {
+          "n": [[90, 91]],
+          "place_names": ["Нева", "Санкт-Петербург"],
+          "place_detail": "Нева river — https://maps.app.goo.gl/kdTN3353ee477iEP9"
+        },
+        {
+          "n": [[92, 100]],
+          "place_names": ["Таврический Сад", "Санкт-Петербург"],
+          "place_detail": "Таврический Сад — https://maps.app.goo.gl/xh5rxRGjx5hDeBcf6"
+        }
+      ]
+    },
     "wedKate": {
       "context": "wedding of Kate, August 2009 — Saint Petersburg ceremony + Алёховщина/Тервиничи country trip",
       "default": {
