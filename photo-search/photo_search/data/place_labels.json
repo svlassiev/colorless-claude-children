@@ -979,6 +979,38 @@
         }
       ]
     },
+    "VisitToNastya": {
+      "context": "trip to visit Nastya in Prague, November-December 2010",
+      "default": {
+        "place_names": ["Прага"],
+        "place_detail": "Prague"
+      },
+      "ranges": [
+        {
+          "n": [1],
+          "place_names": ["Маршала Блюхера"],
+          "place_detail": "проспект Маршала Блюхера (home, before departure) — https://maps.app.goo.gl/3VKZdzNFe1XkqMwb9"
+        },
+        {
+          "n": [[2, 62]],
+          "place_names": ["Прага"],
+          "place_detail": "Прага (Prague) — https://maps.app.goo.gl/QdbZYTYPL843ewmo8"
+        },
+        {
+          "n": [63],
+          "place_names": ["Пулково", "Санкт-Петербург"],
+          "place_detail": "Пулково airport (arrival) — https://maps.app.goo.gl/Mg4eCGCFFsV9G8b26"
+        }
+      ]
+    },
+    "18062005": {
+      "context": "students party at Блюхера, 18-19 June 2005 — folder name encodes the date (18.06.2005)",
+      "default": {
+        "place_names": ["Маршала Блюхера"],
+        "place_detail": "проспект Маршала Блюхера (home) — students party — https://maps.app.goo.gl/3VKZdzNFe1XkqMwb9"
+      },
+      "ranges": []
+    },
     "rodacha": {
       "context": "all 60 photos at дача at Дунай (different camera or trip from the main 'dacha' album), June 2007",
       "default": {
