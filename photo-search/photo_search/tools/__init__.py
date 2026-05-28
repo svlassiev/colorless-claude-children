@@ -15,7 +15,7 @@ dispatches return values back through `TOOL_REGISTRY[name]`.
 
 from __future__ import annotations
 
-from photo_search.tools import filter_by_location
+from photo_search.tools import filter_by_date_range, filter_by_location
 from photo_search.tools.base import DateFilter, Filters, LocationFilter
 
 TOOL_REGISTRY = {
@@ -24,7 +24,11 @@ TOOL_REGISTRY = {
         filter_by_location.Args,
         filter_by_location.execute,
     ),
-    # "filter_by_date_range": (...) — add when implementing the date tool
+    "filter_by_date_range": (
+        filter_by_date_range.DECLARATION,
+        filter_by_date_range.Args,
+        filter_by_date_range.execute,
+    ),
 }
 
 ALL_DECLARATIONS = [entry[0] for entry in TOOL_REGISTRY.values()]

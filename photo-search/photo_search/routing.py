@@ -30,7 +30,13 @@ from google import genai
 from google.genai import types
 from pydantic import ValidationError
 
-from photo_search.tools import ALL_DECLARATIONS, TOOL_REGISTRY, Filters, LocationFilter
+from photo_search.tools import (
+    ALL_DECLARATIONS,
+    TOOL_REGISTRY,
+    DateFilter,
+    Filters,
+    LocationFilter,
+)
 from search_common.generation import tool_call
 
 ROUTING_MODEL = "gemini-2.5-flash"
@@ -141,8 +147,8 @@ async def route_query(
         if raw.name == "filter_by_location":
             if isinstance(result, LocationFilter):
                 filters = replace(filters, location=result)
-        # elif raw.name == "filter_by_date_range":
-        #     if isinstance(result, DateFilter):
-        #         filters = replace(filters, date=result)
+        elif raw.name == "filter_by_date_range":
+            if isinstance(result, DateFilter):
+                filters = replace(filters, date=result)
 
     return filters
