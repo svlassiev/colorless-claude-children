@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from search_common.settings import settings
+
 CORPUS_ROOT = Path.home() / "projects" / "log"
 CACHE_ROOT = Path.home() / ".cache" / "log-search"
 
@@ -10,13 +12,18 @@ META_PATH = CACHE_ROOT / "chunks_meta.jsonl"
 # don't re-bill Gemini Pro for unchanged images.
 IMAGE_CAPTION_CACHE = CACHE_ROOT / "image_caption_cache.jsonl"
 
-PROJECT = "thematic-acumen-225120"
-LOCATION = "europe-west4"
-EMBED_MODEL = "text-embedding-005"
-GENERATE_MODEL = "gemini-2.5-pro"
+PROJECT = settings.project
+LOCATION = settings.location  # regional endpoint for embeddings + generation
+# Model selection centralized in search_common.settings (EXPLORE_* env vars).
+# Defaults match the previous hardcoded values. Note: log-search uses one
+# client for both embed_content and generate_content, so generation stays on
+# the regional LOCATION; a "global"-only generate model would need that client
+# split (see settings.gemini_location).
+EMBED_MODEL = settings.log_embed_model
+GENERATE_MODEL = settings.generate_model
 # Image captions go through Pro (not Flash) so they're verbose enough to
 # act as load-bearing chunk content for retrieval — see captioner.py.
-CAPTION_MODEL = "gemini-2.5-pro"
+CAPTION_MODEL = settings.log_caption_model
 EMBED_DIM = 768
 
 MAX_K = 20  # hard cap on retrieval depth — enforced in server / CLI / retriever

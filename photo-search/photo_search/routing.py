@@ -30,6 +30,7 @@ from google import genai
 from google.genai import types
 from pydantic import ValidationError
 
+from photo_search.paths import ROUTING_MODEL
 from photo_search.tools import (
     ALL_DECLARATIONS,
     TOOL_REGISTRY,
@@ -39,8 +40,6 @@ from photo_search.tools import (
     ProximityFilter,
 )
 from search_common.generation import tool_call
-
-ROUTING_MODEL = "gemini-2.5-flash"
 # 8 s wasn't enough for the cold first call after server startup — the
 # initial Vertex auth handshake + first-token latency can land in the
 # 8-10 s range. 15 s keeps the warm-case latency invisible (Flash p50

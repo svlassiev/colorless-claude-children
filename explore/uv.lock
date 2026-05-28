@@ -793,6 +793,7 @@ dependencies = [
     { name = "numpy" },
     { name = "pydantic" },
     { name = "pytest" },
+    { name = "search-common" },
     { name = "uvicorn" },
 ]
 
@@ -804,6 +805,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=2.4.4" },
     { name = "pydantic", specifier = ">=2.13.3" },
     { name = "pytest", specifier = ">=9.0.3" },
+    { name = "search-common", editable = "../search-common" },
     { name = "uvicorn", specifier = ">=0.46.0" },
 ]
 

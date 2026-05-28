@@ -1,13 +1,21 @@
 from pathlib import Path
 
-PROJECT = "thematic-acumen-225120"
-LOCATION = "europe-west4"
+from search_common.settings import settings
+
+PROJECT = settings.project
+LOCATION = settings.location  # regional endpoint for embeddings + project init
 BUCKET = "colorless-days-children"
 
-CAPTION_MODEL = "gemini-2.5-flash"
-EMBED_MODEL = "multimodalembedding@001"
-GENERATE_MODEL = "gemini-2.5-pro"
-RERANK_MODEL = "gemini-2.5-flash"
+# Model selection is centralized in search_common.settings, driven by
+# EXPLORE_*_MODEL env vars. Defaults match the previous hardcoded values, so
+# behavior is unchanged until an env var overrides one. (Endpoint stays
+# LOCATION; moving generation to a "global"-only model also needs settings.
+# gemini_location + a regional embed client — see that field's note.)
+CAPTION_MODEL = settings.photo_caption_model
+EMBED_MODEL = settings.photo_embed_model
+GENERATE_MODEL = settings.generate_model
+RERANK_MODEL = settings.rerank_model
+ROUTING_MODEL = settings.routing_model
 EMBED_DIM = 1408
 
 MAX_K = 20  # hard cap on retrieval depth — enforced in server / CLI / retriever
