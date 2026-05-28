@@ -25,7 +25,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from photo_search.paths import INDEX_PATH, MAX_K, META_PATH
-from photo_search.tools.base import DateFilter, Filters, LocationFilter
+from photo_search.tools.base import DateFilter, Filters, LocationFilter, ProximityFilter
 
 _YEAR_RE = re.compile(r"\b(19\d{2}|20\d{2})\b")
 _SEASON_YEAR_RE = re.compile(
@@ -146,6 +146,15 @@ def _location_mask(metas: list[dict], lf: LocationFilter) -> np.ndarray:
     return np.array([m["sha"] in lf.matched_shas for m in metas], dtype=bool)
 
 
+def _proximity_mask(metas: list[dict], pf: ProximityFilter) -> np.ndarray:
+    """Boolean mask: True only for shas within the proximity filter's set.
+
+    Distance is precomputed by the tool's executor (haversine against the
+    place's pins); here we just AND-mask by the resulting sha membership,
+    exactly like the location filter."""
+    return np.array([m["sha"] in pf.matched_shas for m in metas], dtype=bool)
+
+
 def search(
     query_vec: np.ndarray,
     vectors: np.ndarray,
@@ -169,6 +178,8 @@ def search(
             mask &= _date_mask(metas, filters.date)
         if filters.location is not None:
             mask &= _location_mask(metas, filters.location)
+        if filters.proximity is not None:
+            mask &= _proximity_mask(metas, filters.proximity)
         sims = np.where(mask, sims, -np.inf)
 
     # Backfill dedup: pull more candidates than k, dedup by content sha,

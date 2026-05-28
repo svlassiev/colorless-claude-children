@@ -27,7 +27,7 @@
         {
           "n": [[19, 21]],
           "place_names": ["Ладожский вокзал", "Санкт-Петербург"],
-          "place_detail": "Ладожский вокзал (Ladoga railway station)"
+          "place_detail": "Ладожский вокзал (Ladoga railway station) — https://maps.app.goo.gl/sqmJ7PUdjz3Xsz5j6"
         },
         {
           "n": [[22, 24]],
@@ -37,13 +37,13 @@
         {
           "n": [[25, 42], 137, 138],
           "place_names": ["Апатиты"],
-          "place_detail": "around Апатиты, Murmansk Oblast",
+          "place_detail": "around Апатиты, Murmansk Oblast — https://maps.app.goo.gl/SKcZauwwZojdJjF36",
           "approximate": true
         },
         {
           "n": [43],
           "place_names": ["Хибины"],
-          "place_detail": "next to Хибины station, Murmansk Oblast",
+          "place_detail": "next to Хибины station, Murmansk Oblast — https://maps.app.goo.gl/m7hwnzcG7A2Kz8aG7",
           "approximate": true
         }
       ]
@@ -59,28 +59,28 @@
         {
           "n": [61],
           "place_names": ["Санкт-Петербург"],
-          "place_detail": "Ковенский переулок 5"
+          "place_detail": "Ковенский переулок 5 — https://maps.app.goo.gl/C65AesEBATQbpSd98"
         },
         {
           "n": [[62, 66]],
           "place_names": ["Санкт-Петербург"],
-          "place_detail": "former Zenit store, corner of Кирочная улица × Суворовский проспект"
+          "place_detail": "former Zenit store, corner of Кирочная улица × Суворовский проспект — https://maps.app.goo.gl/d1Y9ak8yd5BzSpLbA"
         },
         {
           "n": [[67, 68]],
           "place_names": ["Санкт-Петербург"],
-          "place_detail": "Кирочная улица next to Таврический Сад",
+          "place_detail": "Кирочная улица next to Таврический Сад — https://maps.app.goo.gl/NDaVafoRn2MHBUpi6",
           "approximate": true
         },
         {
           "n": [[69, 75]],
           "place_names": ["Ладожский вокзал", "Санкт-Петербург"],
-          "place_detail": "Ладожский вокзал (Ladoga railway station)"
+          "place_detail": "Ладожский вокзал (Ladoga railway station) — https://maps.app.goo.gl/hW6scu2raMT219Br9"
         },
         {
           "n": [[76, 83]],
           "place_names": ["Квартал Четырёх Дураков", "Санкт-Петербург"],
-          "place_detail": "around 'Квартал Четырёх Дураков'",
+          "place_detail": "around 'Квартал Четырёх Дураков' — https://maps.app.goo.gl/GYGpHv66Ctt5YrQv9",
           "approximate": true
         }
       ]
@@ -89,14 +89,14 @@
       "context": "May 2009 spring tradition trip (5th iteration)",
       "default": {
         "place_names": ["Заходское", "Кирилловское"],
-        "place_detail": "Ленинградская область, NW of Saint Petersburg — lake area between Заходское and Кирилловское stations",
+        "place_detail": "Ленинградская область, NW of Saint Petersburg — lake area between Заходское and Кирилловское stations — https://maps.app.goo.gl/u4xyjbcmmoawiNH46 — https://maps.app.goo.gl/YdNXP99Jr2z6vMG69",
         "approximate": true
       },
       "ranges": [
         {
           "n": [[1, 2]],
           "place_names": ["Финляндский вокзал", "Санкт-Петербург"],
-          "place_detail": "Финляндский вокзал (Finland railway station)"
+          "place_detail": "Финляндский вокзал (Finland railway station) — https://maps.app.goo.gl/gJJ2RWErfj8S3oBu9"
         }
       ]
     },
@@ -104,13 +104,13 @@
       "context": "New Year 2008→2009 celebration",
       "default": {
         "place_names": ["Маршала Блюхера"],
-        "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home)"
+        "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home) — https://maps.app.goo.gl/aG4Th4QYXYH2dCgu8"
       },
       "ranges": [
         {
           "n": [43],
           "place_names": ["Маршала Блюхера"],
-          "place_detail": "проспект Маршала Блюхера, Saint Petersburg (different spot — outdoors)"
+          "place_detail": "проспект Маршала Блюхера, Saint Petersburg (different spot — outdoors) — https://maps.app.goo.gl/zSaKH5boBccsMtKi7"
         }
       ]
     },
@@ -118,13 +118,13 @@
       "context": "school hiking trip, July 2004 (Saint Petersburg → Moscow → Trans-Siberian → Северобайкальск → 110km hiking route)",
       "default": {
         "place_names": ["Байкал"],
-        "place_detail": "110km hiking route NW of Северобайкальск, border of Бурятия / Иркутская область"
+        "place_detail": "110km hiking route NW of Северобайкальск, border of Бурятия / Иркутская область — https://maps.app.goo.gl/3Z6S1HXYZuGEwHfU6"
       },
       "ranges": [
         {
           "n": [[1, 4]],
           "place_names": ["Московский вокзал", "Санкт-Петербург"],
-          "place_detail": "Московский вокзал (Moscow railway station)"
+          "place_detail": "Московский вокзал (Moscow railway station) — https://maps.app.goo.gl/ojgVPhFGEAbCshJk8"
         },
         {
           "n": [[5, 8]],
@@ -138,30 +138,33 @@
         },
         {
           "n": [11, 12],
-          "place_names": ["Екатеринбург"]
+          "place_names": ["Екатеринбург"],
+          "place_detail": "Екатеринбург — https://maps.app.goo.gl/gRG5YmXJBMNi1nCC8"
         },
         {
           "n": [13],
-          "place_names": ["Омск"]
+          "place_names": ["Омск"],
+          "place_detail": "Омск — https://maps.app.goo.gl/sB3rwdsBjpAdkVMp9"
         },
         {
           "n": [16],
-          "place_names": ["Северобайкальск"]
+          "place_names": ["Северобайкальск"],
+          "place_detail": "Северобайкальск — https://maps.app.goo.gl/CWsC8tC4D1yXRjweA"
         },
         {
           "n": [23, 24, 25, 26, 27, 32, 35, 36],
           "place_names": ["Гоуджекит", "Байкал"],
-          "place_detail": "Lake Baikal shore at Гоуджекит"
+          "place_detail": "Lake Baikal shore at Гоуджекит — https://maps.app.goo.gl/YmS7i5SFjV2HZjbm8"
         },
         {
           "n": [[17, 22], [28, 31], [33, 34], 37],
           "place_names": ["Гоуджекит"],
-          "place_detail": "mineral waters / hot springs at Гоуджекит"
+          "place_detail": "mineral waters / hot springs at Гоуджекит — https://maps.app.goo.gl/rrvX2za5p7USbTHN9"
         },
         {
           "n": [38],
           "place_names": ["Байкал"],
-          "place_detail": "Lake Baikal"
+          "place_detail": "Lake Baikal — https://maps.app.goo.gl/YmS7i5SFjV2HZjbm8"
         }
       ]
     },
@@ -175,7 +178,7 @@
         {
           "n": [1, 2, 3, 7, 8, 9],
           "place_names": ["Алёховщина"],
-          "place_detail": "Зуёвская улица 1, Зуёво (Leningrad Oblast)"
+          "place_detail": "Зуёвская улица 1, Зуёво (Leningrad Oblast) — https://maps.app.goo.gl/DBz7z6376yUPs5sG8"
         },
         {
           "n": [[4, 6]],
@@ -185,12 +188,12 @@
         {
           "n": [[10, 11]],
           "place_names": ["Алёховщина"],
-          "place_detail": "центр Алёховщины"
+          "place_detail": "центр Алёховщины — https://maps.app.goo.gl/ohcc4jxSLo3szGPq7"
         },
         {
           "n": [[12, 17]],
           "place_names": ["Санкт-Петербург"],
-          "place_detail": "Василеостровская metro exit"
+          "place_detail": "Василеостровская metro exit — https://maps.app.goo.gl/2x1Wt6tFBQFTo6fTA"
         },
         {
           "n": [18],
@@ -200,17 +203,17 @@
         {
           "n": [19],
           "place_names": ["Санкт-Петербург"],
-          "place_detail": "Смоленский мост"
+          "place_detail": "Смоленский мост — https://maps.app.goo.gl/b8UKX1LiBi1TMDtNA"
         },
         {
           "n": [[20, 25]],
           "place_names": ["СПбГУ", "Санкт-Петербург"],
-          "place_detail": "старое здание ВШМ СПбГУ"
+          "place_detail": "старое здание ВШМ СПбГУ — https://maps.app.goo.gl/pFt2PiS92rnS1S4s7"
         },
         {
           "n": [[26, 31]],
           "place_names": ["Санкт-Петербург"],
-          "place_detail": "Vasilyevsky Island area",
+          "place_detail": "Vasilyevsky Island area — https://maps.app.goo.gl/ACGdHwGy9tKz3XLc7",
           "approximate": true
         }
       ]
@@ -219,34 +222,39 @@
       "context": "dedicated to one person; many photos duplicate from other albums (Saint Petersburg + intersections)",
       "ranges": [
         {
+          "n": [7],
+          "place_names": ["Купчино", "Санкт-Петербург"],
+          "place_detail": "Купчино https://maps.app.goo.gl/DS4xg5QN1V1kLdYZA"
+        },
+        {
           "n": [75, [79, 86], 224],
           "place_names": ["Купчино", "Санкт-Петербург"],
-          "place_detail": "Купчино"
+          "place_detail": "Купчино — https://maps.app.goo.gl/U1svsW12XtB3yjbj6"
         },
         {
           "n": [[87, 99], [216, 223], [225, 228]],
           "place_names": ["Маршала Блюхера"],
-          "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home)"
+          "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home) — https://maps.app.goo.gl/GjekbbvrEQJ5CJ116 — https://maps.app.goo.gl/XsJLzRRNiaoiX5Ur7"
         },
         {
           "n": [[100, 102]],
           "place_names": ["Санкт-Петербург"],
-          "place_detail": "Невский проспект near Площадь Александра Невского"
+          "place_detail": "Невский проспект near Площадь Александра Невского — https://maps.app.goo.gl/xoghdTPYY6JB5z787"
         },
         {
           "n": [[213, 215]],
           "place_names": ["ПУНК"],
-          "place_detail": "Мат-Мех"
+          "place_detail": "Мат-Мех — https://maps.app.goo.gl/9TZtVf9dxFK8kB3MA"
         },
         {
           "n": [182, [188, 193]],
           "place_names": ["Яппиля"],
-          "place_detail": "Яппиля station, Ленинградская область"
+          "place_detail": "Яппиля station, Ленинградская область — https://maps.app.goo.gl/mYajT82GUwzxBpAA9"
         },
         {
           "n": [183, [185, 187]],
           "place_names": ["Яппиля"],
-          "place_detail": "Яппиля, Ленинградская область (off-station)",
+          "place_detail": "Яппиля, Ленинградская область (off-station) — https://maps.app.goo.gl/1wg6kKsyR5AaMuB3A",
           "approximate": true
         }
       ]
@@ -262,7 +270,7 @@
         {
           "n": [70],
           "place_names": ["Москва"],
-          "place_detail": "Нулевой Километр (Zero Kilometer), next to the Kremlin"
+          "place_detail": "Нулевой Километр (Zero Kilometer), next to the Kremlin — https://maps.app.goo.gl/PY4PVnq1Y3qoJ3SG8"
         }
       ]
     },
@@ -277,12 +285,12 @@
         {
           "n": [234, 250, 251, 297, 298],
           "place_names": ["Алёховщина"],
-          "place_detail": "Зуёвская улица 3, Зуёво (Leningrad Oblast)"
+          "place_detail": "Зуёвская улица 3, Зуёво (Leningrad Oblast) — https://maps.app.goo.gl/DE83w5mWEHxiqakC8"
         },
         {
           "n": [[123, 233], [235, 249], [252, 296], [299, 315], [318, 320]],
           "place_names": ["Алёховщина"],
-          "place_detail": "Зуёвская улица 1, Зуёво (Leningrad Oblast)"
+          "place_detail": "Зуёвская улица 1, Зуёво (Leningrad Oblast) — https://maps.app.goo.gl/ZTwxU6HBvA9f1rGq6 — https://maps.app.goo.gl/x7Qn5k2bJNnbncbw8"
         }
       ]
     },
@@ -290,13 +298,13 @@
       "context": "birthday party celebration around Блюхера, June 2007",
       "default": {
         "place_names": ["Маршала Блюхера"],
-        "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home area)"
+        "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home area) — https://maps.app.goo.gl/wUS3FJuWYGtkc6Wv6"
       },
       "ranges": [
         {
           "n": [[5, 54]],
           "place_names": ["Полюстрово", "Санкт-Петербург"],
-          "place_detail": "Полюстрово"
+          "place_detail": "Полюстрово — https://maps.app.goo.gl/B9qNDPhUDs76DHBP8"
         }
       ]
     },
@@ -306,67 +314,68 @@
         {
           "n": [[1, 5]],
           "place_names": ["Алёховщина"],
-          "place_detail": "Зуёво (Leningrad Oblast)"
+          "place_detail": "Зуёво (Leningrad Oblast) — https://maps.app.goo.gl/qFMNdLSCh4C4LHwj7"
         },
         {
           "n": [[6, 17]],
           "place_names": ["Парголово", "Санкт-Петербург"],
-          "place_detail": "Парголово (ski day)"
+          "place_detail": "Парголово (ski day) — https://maps.app.goo.gl/aKD7gR3us9Yxh7g4A"
         },
         {
           "n": [[18, 19]],
           "place_names": ["школа 239", "Санкт-Петербург"],
-          "place_detail": "школа 239"
+          "place_detail": "школа 239 — https://maps.app.goo.gl/vktrtq4eR1YyFnGT6"
         },
         {
           "n": [[20, 25]],
           "place_names": ["Полюстрово", "Санкт-Петербург"],
-          "place_detail": "Красногвардейский район, Полюстрово"
+          "place_detail": "Красногвардейский район, Полюстрово — https://maps.app.goo.gl/qmtD9xXFGR4Dw7g67"
         },
         {
           "n": [[26, 27]],
           "place_names": ["ПУНК"],
-          "place_detail": "Физфак"
+          "place_detail": "Физфак — https://maps.app.goo.gl/F7PXZWGgtiMa6m6c8"
         },
         {
           "n": [[28, 29]],
           "place_names": ["ПУНК"],
-          "place_detail": "Мат-Мех"
+          "place_detail": "Мат-Мех — https://maps.app.goo.gl/TGr73gsvAgyZKbtX9"
         },
         {
           "n": [30],
           "place_names": ["Маршала Блюхера"],
-          "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home)"
+          "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home) — https://maps.app.goo.gl/XsJLzRRNiaoiX5Ur7"
         },
         {
           "n": [[31, 45]],
           "place_names": ["Санкт-Петербург"],
-          "place_detail": "Васильевский остров around Приморская metro",
+          "place_detail": "Васильевский остров around Приморская metro — https://maps.app.goo.gl/J9BTgWipFR956mYE8",
           "approximate": true
         },
         {
           "n": [[46, 61]],
           "place_names": ["Санкт-Петербург"],
-          "place_detail": "Комендантский проспект"
+          "place_detail": "Комендантский проспект — https://maps.app.goo.gl/yR9bYBMgHNjtN8BL8"
         },
         {
           "n": [[62, 66]],
           "place_names": ["ПУНК"],
-          "place_detail": "общежития, турнир по преферансу"
+          "place_detail": "общежития, турнир по преферансу — https://maps.app.goo.gl/bY7ibwhDoGw1EfGj9"
         },
         {
           "n": [[67, 81]],
           "place_names": ["Главное Здание", "СПбГУ"],
-          "place_detail": "бассейн СПбГУ"
+          "place_detail": "бассейн СПбГУ — https://maps.app.goo.gl/zGoxvkayYM8tLZM37"
         },
         {
           "n": [[82, 89]],
-          "place_names": ["ПУНК"]
+          "place_names": ["ПУНК"],
+          "place_detail": "MarchApril10 — https://maps.app.goo.gl/AQ4prBfFQyGkCDtR6"
         },
         {
           "n": [90],
           "place_names": ["Санкт-Петербург"],
-          "place_detail": "Южное Кладбище (South Cemetery)"
+          "place_detail": "Южное Кладбище (South Cemetery) — https://maps.app.goo.gl/Mbvjts6yj8wGyrVw8"
         }
       ]
     },
@@ -374,7 +383,7 @@
       "context": "birthday celebration, June 5, 2010; one-event album",
       "default": {
         "place_names": ["Заходское"],
-        "place_detail": "lake in Finland-direction Ленинградская область, ~near Заходское (exact station unknown)",
+        "place_detail": "lake in Finland-direction Ленинградская область, ~near Заходское (exact station unknown) — https://maps.app.goo.gl/xuHnhCG7BEfDS32JA",
         "approximate": true
       },
       "ranges": []
@@ -385,13 +394,13 @@
         {
           "n": [[1, 22]],
           "place_names": ["школа 239", "Санкт-Петербург"],
-          "place_detail": "next to школа 239",
+          "place_detail": "next to школа 239 — https://maps.app.goo.gl/oeFvTeDxsLuLA4uo7",
           "approximate": true
         },
         {
           "n": [[23, 77]],
           "place_names": ["Санкт-Петербург"],
-          "place_detail": "Сенная площадь (Sennaya Square)"
+          "place_detail": "Сенная площадь (Sennaya Square) — https://maps.app.goo.gl/vocKhM7JPRaj3oYk7"
         }
       ]
     },
@@ -399,7 +408,7 @@
       "context": "student's party, 2006-09-24",
       "default": {
         "place_names": ["Маршала Блюхера"],
-        "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home)"
+        "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home) — https://maps.app.goo.gl/XsJLzRRNiaoiX5Ur7"
       },
       "ranges": []
     },
@@ -407,7 +416,7 @@
       "context": "all 65 pictures are at the family dacha near Дунай station",
       "default": {
         "place_names": ["дача"],
-        "place_detail": "дача at Дунай, Ленинградская область"
+        "place_detail": "дача at Дунай, Ленинградская область — https://maps.app.goo.gl/6sGgzfE2MQxjV4RcA"
       },
       "ranges": []
     },
@@ -417,7 +426,7 @@
         {
           "n": [[24, 28]],
           "place_names": ["Санкт-Петербург"],
-          "place_detail": "central Saint Petersburg, possibly канал Грибоедова",
+          "place_detail": "central Saint Petersburg, possibly канал Грибоедова — https://maps.app.goo.gl/tSL5VkH6JDgjoiHb9",
           "approximate": true
         }
       ]
@@ -428,22 +437,22 @@
         {
           "n": [[1, 2]],
           "place_names": ["Маршала Блюхера"],
-          "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home)"
+          "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home) — https://maps.app.goo.gl/XsJLzRRNiaoiX5Ur7"
         },
         {
           "n": [[3, 4]],
           "place_names": ["Янино"],
-          "place_detail": "Янино, Saint Petersburg area"
+          "place_detail": "Янино, Saint Petersburg area — https://maps.app.goo.gl/d6Tk7q4wnbPXRxcx9"
         },
         {
           "n": [[5, 6]],
           "place_names": ["ПУНК"],
-          "place_detail": "Мат-Мех"
+          "place_detail": "Мат-Мех — https://maps.app.goo.gl/vXaYBVEaQ5Z1EspG9"
         },
         {
           "n": [[13, 22]],
           "place_names": ["Купчино", "Санкт-Петербург"],
-          "place_detail": "Купчино (birthday party)"
+          "place_detail": "Купчино (birthday party) — https://maps.app.goo.gl/fQCChZkZVpR4wDDSA"
         }
       ]
     },
@@ -451,18 +460,18 @@
       "context": "third May hiking trip, end of April / early May 2007; Финляндский вокзал → Заходское and back; main camp at Заходское",
       "default": {
         "place_names": ["Заходское"],
-        "place_detail": "Заходское, Ленинградская область"
+        "place_detail": "Заходское, Ленинградская область — https://maps.app.goo.gl/8vhFHMfbuCFwCcv76"
       },
       "ranges": [
         {
           "n": [[1, 3]],
           "place_names": ["Маршала Блюхера"],
-          "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home)"
+          "place_detail": "проспект Маршала Блюхера, Saint Petersburg (home) — https://maps.app.goo.gl/XsJLzRRNiaoiX5Ur7"
         },
         {
           "n": [[4, 6]],
           "place_names": ["Финляндский вокзал", "Санкт-Петербург"],
-          "place_detail": "Финляндский вокзал (Finland railway station)"
+          "place_detail": "Финляндский вокзал (Finland railway station) — https://maps.app.goo.gl/RNu3ckEivtrzGbzB6"
         }
       ]
     },
@@ -470,7 +479,7 @@
       "context": "Saint Petersburg → Northern Ural mountains (border of Perm Krai) and back; June-July 2008 — school 239 graduate hiking expedition with stopovers in Perm, Хохловка, Березники/Соликамск, and Екатеринбург",
       "default": {
         "place_names": ["Северный Урал"],
-        "place_detail": "Northern Ural hiking route (border of Perm Krai)"
+        "place_detail": "Northern Ural hiking route (border of Perm Krai) — https://maps.app.goo.gl/EGj2gsgwaUUwgRqS8"
       },
       "ranges": [
         {
@@ -516,7 +525,7 @@
         {
           "n": [[96, 119]],
           "place_names": ["Екатеринбург"],
-          "place_detail": "Екатеринбург"
+          "place_detail": "Екатеринбург — https://maps.app.goo.gl/tiduG4vf7w3gnpTRA"
         },
         {
           "n": [[275, 286]],
@@ -568,7 +577,7 @@
       "context": "school hiking trip in Ловозёрские Тундры mountains, around lakes Ловозеро and Сейдозеро, March 2010; folder suffix '10' = 2010",
       "default": {
         "place_names": ["Ловозёрские Тундры"],
-        "place_detail": "Ловозёрские Тундры (mountain region around lakes Ловозеро and Сейдозеро) — https://maps.app.goo.gl/AwLX7vrYcZW1j2nG9"
+        "place_detail": "Ловозёрские Тундры (mountain region around lakes Ловозеро and Сейдозеро) — https://maps.app.goo.gl/AwLX7vrYcZW1j2nG9 — https://maps.app.goo.gl/RbWHm5LSBbqwoE3Y7"
       },
       "ranges": [
         {

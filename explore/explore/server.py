@@ -307,6 +307,12 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
     location_filter = (
         photo_filters.location.place_name if photo_filters.location else None
     )
+    proximity_filter = (
+        f"{photo_filters.proximity.place_name} "
+        f"(within {photo_filters.proximity.radius_km:g} km)"
+        if photo_filters.proximity
+        else None
+    )
 
     def _build_citations(ordered_hits, gen_shas: set[str]) -> list[dict]:
         """Return list[dict] (already JSON-serialisable) so we can drop the
@@ -354,6 +360,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                     "corpus": req.corpus,
                     "date_filter": date_filter,
                     "location_filter": location_filter,
+                    "proximity_filter": proximity_filter,
                     "auth_state": auth_label,
                     "quota_used": cap - remaining,
                     "quota_remaining": remaining,
@@ -381,6 +388,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                     "corpus": req.corpus,
                     "date_filter": date_filter,
                     "location_filter": location_filter,
+                    "proximity_filter": proximity_filter,
                     "auth_state": auth_label,
                     "quota_used": cap - remaining,
                     "quota_remaining": remaining,
@@ -436,6 +444,8 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                 "rerank_used": rerank_used,
                 "corpus": req.corpus,
                 "date_filter": date_filter,
+                "location_filter": location_filter,
+                "proximity_filter": proximity_filter,
                 "auth_state": auth_label,
                 "quota_used": quota_used,
             },

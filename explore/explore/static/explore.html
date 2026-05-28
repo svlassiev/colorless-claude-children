@@ -520,6 +520,12 @@ function renderCitations(data, isRetrieveOnly) {
     // Meta slot now holds date filter + a snapshot of the quota counter.
     // The header bar shows the live quota; this is the per-query record.
     let metaHtml = '';
+    if (data.location_filter) {
+        metaHtml += '<div class="meta">place filter: ' + esc(data.location_filter) + '</div>';
+    }
+    if (data.proximity_filter) {
+        metaHtml += '<div class="meta">near: ' + esc(data.proximity_filter) + '</div>';
+    }
     if (data.date_filter) {
         metaHtml += '<div class="meta">date filter: ' + esc(data.date_filter) + '</div>';
     }

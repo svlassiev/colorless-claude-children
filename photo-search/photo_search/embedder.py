@@ -218,7 +218,14 @@ def main() -> int:
     # place_baker.py) only land in meta when present on the manifest row;
     # rows without them stay clean.
     META_REQUIRED = ("id", "gcs_uri", "blob_path", "exif_date_iso", "exif_gps", "caption", "sha")
-    META_OPTIONAL = ("place_names", "place_detail", "place_approximate", "place_context")
+    META_OPTIONAL = (
+        "place_names",
+        "place_detail",
+        "place_approximate",
+        "place_context",
+        "place_coord",
+        "place_coord_source",
+    )
     with META_PATH.open("w", encoding="utf-8") as f:
         for r in rows:
             meta: dict = {k: r.get(k) for k in META_REQUIRED}

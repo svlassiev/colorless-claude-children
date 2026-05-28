@@ -36,6 +36,7 @@ from photo_search.tools import (
     DateFilter,
     Filters,
     LocationFilter,
+    ProximityFilter,
 )
 from search_common.generation import tool_call
 
@@ -150,5 +151,8 @@ async def route_query(
         elif raw.name == "filter_by_date_range":
             if isinstance(result, DateFilter):
                 filters = replace(filters, date=result)
+        elif raw.name == "filter_by_proximity":
+            if isinstance(result, ProximityFilter):
+                filters = replace(filters, proximity=result)
 
     return filters

@@ -43,13 +43,32 @@ class LocationFilter:
 
 
 @dataclass(frozen=True)
+class ProximityFilter:
+    """Set of photo shas within `radius_km` of a named place's pins.
+
+    Distinct from LocationFilter: location matches by *label* (this photo is
+    tagged Хибины), proximity matches by *distance* (this photo's coordinate
+    is within N km of any Хибины pin). A photo with no coordinate can never
+    satisfy proximity, even if its label matches.
+
+    `place_name` + `radius_km` are kept for the SSE display ('within 5 km of
+    Купчино'); `matched_shas` is the masking material.
+    """
+
+    place_name: str
+    radius_km: float
+    matched_shas: frozenset[str]
+
+
+@dataclass(frozen=True)
 class Filters:
-    """All filters resolved by the router for one query. Either slot may
-    be None — the retriever treats None as 'no constraint on this axis.'"""
+    """All filters resolved by the router for one query. Any slot may be
+    None — the retriever treats None as 'no constraint on this axis.'"""
 
     date: DateFilter | None = None
     location: LocationFilter | None = None
+    proximity: ProximityFilter | None = None
 
     @property
     def is_empty(self) -> bool:
-        return self.date is None and self.location is None
+        return self.date is None and self.location is None and self.proximity is None

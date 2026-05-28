@@ -1,0 +1,949 @@
+{
+  "https://maps.app.goo.gl/1rREemCEwkvXRBUx5": {
+    "source": "geocode",
+    "name": "Beach Laskoviy, St Petersburg, Russia, 197739",
+    "lat": 60.1410266,
+    "lng": 29.9307192
+  },
+  "https://maps.app.goo.gl/2R4UKAymvTCH5zHW6": {
+    "lat": 67.6736603,
+    "lng": 33.2148143,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/2U6ePoebZggJD6U46": {
+    "source": "geocode",
+    "name": "St. Petersburg State University campus, Botanicheskaya Ulitsa, 64 корпус 3, St Petersburg, Russia, 198504",
+    "lat": 59.8745408,
+    "lng": 29.82865499999999
+  },
+  "https://maps.app.goo.gl/2o6CR3ECTA47TNVs7": {
+    "lat": 60.4015669,
+    "lng": 33.8755978,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/31bnELfQKsNeX48E8": {
+    "lat": 59.9137006,
+    "lng": 30.2997905,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/346esvXJwVveVYh6A": {
+    "lat": 67.0821014,
+    "lng": 32.9372226,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/3DC6xToHCv4uJAG5A": {
+    "lat": 59.937203,
+    "lng": 30.332298,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/3Fd9B9ZnC52MjgF2A": {
+    "lat": 59.935842,
+    "lng": 30.3145448,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/3PjBkmAbPWQiTwx88": {
+    "source": "geocode",
+    "name": "Finland Station",
+    "lat": 59.9554418,
+    "lng": 30.3568942
+  },
+  "https://maps.app.goo.gl/3VKZdzNFe1XkqMwb9": {
+    "lat": 59.9733296,
+    "lng": 30.4305258,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/3WmZfhjqUt2tqEjC9": {
+    "lat": 59.9453717,
+    "lng": 30.3622768,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/4eSYrh2RvaFPogbN7": {
+    "lat": 59.9749959,
+    "lng": 30.3926561,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/4xDTMb7Y71Vv4fyn8": {
+    "source": "geocode",
+    "name": "Sredneokhtinskiy Prospekt, 42, Sankt-Peterburg, Russia, 195027",
+    "lat": 59.9558275,
+    "lng": 30.4149386
+  },
+  "https://maps.app.goo.gl/551HyBXNszoiNtuT6": {
+    "lat": 59.9440539,
+    "lng": 30.3292475,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/5GvL2sUaAimooqhK7": {
+    "lat": 59.9733268,
+    "lng": 30.4282298,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/5geQDza33cBhvyn27": {
+    "lat": 67.857945,
+    "lng": 34.717871,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/6Mgd5givnMDSLL3k8": {
+    "lat": 59.9772292,
+    "lng": 30.3495637,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/6P7bZtaZTs8QNqPo8": {
+    "lat": 59.9447297,
+    "lng": 30.3512564,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/6geWct2reTpZTi4P9": {
+    "source": "geocode",
+    "name": "Kandalaksha railway station, Murmansk Oblast, Russia",
+    "lat": 67.1508569,
+    "lng": 32.4133751
+  },
+  "https://maps.app.goo.gl/6nV8Da4WdsXXvzXm7": {
+    "lat": 59.939931,
+    "lng": 30.316715,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/7dJ3MFM5DoonqDpc7": {
+    "lat": 59.973326899999996,
+    "lng": 30.433100699999997,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/8AP5rbhrVKU4qXm86": {
+    "lat": 59.93202,
+    "lng": 30.360484,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/8NUmQbW5UnrM1UoAA": {
+    "lat": 60.1423239,
+    "lng": 29.9175418,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/9LheAfLhZuTvcZVM7": {
+    "lat": 61.868056,
+    "lng": 32.695603,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/9XpBXt9C3v35aZXy6": {
+    "source": "geocode",
+    "name": "Little Lake Krasnoporskoe (Pieni-Särkijärvi), Leningrad Oblast, Russia, 188861",
+    "lat": 60.4162062,
+    "lng": 29.2834055
+  },
+  "https://maps.app.goo.gl/AiRrgF69CdrcLQ6M9": {
+    "lat": 67.9119899,
+    "lng": 34.9448302,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/AwLX7vrYcZW1j2nG9": {
+    "lat": 67.8457993,
+    "lng": 34.6594003,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/BoYYoEWj6dEo338W9": {
+    "source": "geocode",
+    "name": "Perm 2, Ulitsa Lenina, 89, Perm, Perm Krai, Russia, 614961",
+    "lat": 58.0047198,
+    "lng": 56.180858
+  },
+  "https://maps.app.goo.gl/CJQme6JM1yxjZi95A": {
+    "lat": 60.4065131,
+    "lng": 33.831903,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/ChpJrehJroo6RV797": {
+    "lat": 59.9457177,
+    "lng": 30.3678159,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/DVG83EDFwpVEDtuGA": {
+    "source": "geocode",
+    "name": "Perm, Perm Krai, Russia",
+    "lat": 58.00916830000001,
+    "lng": 56.22696740000001
+  },
+  "https://maps.app.goo.gl/EDR2x2864ohJqEv59": {
+    "lat": 59.9733268,
+    "lng": 30.4282298,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/EiSVhQaRUpsztb7y7": {
+    "source": "geocode",
+    "name": "Kvarkush, Perm Krai, Russia, 618570",
+    "lat": 60.201667,
+    "lng": 58.725
+  },
+  "https://maps.app.goo.gl/Es4vSo8Mgvbz17kk6": {
+    "lat": 67.815179,
+    "lng": 34.924038,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/EyMtaNnhEYLto7Pz9": {
+    "lat": 59.932044,
+    "lng": 30.354343,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/F2JUH9JVWTnfLzss7": {
+    "lat": 59.8745408,
+    "lng": 29.82608,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/HLbjbFaEJsEEbgef6": {
+    "lat": 67.816408,
+    "lng": 34.93066,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/HdbQXfZD2tP7Mg8o7": {
+    "lat": 59.94468,
+    "lng": 30.351284,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/J9TFVEAGamqRrD316": {
+    "source": "geocode",
+    "name": "Kandalaksha, Murmansk Oblast, Russia",
+    "lat": 67.1508569,
+    "lng": 32.4133751
+  },
+  "https://maps.app.goo.gl/JnCN4YsLMoKBPReD8": {
+    "lat": 59.9384074,
+    "lng": 30.2879457,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/K6XGX7pFfsaNnLgw8": {
+    "lat": 61.172037,
+    "lng": 32.399487,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/KdF5GcVMFRgeruFP8": {
+    "source": "geocode",
+    "name": "Khokhlovka, Perm Krai, Russia, 614505",
+    "lat": 58.2640536,
+    "lng": 56.249896
+  },
+  "https://maps.app.goo.gl/KfRFu9WZCcLamDH87": {
+    "lat": 59.9772954,
+    "lng": 30.4230474,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/LUTB1BbzmnEhXDND9": {
+    "lat": 67.790401,
+    "lng": 34.695904,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/LptZK7NgoMW1rkhZ8": {
+    "lat": 58.7455962,
+    "lng": 29.8174784,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/MGJHXc1UKP4nHpBH6": {
+    "source": "geocode",
+    "name": "Ruin Tower, Podkaprizovaya Doroga, St Petersburg, Russia, 196603",
+    "lat": 59.7096865,
+    "lng": 30.3841603
+  },
+  "https://maps.app.goo.gl/MHH2fBA3hshCZVRX7": {
+    "lat": 59.955779,
+    "lng": 30.376753,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/MNJkxK4UfSYehd157": {
+    "source": "geocode",
+    "name": "Spbgu, Fakul'tet Matematiki I Komp'yuternykh Nauk, 14-я линия В.О., 29, St Petersburg, Russia, 199178",
+    "lat": 59.938584,
+    "lng": 30.270697
+  },
+  "https://maps.app.goo.gl/Mg4eCGCFFsV9G8b26": {
+    "lat": 59.8029153,
+    "lng": 30.2652642,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/MjQr7DgUZdrr5RDG7": {
+    "source": "geocode",
+    "name": "Kolvitsa, Murmansk Oblast, Russia, 184015",
+    "lat": 67.08624929999999,
+    "lng": 32.9822006
+  },
+  "https://maps.app.goo.gl/N7qZoWfh3gDSoXsT9": {
+    "lat": 59.9561684,
+    "lng": 30.3191955,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/NYa3At7q22dfUwdY7": {
+    "lat": 59.8859388,
+    "lng": 29.9065118,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/Pzgn9G2vpTG8uav48": {
+    "lat": 59.98053,
+    "lng": 30.382752,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/QdbZYTYPL843ewmo8": {
+    "lat": 50.0598438,
+    "lng": 14.3008772,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/QpcZP1K3v7sSRr596": {
+    "lat": 60.4157447,
+    "lng": 29.2801709,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/TFs1GHMBoGL5XftR7": {
+    "source": "geocode",
+    "name": "St. Petersburg State University, Faculty of Mathematics and Mechanics, Universitetskiy Prospekt, 28, St Petersburg, Russia, 198504",
+    "lat": 59.88001060000001,
+    "lng": 29.8290008
+  },
+  "https://maps.app.goo.gl/UrEmA1EYX1LVVdU56": {
+    "lat": 55.7532733,
+    "lng": 37.3021192,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/VBboyb7nJUfZo3fU9": {
+    "source": "geocode",
+    "name": "Ladozhskiy Vokzal, Zanevskiy Prospekt, 75, St Petersburg, Russia, 195277",
+    "lat": 59.93419099999999,
+    "lng": 30.441576
+  },
+  "https://maps.app.goo.gl/VuBmEr18zjsomcAW6": {
+    "lat": 67.7165551,
+    "lng": 33.7401942,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/W56rNQedQHPyndheA": {
+    "lat": 59.878778,
+    "lng": 29.83135,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/X6sx4Ebes2iERHiE9": {
+    "source": "geocode",
+    "name": "University canteen, Ulitsa Ul'yanovskaya, 9 корп. 1, St Petersburg, Russia, 198504",
+    "lat": 59.880413,
+    "lng": 29.824892
+  },
+  "https://maps.app.goo.gl/XHLct2ipfTXkJA6S6": {
+    "lat": 59.936463,
+    "lng": 30.361065,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/XYwqT6iw8XZH9n5g6": {
+    "lat": 66.43584,
+    "lng": 32.847865,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/Yvp6XekFW6oRD7YF7": {
+    "lat": 59.5597234,
+    "lng": 29.950478,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/ZRM3ZsFo4JmsU4Vr8": {
+    "source": "geocode",
+    "name": "Repino",
+    "lat": 60.1683493,
+    "lng": 29.8672864
+  },
+  "https://maps.app.goo.gl/ZY3maZyaLvW5M8FG7": {
+    "source": "geocode",
+    "name": "Spbgu, Fizicheskiy Fakul'tet, Ulitsa Ul'yanovskaya, 3, St Petersburg, Russia, 198504",
+    "lat": 59.8824623,
+    "lng": 29.8231777
+  },
+  "https://maps.app.goo.gl/bUGLwQK7mWTgEf4L7": {
+    "lat": 59.9552399,
+    "lng": 30.3177872,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/cLMeqrZp21jDeJTy5": {
+    "source": "geocode",
+    "name": "University canteen, Ulitsa Ul'yanovskaya, 9 корп. 1, St Petersburg, Russia, 198504",
+    "lat": 59.880413,
+    "lng": 29.824892
+  },
+  "https://maps.app.goo.gl/dnHnPMYrTEL8zn27A": {
+    "lat": 59.941242,
+    "lng": 30.270521,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/dprJbfVbDzV7apvp9": {
+    "lat": 59.956138,
+    "lng": 30.414449,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/egzZrXyFzEXWwbQd6": {
+    "source": "geocode",
+    "name": "Saint Petersburg",
+    "lat": 59.9310584,
+    "lng": 30.3609097
+  },
+  "https://maps.app.goo.gl/et5dWahMYsHzcgDD8": {
+    "lat": 67.8021883,
+    "lng": 33.5995308,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/f43qw5gTVMcBnbU5A": {
+    "source": "geocode",
+    "name": "Permyak-Solenyye Ushi, Komsomol'skiy Prospekt, 27, Perm, Perm Krai, Russia, 614045",
+    "lat": 58.0097,
+    "lng": 56.2396
+  },
+  "https://maps.app.goo.gl/fgwEcvNau7CcagqXA": {
+    "lat": 59.906813,
+    "lng": 30.2960827,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/gZpgzMjUaTWzrBUE9": {
+    "lat": 60.417806,
+    "lng": 33.678537,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/gaaqybczQgm5UEAL7": {
+    "lat": 68.0048844,
+    "lng": 34.978374,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/gebm7fZYGzUz5nqr9": {
+    "lat": 59.984587499999996,
+    "lng": 30.9278528,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/hLPo44aYQyGpwBMa6": {
+    "lat": 67.758881,
+    "lng": 34.743459,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/hSGzYVjdMnocHFya8": {
+    "lat": 67.827276,
+    "lng": 34.97743,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/iVDfT4A39Hkdtsks6": {
+    "lat": 60.401564,
+    "lng": 33.875501,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/ib3XYsmr4dcqBjXM9": {
+    "lat": 59.984591,
+    "lng": 30.927822,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/jSRhvbwMKBgDJrvQ9": {
+    "lat": 59.9680657,
+    "lng": 30.3436563,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/jZ9XRyFy9ATJctTNA": {
+    "lat": 59.9372679,
+    "lng": 30.3268103,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/jZiAjUdVTcybYjwV7": {
+    "lat": 59.9410633,
+    "lng": 30.2959499,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/kQVSPSodU5m8wWnA7": {
+    "source": "geocode",
+    "name": "Президентский физико-математический лицей №239., Kirochnaya Ulitsa, 8Б, St Petersburg, Russia, 191028",
+    "lat": 59.94418269999999,
+    "lng": 30.3512568
+  },
+  "https://maps.app.goo.gl/kdTN3353ee477iEP9": {
+    "lat": 59.950737,
+    "lng": 30.361277,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/mzKFeFLEyruw794i7": {
+    "lat": 59.934191,
+    "lng": 30.4367051,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/n7vKgVQ5YmsZcHey8": {
+    "lat": 67.720237,
+    "lng": 33.499713,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/nTt14enMDBz9BzXC6": {
+    "source": "geocode",
+    "name": "Ladozhskiy Vokzal, Zanevskiy Prospekt, 75, St Petersburg, Russia, 195277",
+    "lat": 59.93419099999999,
+    "lng": 30.441576
+  },
+  "https://maps.app.goo.gl/ngQZAk2nVERPcHEq9": {
+    "lat": 59.9447297,
+    "lng": 30.3512564,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/o4HSDz651KDCFiaM6": {
+    "source": "geocode",
+    "name": "Salt Cave Berezniki, Ulitsa Mira, 58, Berezniki, Perm Krai, Russia, 618400",
+    "lat": 59.4061731,
+    "lng": 56.847592
+  },
+  "https://maps.app.goo.gl/ocGgB2RZo6EpLkS58": {
+    "lat": 59.9556748,
+    "lng": 30.3538794,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/odpqMmPkdY5v3BF3A": {
+    "lat": 59.930557,
+    "lng": 30.2713243,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/oyDjJa3Yndmu7DcW8": {
+    "lat": 67.789964,
+    "lng": 34.594762,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/p6gyCvG65AfDodhSA": {
+    "lat": 59.954052,
+    "lng": 30.355698,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/pGgYyYmVxvoU2s996": {
+    "lat": 59.8742127,
+    "lng": 29.8302573,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/qBVkKwj5wbc3uSCPA": {
+    "lat": 59.945635499999995,
+    "lng": 30.2548,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/qUhWe2bQ19BZ8GDi7": {
+    "lat": 61.165694,
+    "lng": 32.419978,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/sEaKk4CAThUtqGFe6": {
+    "source": "geocode",
+    "name": "Moscow Railway Station",
+    "lat": 59.92991230000001,
+    "lng": 30.3622406
+  },
+  "https://maps.app.goo.gl/tc9Yj5JprhL4zEn56": {
+    "lat": 59.94852,
+    "lng": 30.3943435,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/tpHS1VF6o3M68eMG8": {
+    "lat": 68.1344049,
+    "lng": 33.2338819,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/tzqUeUZQb23jSkd7A": {
+    "lat": 59.9469183,
+    "lng": 30.2559121,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/u1cqybzAMPSQYBb66": {
+    "lat": 68.1423075,
+    "lng": 33.1166464,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/uFKrbwuDct6oTdFPA": {
+    "lat": 67.829043,
+    "lng": 34.802228,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/udPmMaa4yE5PTaLR9": {
+    "lat": 59.94018,
+    "lng": 30.268549,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/uzRf5caukdVDGoDt9": {
+    "lat": 67.94196,
+    "lng": 34.958673,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/wRWCDEuFrtG1GSS99": {
+    "lat": 59.9806296,
+    "lng": 30.3827917,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/wqJo45MEDBVTfMvH9": {
+    "lat": 60.4048613,
+    "lng": 33.1932002,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/xh5rxRGjx5hDeBcf6": {
+    "lat": 59.9457178,
+    "lng": 30.3701119,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/yGr9JHek2gsuz16p8": {
+    "lat": 67.782596,
+    "lng": 33.730066,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/ydZfWRmPtEh1xs8b9": {
+    "source": "geocode",
+    "name": "Kolvitsa, Murmansk Oblast, Russia, 184015",
+    "lat": 67.08624929999999,
+    "lng": 32.9822006
+  },
+  "https://maps.app.goo.gl/zBoJW3MRJAxEAJUR9": {
+    "lat": 60.0080556,
+    "lng": 30.3645502,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/zK2QZG5GZmM2oobY6": {
+    "lat": 68.0048878,
+    "lng": 34.9967424,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/zM7ScaGcXJiAxPGR9": {
+    "lat": 59.8800106,
+    "lng": 29.8264259,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/1wg6kKsyR5AaMuB3A": {
+    "lat": 60.215591,
+    "lng": 29.160027,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/2x1Wt6tFBQFTo6fTA": {
+    "lat": 59.9427526,
+    "lng": 30.2779974,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/3Z6S1HXYZuGEwHfU6": {
+    "lat": 55.859174599999996,
+    "lng": 108.7725526,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/6sGgzfE2MQxjV4RcA": {
+    "lat": 59.984607,
+    "lng": 30.927815,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/8vhFHMfbuCFwCcv76": {
+    "lat": 60.413659,
+    "lng": 29.282693,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/9TZtVf9dxFK8kB3MA": {
+    "source": "geocode",
+    "name": "St. Petersburg State University, Faculty of Mathematics and Mechanics, Universitetskiy Prospekt, 28, St Petersburg, Russia, 198504",
+    "lat": 59.88001060000001,
+    "lng": 29.8290008
+  },
+  "https://maps.app.goo.gl/ACGdHwGy9tKz3XLc7": {
+    "source": "geocode",
+    "name": "9-Ya Krasnoarmeyskaya Ulitsa, Sankt-Peterburg, Russia",
+    "lat": 59.9137006,
+    "lng": 30.3023654
+  },
+  "https://maps.app.goo.gl/AQ4prBfFQyGkCDtR6": {
+    "lat": 59.87373,
+    "lng": 29.827968,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/B9qNDPhUDs76DHBP8": {
+    "lat": 59.967123,
+    "lng": 30.426148,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/C65AesEBATQbpSd98": {
+    "source": "geocode",
+    "name": "Kovenskiy Pereulok, 5, Sankt-Peterburg, Russia, 191014",
+    "lat": 59.93685389999999,
+    "lng": 30.3568235
+  },
+  "https://maps.app.goo.gl/CWsC8tC4D1yXRjweA": {
+    "source": "geocode",
+    "name": "Zhd Vokzal, Prospekt 60 Let Sssr, 19, Severobaykalsk, Buryatia, Russia, 671700",
+    "lat": 55.63299,
+    "lng": 109.3417251
+  },
+  "https://maps.app.goo.gl/DBz7z6376yUPs5sG8": {
+    "lat": 60.4015371,
+    "lng": 33.8755254,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/DE83w5mWEHxiqakC8": {
+    "lat": 60.401250899999994,
+    "lng": 33.8769335,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/DS4xg5QN1V1kLdYZA": {
+    "source": "geocode",
+    "name": "Купчино",
+    "lat": 59.829637,
+    "lng": 30.375462
+  },
+  "https://maps.app.goo.gl/EGj2gsgwaUUwgRqS8": {
+    "source": "geocode",
+    "name": "Perm Krai, Russia",
+    "lat": 58.8231929,
+    "lng": 56.5872481
+  },
+  "https://maps.app.goo.gl/F7PXZWGgtiMa6m6c8": {
+    "lat": 59.882465,
+    "lng": 29.8206028,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/GYGpHv66Ctt5YrQv9": {
+    "source": "geocode",
+    "name": "Porokhovye Municipal Okrug, St Petersburg, Russia, 195426",
+    "lat": 59.94489720000001,
+    "lng": 30.4780576
+  },
+  "https://maps.app.goo.gl/GjekbbvrEQJ5CJ116": {
+    "source": "geocode",
+    "name": "Prospekt Marshala Blyukhera, 67 корпус 2, Sankt-Peterburg, Russia, 195253",
+    "lat": 59.9733269,
+    "lng": 30.4331008
+  },
+  "https://maps.app.goo.gl/J9BTgWipFR956mYE8": {
+    "lat": 59.948514,
+    "lng": 30.20554,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/Mbvjts6yj8wGyrVw8": {
+    "lat": 59.765613,
+    "lng": 30.266948,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/NDaVafoRn2MHBUpi6": {
+    "source": "geocode",
+    "name": "Tauride Garden, Potomkinskaya Ulitsa, St Petersburg, Russia, 191015",
+    "lat": 59.9457151,
+    "lng": 30.3726868
+  },
+  "https://maps.app.goo.gl/PY4PVnq1Y3qoJ3SG8": {
+    "source": "geocode",
+    "name": "Nulevoy Kilometr, Proyezd Voskresenskiye Vorota, 1А, Moscow, Russia, 109012",
+    "lat": 55.7558022,
+    "lng": 37.6176881
+  },
+  "https://maps.app.goo.gl/RNu3ckEivtrzGbzB6": {
+    "lat": 59.9556775,
+    "lng": 30.3538794,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/RbWHm5LSBbqwoE3Y7": {
+    "lat": 67.9002726,
+    "lng": 34.6144127,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/SKcZauwwZojdJjF36": {
+    "source": "geocode",
+    "name": "Apatity, Murmansk Oblast, Russia, 184209",
+    "lat": 67.5671052,
+    "lng": 33.3910689
+  },
+  "https://maps.app.goo.gl/TGr73gsvAgyZKbtX9": {
+    "lat": 59.8807925,
+    "lng": 29.8262408,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/U1svsW12XtB3yjbj6": {
+    "lat": 59.8315915,
+    "lng": 30.3604673,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/XsJLzRRNiaoiX5Ur7": {
+    "lat": 59.9733296,
+    "lng": 30.4305258,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/YdNXP99Jr2z6vMG69": {
+    "source": "geocode",
+    "name": "Kirillovskoe",
+    "lat": 60.4706602,
+    "lng": 29.2825249
+  },
+  "https://maps.app.goo.gl/YmS7i5SFjV2HZjbm8": {
+    "lat": 55.6435483,
+    "lng": 109.6435185,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/ZTwxU6HBvA9f1rGq6": {
+    "lat": 60.4021602,
+    "lng": 33.874882299999996,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/aG4Th4QYXYH2dCgu8": {
+    "source": "geocode",
+    "name": "Prospekt Marshala Blyukhera, 67 корпус 2, Sankt-Peterburg, Russia, 195253",
+    "lat": 59.9733269,
+    "lng": 30.4331008
+  },
+  "https://maps.app.goo.gl/aKD7gR3us9Yxh7g4A": {
+    "lat": 60.0763988,
+    "lng": 30.276794,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/b8UKX1LiBi1TMDtNA": {
+    "source": "geocode",
+    "name": "Smolenskiy Most, 17 Liniya Vasil'yevskogo Ostrova, St Petersburg, Russia, 199178",
+    "lat": 59.9471618,
+    "lng": 30.25676409999999
+  },
+  "https://maps.app.goo.gl/bY7ibwhDoGw1EfGj9": {
+    "lat": 59.8742127,
+    "lng": 29.8302573,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/d1Y9ak8yd5BzSpLbA": {
+    "lat": 59.9421373,
+    "lng": 30.381824299999998,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/d6Tk7q4wnbPXRxcx9": {
+    "lat": 59.954355,
+    "lng": 30.619672,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/fQCChZkZVpR4wDDSA": {
+    "lat": 59.9285406,
+    "lng": 30.2638934,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/gJJ2RWErfj8S3oBu9": {
+    "source": "geocode",
+    "name": "Finland Station",
+    "lat": 59.9554418,
+    "lng": 30.3568942
+  },
+  "https://maps.app.goo.gl/gRG5YmXJBMNi1nCC8": {
+    "source": "geocode",
+    "name": "Yekaterinburg-Passazhirskiy, Vokzal'naya Ulitsa, 22, Yekaterinburg, Sverdlovsk Oblast, Russia, 620107",
+    "lat": 56.858569,
+    "lng": 60.602723
+  },
+  "https://maps.app.goo.gl/hW6scu2raMT219Br9": {
+    "source": "geocode",
+    "name": "Ladozhskiy Vokzal, Zanevskiy Prospekt, 75, St Petersburg, Russia, 195277",
+    "lat": 59.93419099999999,
+    "lng": 30.441576
+  },
+  "https://maps.app.goo.gl/m7hwnzcG7A2Kz8aG7": {
+    "source": "geocode",
+    "name": "Hibiny",
+    "lat": 67.673934,
+    "lng": 33.2174983
+  },
+  "https://maps.app.goo.gl/mYajT82GUwzxBpAA9": {
+    "lat": 60.2224579,
+    "lng": 29.1802119,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/oeFvTeDxsLuLA4uo7": {
+    "lat": 59.944204,
+    "lng": 30.350871,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/ohcc4jxSLo3szGPq7": {
+    "lat": 60.4043048,
+    "lng": 33.8539007,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/ojgVPhFGEAbCshJk8": {
+    "source": "geocode",
+    "name": "Moscow Railway Station",
+    "lat": 59.92991230000001,
+    "lng": 30.3622406
+  },
+  "https://maps.app.goo.gl/pFt2PiS92rnS1S4s7": {
+    "source": "geocode",
+    "name": "Sankt-Peterburgskiy Gosudarstvennyy Universitet, Geologicheskiy Fakul'tet, Pereulok Dekabristov, St Petersburg, Russia, 199155",
+    "lat": 59.9526826,
+    "lng": 30.2483248
+  },
+  "https://maps.app.goo.gl/qFMNdLSCh4C4LHwj7": {
+    "lat": 60.401429,
+    "lng": 33.875629,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/qmtD9xXFGR4Dw7g67": {
+    "lat": 59.9558302,
+    "lng": 30.4123637,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/rrvX2za5p7USbTHN9": {
+    "source": "geocode",
+    "name": "Gostinitsa \"Vstrecha\" Goudzhekit, Гостиница Встреча Гоуджекит, Severobaykalsk, Buryatia, Russia, 671700",
+    "lat": 55.7039695,
+    "lng": 109.069575
+  },
+  "https://maps.app.goo.gl/sB3rwdsBjpAdkVMp9": {
+    "source": "geocode",
+    "name": "Вокзал Омск, Privokzal'naya Ploshchad', 500, Omsk, Omsk Oblast, Russia, 644020",
+    "lat": 54.940014,
+    "lng": 73.38536800000001
+  },
+  "https://maps.app.goo.gl/sqmJ7PUdjz3Xsz5j6": {
+    "source": "geocode",
+    "name": "Ladozhskiy Vokzal, Zanevskiy Prospekt, 75, St Petersburg, Russia, 195277",
+    "lat": 59.93419099999999,
+    "lng": 30.441576
+  },
+  "https://maps.app.goo.gl/tSL5VkH6JDgjoiHb9": {
+    "lat": 59.9285406,
+    "lng": 30.2638934,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/tiduG4vf7w3gnpTRA": {
+    "source": "geocode",
+    "name": "Yekaterinburg, Sverdlovsk Oblast, Russia",
+    "lat": 56.8430993,
+    "lng": 60.64540859999999
+  },
+  "https://maps.app.goo.gl/u4xyjbcmmoawiNH46": {
+    "source": "geocode",
+    "name": "Zakhodskoe, Leningrad Oblast, Russia",
+    "lat": 60.40951769999999,
+    "lng": 29.3477265
+  },
+  "https://maps.app.goo.gl/vXaYBVEaQ5Z1EspG9": {
+    "lat": 59.8800106,
+    "lng": 29.8290008,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/vktrtq4eR1YyFnGT6": {
+    "lat": 59.9441854,
+    "lng": 30.3486819,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/vocKhM7JPRaj3oYk7": {
+    "lat": 59.9263535,
+    "lng": 30.3208619,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/wUS3FJuWYGtkc6Wv6": {
+    "lat": 59.973335,
+    "lng": 30.433783,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/x7Qn5k2bJNnbncbw8": {
+    "lat": 60.4014391,
+    "lng": 33.8757034,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/xoghdTPYY6JB5z787": {
+    "lat": 59.927813,
+    "lng": 30.373624,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/xuHnhCG7BEfDS32JA": {
+    "lat": 60.4098527,
+    "lng": 29.3406681,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/yR9bYBMgHNjtN8BL8": {
+    "lat": 60.010436,
+    "lng": 30.257346,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/zGoxvkayYM8tLZM37": {
+    "lat": 59.940591,
+    "lng": 30.2977399,
+    "source": "url"
+  },
+  "https://maps.app.goo.gl/zSaKH5boBccsMtKi7": {
+    "lat": 59.973392399999994,
+    "lng": 30.4266562,
+    "source": "url"
+  }
+}
