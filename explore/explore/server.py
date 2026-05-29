@@ -453,6 +453,16 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
 
         # Step 2: generate.
         if req.corpus == "photo":
+            # Tell the generator what metadata filters already matched these
+            # photos, so it treats place/date as established and doesn't
+            # disclaim photos it can't visually tie to the location.
+            _notes = []
+            if location_filter:
+                _notes.append(f"location = {location_filter}")
+            if proximity_filter:
+                _notes.append(f"near {proximity_filter}")
+            if date_filter:
+                _notes.append(f"dates {date_filter}")
             outcome = await safe_generate(
                 photo_qa.generate,
                 req.query,
@@ -460,6 +470,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                 _state["gen_client"],
                 _state["storage_client"],
                 prefetched_bytes=photo_bytes_by_sha or None,
+                filters_note="; ".join(_notes) or None,
             )
         else:
             outcome = await safe_generate(

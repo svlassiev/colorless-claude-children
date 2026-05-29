@@ -21,15 +21,28 @@ from photo_search.tools.base import Filters
 
 GENERATION_PROMPT = """\
 You are answering a question about Sergey's personal photo collection.
-
+{filter_block}
 Look at the {n} photos provided above and answer the user's query. For each
-relevant photo, briefly describe what's visible. If a photo is not relevant
-to the query, say so for that photo. Do not speculate about the identities
-of the people in the photos. Stay concise — 2-3 short paragraphs total.
+relevant photo, briefly describe what's visible. If a photo is genuinely
+unrelated to the query, say so for that photo. Do not speculate about the
+identities of the people in the photos. Stay concise — 2-3 short paragraphs total.
 
 USER QUERY: {query}
 
 ANSWER:"""
+
+# Inserted into the prompt when the retrieval was narrowed by metadata filters
+# (place / proximity / date). Without it the model re-judges location/date from
+# the pixels alone — and disclaims photos it can't visually tie to the place,
+# undermining a filter that already matched them by GPS/tags. {note} is a short
+# human string like "location = Оять; dates 2009-06-01 .. 2009-08-31".
+_FILTER_BLOCK = (
+    "\nThese photos were already filtered by metadata (GPS / place tags / dates),"
+    " not by their visible content, to match: {note}. Treat that as established"
+    " ground truth — do NOT dismiss a photo just because the place or date isn't"
+    " identifiable from the image itself; assume it is correct and answer the"
+    " query on that basis.\n"
+)
 
 
 def embed_query(text: str, embed_model: MultiModalEmbeddingModel) -> np.ndarray:
@@ -92,6 +105,7 @@ def generate(
     *,
     max_output_tokens: int | None = None,
     prefetched_bytes: dict[str, bytes] | None = None,
+    filters_note: str | None = None,
 ) -> tuple[str, dict]:
     """Pass query + retrieved images (with date+caption metadata) to Gemini.
 
@@ -132,7 +146,11 @@ def generate(
         )
         if h.caption:
             contents.append(f"Auto-generated caption: {h.caption}")
-    contents.append("\n\n" + GENERATION_PROMPT.format(n=len(hits), query=query))
+    filter_block = _FILTER_BLOCK.format(note=filters_note) if filters_note else ""
+    contents.append(
+        "\n\n"
+        + GENERATION_PROMPT.format(n=len(hits), query=query, filter_block=filter_block)
+    )
 
     resp = gen_client.models.generate_content(
         model=GENERATE_MODEL,
