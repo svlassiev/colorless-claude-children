@@ -34,6 +34,12 @@ class Settings:
     log_caption_model: str
     photo_embed_model: str
     log_embed_model: str
+    # Google Geocoding API key — used at request time by filter_by_proximity to
+    # turn a "near <place>" query into a coordinate when no labeled photo
+    # anchors the place. Empty disables the fallback (proximity then only works
+    # for places that have coordinated photos). Restrict the key to the
+    # Geocoding API; results are cached in-memory per server instance.
+    geocoding_api_key: str
 
 
 def _load() -> Settings:
@@ -61,6 +67,7 @@ def _load() -> Settings:
             "EXPLORE_PHOTO_EMBED_MODEL", "multimodalembedding@001"
         ),
         log_embed_model=os.environ.get("EXPLORE_LOG_EMBED_MODEL", "text-embedding-005"),
+        geocoding_api_key=os.environ.get("GEOCODING_API_KEY", ""),
     )
 
 
