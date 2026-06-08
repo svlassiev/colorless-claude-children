@@ -515,6 +515,33 @@
       <hr class="section-rule">
     </div>
 
+    <!-- Explore — Agentic RAG (personal project) -->
+    <div class="job">
+      <div class="job-location">Stockholm, Sweden</div>
+      <div class="job-row">
+        <span class="job-role">Software Engineer</span>
+        <span class="job-company"><a href="https://serg.vlassiev.info/explore" target="_blank" rel="noopener" class="subtle-link">Explore</a></span>
+        <span class="job-dates">2026&mdash;present</span>
+      </div>
+      <div class="job-subtitle">Agentic RAG system &mdash; Vertex AI + Gemini multimodal and text RAG over a 20-year family photo archive and a private working journal</div>
+      <div class="job-tech">Main technologies: Python (FastAPI, asyncio), Vertex AI (now Gemini Enterprise Agent Platform), Gemini 2.5 Pro&thinsp;/&thinsp;Flash, Cloud Run, GKE, Firestore, Firebase Auth, GCS, Server-Sent Events, grafana-app-sdk</div>
+      <details class="brag">
+        <summary>key achievements</summary>
+        <div class="brag-body">
+          <ul class="brag-list">
+            <li><strong>Multimodal RAG over the family archive</strong> &mdash; <span class="m">6,040</span> personal photos embedded into a shared text&thinsp;/&thinsp;image space (multimodalembedding@001, 1408-dim). Natural-language questions are answered with cited images, and EXIF&thinsp;/&thinsp;folder-name date filters are parsed straight out of the query (&ldquo;summer 2017&rdquo;). A second corpus does text RAG over a private working journal with text-embedding-005.</li>
+            <li><strong>Two-stage retrieval with vision reranking</strong> &mdash; Cosine top-k over an in-memory index, then the top 20 images fanned out to four parallel Gemini 2.5 Flash batches that rerank under a structured schema; the best 10 go to Gemini 2.5 Pro for the written answer. A SHA-keyed byte map means Pro never re-downloads what Flash already saw, and a 15&thinsp;s timeout falls back to similarity order without tearing the response.</li>
+            <li><strong>Streamed answers over Server-Sent Events</strong> &mdash; The ask endpoint emits citations first (~5&ndash;10&thinsp;s in) so photos render while Pro is still writing, then the answer (~10&ndash;15&thinsp;s), then refreshed quota. A soft-failure wrapper (asyncio timeout in a worker thread) turns a 60&thinsp;s generation timeout into an inline notice rather than a 500 &mdash; citations always stay on screen.</li>
+            <li><strong>Cost engineering as a first principle</strong> &mdash; Rejected Vertex AI Vector Search (~<span class="m">$360</span>/mo) in favour of in-memory NumPy cosine similarity: 6k vectors &times; 1408-dim &asymp; 35&thinsp;MB fits in memory trivially, and the same code path scales to managed search at 100k+ items. Cloud Run scales to zero, so idle cost is <span class="m">$0</span>.</li>
+            <li><strong>Auth as the only server-side trust boundary</strong> &mdash; Firebase ID tokens cryptographically verified (signature, audience, expiry) against Google&rsquo;s public keys, plus an email allow-list; the entire client flow can be broken without compromising it. Anonymous visitors query the public photo corpus (20/day globally); allow-listed users also reach the private journal corpus (50/day each).</li>
+            <li><strong>Fail-closed rate limiting</strong> &mdash; Atomic per-day Firestore counters that avoid read-modify-write races under concurrency; corpus authorisation checked twice per request as defence-in-depth; if the counter store is unreachable the request fails closed rather than leaking quota.</li>
+            <li><strong>Private deployment topology</strong> &mdash; Browser &rarr; GKE Ingress (TLS) &rarr; a small nginx-proxy pod &rarr; Cloud Run, keeping the internal run.app URL off the public surface at ~30&thinsp;ms p50 overhead. The proxy runs with buffering off and a 130&thinsp;s read timeout so SSE frames flush in real time. Packaged as a multi-package uv repository, deployed via Artifact Registry.</li>
+            <li><strong>Declarative control plane</strong> <em>(sibling project)</em> &mdash; Modelled Explore&rsquo;s configuration as Grafana App Platform resources with grafana-app-sdk: ModelRoute and Corpus kinds in CUE, code-generated into a Kubernetes-style apiserver, with a minimal reconciler that fills an index status. Built as a faithful model and a reproduction harness for two open upstream grafana-app-sdk issues.</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+
     <!-- Epidemic Sound -->
     <div class="job">
       <div class="job-location">Stockholm, Sweden</div>
@@ -629,6 +656,7 @@
         <div class="brag-body">
           <ul class="brag-list">
             <li>Designed and implemented Java 8 language level support, significantly expanding the product&rsquo;s addressable market.</li>
+            <li>Contributed two merged upstream fixes to <a href="https://github.com/javaparser/javaparser" target="_blank" rel="noopener" class="subtle-link">JavaParser</a>, the widely-used open-source Java AST library, while building the analyzer&rsquo;s Java parsing &mdash; stopping a visitor from mutating an unmodifiable collection (<a href="https://github.com/javaparser/javaparser/pull/315" target="_blank" rel="noopener" class="subtle-link">#315</a>) and correcting traversal to descend into array initialisers (<a href="https://github.com/javaparser/javaparser/pull/322" target="_blank" rel="noopener" class="subtle-link">#322</a>).</li>
             <li>Added support for major enterprise web technologies: JavaServer Faces, Apache Struts, JAX-RS, JSP tag libraries.</li>
             <li>Implemented code protection mechanisms &mdash; both hardware dongle-based and software-based &mdash; to prevent licence circumvention.</li>
           </ul>
