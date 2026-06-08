@@ -106,7 +106,7 @@ A few load-bearing details:
 |---|---|---|---|
 | GET | `/explore/` | `text/html` | The HTML page. |
 | GET | `/explore` | 307 redirect | Trailing-slash canonicaliser. |
-| GET | `/explore/healthz` | JSON | Liveness; returns `{"status":"ok","vectors_loaded":<n>}`. |
+| GET | `/explore/healthz` | JSON | Liveness; returns `{"status":"ok","photo_vectors":<n>,"log_vectors":<n>}` (loaded vector counts per corpus; `log_vectors` is 0 when the log tab is disabled). |
 | GET | `/explore/api/auth/status` | JSON | Read-only; returns auth state + remaining quota for the UI. |
 | POST | `/explore/api/ask` | `text/event-stream` | Cost-causing endpoint: retrieval (+ rerank + generation). Streams SSE — see [Request lifecycle](#request-lifecycle-post-exploreapiask). |
 

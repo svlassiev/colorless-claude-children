@@ -181,7 +181,11 @@ async def _explore_no_slash_redirect() -> RedirectResponse:
 
 @app.get("/explore/healthz")
 async def healthz():
-    return {"status": "ok", "vectors_loaded": len(_state.get("photo_metas", []))}
+    return {
+        "status": "ok",
+        "photo_vectors": len(_state.get("photo_metas", [])),
+        "log_vectors": len(_state.get("log_metas", [])),
+    }
 
 
 @app.get("/explore/api/auth/status")
