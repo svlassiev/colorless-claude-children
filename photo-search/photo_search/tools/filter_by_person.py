@@ -116,6 +116,21 @@ class Args(BaseModel):
     person_name: str = Field(min_length=1, max_length=80)
 
 
+def _lookup(form: str) -> list[str] | None:
+    """Resolve one already-normalized form, with an English-plural (-s) fallback
+    for Latin names: 'ivanovs' -> 'ivanov'. Russian plurals are already baked by
+    pymorphy (the -овы/-евы family forms), so the fallback only helps a Latin
+    transliteration the user pluralised with an English -s. Cyrillic forms are left
+    alone (they aren't ascii), so this never mangles a Russian word.
+    """
+    hit = _FORM_TO_NAMES.get(form)
+    if hit:
+        return hit
+    if len(form) > 3 and form.isascii() and form.endswith("s"):
+        return _FORM_TO_NAMES.get(form[:-1])
+    return None
+
+
 def _resolve(raw: str) -> list[str] | None:
     """Resolve a written name to canonical identity name(s), or None.
 
@@ -125,16 +140,18 @@ def _resolve(raw: str) -> list[str] | None:
     words are INTERSECTED: a "FirstName Surname" resolves to whoever is both that
     first name AND that surname. This resolves combined forms that were never
     baked as a single alias, and disambiguates a shared first name (two people
-    with the same given name are separated by the surname). None when nothing
-    resolves (caller falls back to visual search).
+    with the same given name are separated by the surname). Each lookup also
+    tolerates an English -s plural on Latin names. None when nothing resolves
+    (caller falls back to visual search).
     """
-    direct = _FORM_TO_NAMES.get(_norm(raw))
+    n = _norm(raw)
+    direct = _lookup(n)
     if direct:
         return direct
-    toks = [t for t in _norm(raw).split() if t]
+    toks = [t for t in n.split() if t]
     if len(toks) < 2:
         return None
-    per_token = [_FORM_TO_NAMES.get(t) for t in toks]
+    per_token = [_lookup(t) for t in toks]
     if not all(per_token):
         return None
     inter = set(per_token[0])
