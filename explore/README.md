@@ -13,7 +13,7 @@ FastAPI service that backs `serg.vlassiev.info/explore` — the unified entry po
 
 ## High-level architecture
 
-The request flow and the logical modules each stage talks to — **Tools** (query filters), **Models** (Gemini Flash / Pro), the **Data / index** layer, and **Auth & quota**. Dashed amber marks the planned [face search](../photo-search/FACE_SEARCH_PLAN.md) additions.
+The request flow and the logical modules each stage talks to — **Tools** (query filters), **Models** (Gemini Flash / Pro), the **Data / index** layer, and **Auth & quota**.
 
 ![Explore RAG — request flow and the modules it touches](rag-architecture.svg)
 
