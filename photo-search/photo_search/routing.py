@@ -103,7 +103,11 @@ def _combine_people(parts: list[PersonFilter]) -> PersonFilter:
         shas = shas & p.matched_shas
     names = tuple(dict.fromkeys(n for p in parts for n in p.names))
     query = " + ".join(p.query for p in parts)
-    return PersonFilter(query=query, names=names, matched_shas=frozenset(shas))
+    # Per-term breakdown so generation can map a tagged person back to the search
+    # term it matched (so a tag that is a given name is recognised as the surname
+    # the user typed, rather than being mismatched to a similar-looking name).
+    groups = tuple((p.query, p.names) for p in parts)
+    return PersonFilter(query=query, names=names, matched_shas=frozenset(shas), groups=groups)
 
 
 def _roster_block() -> str:

@@ -68,11 +68,19 @@ class PersonFilter:
     shared family surname, can match more than one person), so `names` is the
     resolved identity set and `matched_shas` is the UNION of their photos.
     `query` is what the user/model wrote — kept for the SSE display label.
+
+    `groups` keeps the per-search-term breakdown when several names were ANDed
+    ("Anna and Ivanova" -> (("Anna", (..the Annas..)), ("Ivanova", (..the family..)))).
+    This lets generation map each tagged person back to the term they matched —
+    without it the model can't tell that a person tagged with a given name is the
+    surname the user searched for. Empty for the single-term case (then
+    `query`/`names` already say it).
     """
 
     query: str
     names: tuple[str, ...]
     matched_shas: frozenset[str]
+    groups: tuple[tuple[str, tuple[str, ...]], ...] = ()
 
 
 @dataclass(frozen=True)

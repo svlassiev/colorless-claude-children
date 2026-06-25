@@ -40,20 +40,18 @@ the time of year.
 
 Naming people: never guess identities from faces, and never say which visible
 person is which name. Some photos carry a line "Known people in this photo: ..."
-— those names come from face recognition and are reliable, so you MAY state that
-a photo includes those people (e.g. "Photo 3 includes Anna and Ivan"), but only
-as the set of who is present, never tied to a position or a specific face. You
-know WHO is present but NOTHING about how people are related: never call anyone a
-family member, relative, couple, or friend, never assign or imply a surname, and
-never group people as "the family" — even when the search term is itself a
-surname (it only selected the photos; it says nothing about anyone else in them).
-For photos with no such line, describe people generically (a man, two children)
-and invent no names. If the query named a person or surname, treat it purely as a
-search term, not a relationship to assert about anyone present.
+— those names are reliable face-recognition tags, so you MAY state that a photo
+includes those people (e.g. "Photo 3 includes Anna and Ivan"), but only as the
+set of who is present, never tied to a position or a specific face. Do NOT infer
+relationships FROM THE IMAGES: never call people a family, couple, or friends, and
+never guess a surname from a face. (A "Search match" note below, if present, is
+authoritative — you MAY use it to say which searched name a present person matched;
+that is given to you, not guessed.) For photos with no tag line, describe people
+generically (a man, two children) and invent no names.
 
 If a photo is genuinely unrelated to the query, say so for that photo. Stay
 concise — 2-3 short paragraphs total.
-{filter_block}{person_block}
+{filter_block}{person_block}{resolution_block}
 USER QUERY: {query}
 
 ANSWER:"""
@@ -79,6 +77,23 @@ _PERSON_BLOCK = (
     "\nThese photos were selected by face-recognition tags to include the"
     " person(s) the user searched for — trust that selection; do not dismiss a"
     " photo just because you cannot personally pick the person out.\n"
+)
+
+# Inserted for a multi-term person search (e.g. a name AND a surname). Maps each
+# search term to the known people it resolved to, so the model can connect a
+# per-photo tag (a canonical name like "Anna") back to the term the user typed
+# (a surname like "Ivanova") instead of mismatching a similar-looking tag. {note}
+# is built from PersonFilter.groups, e.g. "'Anna' -> Anna Smith, Anna Jones;
+# 'Ivanova' -> the Ivanov family".
+_PERSON_RESOLUTION_BLOCK = (
+    "\nSearch match (authoritative — use it, do not second-guess). The user's search"
+    " terms resolved to these known people: {note}. Every photo shown contains at"
+    " least one person from EACH term's group (that is why it was selected). Using the"
+    " per-photo 'Known people' tags, say which of these people appear and which search"
+    " term each matched (someone tagged with a given name may be the surname the user"
+    " searched). A photo matching ALL terms is the strongest match. NEVER say a"
+    " searched term has no matches, and NEVER match a term to a different but"
+    " similarly-spelled name.\n"
 )
 
 
@@ -145,6 +160,7 @@ def generate(
     filters_note: str | None = None,
     person_active: bool = False,
     show_people: bool = False,
+    person_resolution: str | None = None,
 ) -> tuple[str, dict]:
     """Pass query + retrieved images (with date+caption metadata) to Gemini.
 
@@ -193,6 +209,9 @@ def generate(
             contents.append(f"Known people in this photo: {', '.join(h.person_names)}")
     filter_block = _FILTER_BLOCK.format(note=filters_note) if filters_note else ""
     person_block = _PERSON_BLOCK if person_active else ""
+    resolution_block = (
+        _PERSON_RESOLUTION_BLOCK.format(note=person_resolution) if person_resolution else ""
+    )
     contents.append(
         "\n\n"
         + GENERATION_PROMPT.format(
@@ -200,6 +219,7 @@ def generate(
             query=query,
             filter_block=filter_block,
             person_block=person_block,
+            resolution_block=resolution_block,
         )
     )
 

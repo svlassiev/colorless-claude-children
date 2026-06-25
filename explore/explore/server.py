@@ -500,6 +500,17 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
             # flags below: person_active vouches for the face-tag SELECTION, and
             # show_people (people-gated) lets Pro report the authoritative tags
             # per photo — never a visual guess.
+            #
+            # person_resolution maps each search TERM to the people it resolved to
+            # (people-gated), so Pro can connect a per-photo tag (canonical name)
+            # back to the term the user typed (often a surname) instead of grabbing
+            # a similar-looking tag. Only built when a person filter is active.
+            person_resolution = None
+            if people_allowed and photo_filters.person and photo_filters.person.groups:
+                person_resolution = "; ".join(
+                    f"'{term}' → {', '.join(names)}"
+                    for term, names in photo_filters.person.groups
+                )
             outcome = await safe_generate(
                 photo_qa.generate,
                 req.query,
@@ -510,6 +521,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                 filters_note="; ".join(_notes) or None,
                 person_active=photo_filters.person is not None,
                 show_people=people_allowed,
+                person_resolution=person_resolution,
             )
         else:
             outcome = await safe_generate(
