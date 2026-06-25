@@ -20,28 +20,53 @@ from photo_search.retriever import Hit, search
 from photo_search.tools.base import Filters
 
 GENERATION_PROMPT = """\
-You are answering a question about Sergey's personal photo collection.
-{filter_block}
-Look at the {n} photos provided above and answer the user's query. For each
-relevant photo, briefly describe what's visible. If a photo is genuinely
-unrelated to the query, say so for that photo. Do not speculate about the
-identities of the people in the photos. Stay concise — 2-3 short paragraphs total.
+You are answering a question about a family photo collection.
 
+The person searching is not necessarily anyone shown in the photos. Never
+address the viewer as someone in a picture (e.g. "you are pictured with ...")
+and never assume who is asking.
+
+Look at the {n} photos provided above and answer the user's query. For each
+relevant photo, briefly describe what is happening — the setting, the activity,
+the time of year.
+
+Naming people: never guess identities from faces, and never say which visible
+person is which name. Some photos carry a line "Known people in this photo: ..."
+— those names come from face recognition and are reliable, so you MAY state that
+a photo includes those people (e.g. "Photo 3 includes Anna and Ivan"), but
+only as the set of who is present, never tied to a position or a specific face.
+For photos with no such line, describe people generically (a man, two children)
+and invent no names. If the query itself named people, treat those names as
+search terms, not as labels to pin on faces.
+
+If a photo is genuinely unrelated to the query, say so for that photo. Stay
+concise — 2-3 short paragraphs total.
+{filter_block}{person_block}
 USER QUERY: {query}
 
 ANSWER:"""
 
-# Inserted into the prompt when the retrieval was narrowed by metadata filters
-# (place / proximity / date). Without it the model re-judges location/date from
-# the pixels alone — and disclaims photos it can't visually tie to the place,
-# undermining a filter that already matched them by GPS/tags. {note} is a short
-# human string like "location = Оять; dates 2009-06-01 .. 2009-08-31".
+# Inserted when retrieval was narrowed by place/proximity/date metadata. Without
+# it the model re-judges location/date from pixels alone — and disclaims photos
+# it can't visually tie to the place, undermining a filter that already matched
+# them by GPS/tags. {note} is a short human string like
+# "location = Оять; dates 2009-06-01 .. 2009-08-31".
 _FILTER_BLOCK = (
     "\nThese photos were already filtered by metadata (GPS / place tags / dates),"
     " not by their visible content, to match: {note}. Treat that as established"
     " ground truth — do NOT dismiss a photo just because the place or date isn't"
     " identifiable from the image itself; assume it is correct and answer the"
     " query on that basis.\n"
+)
+
+# Inserted when the query named a person and we narrowed by face tags. Like the
+# metadata block it vouches for the SELECTION (don't dismiss a photo for not
+# obviously showing the person); identity attribution itself is governed by the
+# "Naming people" rule above — report tags, never map a name onto a face.
+_PERSON_BLOCK = (
+    "\nThese photos were selected by face-recognition tags to include the"
+    " person(s) the user searched for — trust that selection; do not dismiss a"
+    " photo just because you cannot personally pick the person out.\n"
 )
 
 
@@ -106,6 +131,8 @@ def generate(
     max_output_tokens: int | None = None,
     prefetched_bytes: dict[str, bytes] | None = None,
     filters_note: str | None = None,
+    person_active: bool = False,
+    show_people: bool = False,
 ) -> tuple[str, dict]:
     """Pass query + retrieved images (with date+caption metadata) to Gemini.
 
@@ -146,10 +173,21 @@ def generate(
         )
         if h.caption:
             contents.append(f"Auto-generated caption: {h.caption}")
+        # Authoritative face-recognition tags — only surfaced for allow-listed
+        # callers (server gates show_people on the people allow-list). The prompt
+        # lets the model report these as who-is-present, never mapped to a face.
+        if show_people and h.person_names:
+            contents.append(f"Known people in this photo: {', '.join(h.person_names)}")
     filter_block = _FILTER_BLOCK.format(note=filters_note) if filters_note else ""
+    person_block = _PERSON_BLOCK if person_active else ""
     contents.append(
         "\n\n"
-        + GENERATION_PROMPT.format(n=len(hits), query=query, filter_block=filter_block)
+        + GENERATION_PROMPT.format(
+            n=len(hits),
+            query=query,
+            filter_block=filter_block,
+            person_block=person_block,
+        )
     )
 
     resp = gen_client.models.generate_content(

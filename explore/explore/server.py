@@ -493,8 +493,13 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                 _notes.append(f"near {proximity_filter}")
             if date_filter:
                 _notes.append(f"dates {date_filter}")
-            if person_filter:
-                _notes.append(f"person = {person_filter}")
+            # Person is deliberately NOT folded into this metadata "ground truth"
+            # note. That note tells Pro "treat these as established fact", which
+            # made it assert the named people were visible and then map names onto
+            # faces (misnaming them). Person handling goes through the dedicated
+            # flags below: person_active vouches for the face-tag SELECTION, and
+            # show_people (people-gated) lets Pro report the authoritative tags
+            # per photo — never a visual guess.
             outcome = await safe_generate(
                 photo_qa.generate,
                 req.query,
@@ -503,6 +508,8 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                 _state["storage_client"],
                 prefetched_bytes=photo_bytes_by_sha or None,
                 filters_note="; ".join(_notes) or None,
+                person_active=photo_filters.person is not None,
+                show_people=people_allowed,
             )
         else:
             outcome = await safe_generate(

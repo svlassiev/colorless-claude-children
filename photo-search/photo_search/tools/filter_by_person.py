@@ -116,6 +116,33 @@ class Args(BaseModel):
     person_name: str = Field(min_length=1, max_length=80)
 
 
+def _resolve(raw: str) -> list[str] | None:
+    """Resolve a written name to canonical identity name(s), or None.
+
+    First an exact normalized match — covers first names, nicknames, surnames
+    and full canonical names (every form alias_expand baked). Failing that, a
+    multi-word query is read as "<given> <surname>" and the identity sets of its
+    words are INTERSECTED: a "FirstName Surname" resolves to whoever is both that
+    first name AND that surname. This resolves combined forms that were never
+    baked as a single alias, and disambiguates a shared first name (two people
+    with the same given name are separated by the surname). None when nothing
+    resolves (caller falls back to visual search).
+    """
+    direct = _FORM_TO_NAMES.get(_norm(raw))
+    if direct:
+        return direct
+    toks = [t for t in _norm(raw).split() if t]
+    if len(toks) < 2:
+        return None
+    per_token = [_FORM_TO_NAMES.get(t) for t in toks]
+    if not all(per_token):
+        return None
+    inter = set(per_token[0])
+    for s in per_token[1:]:
+        inter &= set(s)
+    return sorted(inter) if inter else None
+
+
 def execute(args: Args, metas: list[dict]) -> PersonFilter | None:
     """Resolve the query name to identities and mask metas by person_names.
 
@@ -124,7 +151,7 @@ def execute(args: Args, metas: list[dict]) -> PersonFilter | None:
     before person search existed). Otherwise returns a PersonFilter masking to
     the union of photos that carry any of the resolved identities.
     """
-    names = _FORM_TO_NAMES.get(_norm(args.person_name))
+    names = _resolve(args.person_name)
     if not names:
         return None
     nameset = set(names)

@@ -86,6 +86,11 @@ class Hit:
     date_iso: str | None
     caption: str
     sha: str
+    # Face-recognition identity tags for this photo (authoritative, NOT a visual
+    # guess). Always populated from the meta; only ever SURFACED to allow-listed
+    # callers (the server passes them on to generation / citations behind the
+    # people gate). Empty tuple when the photo has no tagged people.
+    person_names: tuple[str, ...] = ()
 
 
 def parse_date_filter(query: str) -> tuple[str | None, str | None]:
@@ -225,6 +230,7 @@ def search(
                 date_iso=m.get("exif_date_iso") or _infer_date_iso_from_path(m["blob_path"]),
                 caption=m.get("caption", ""),
                 sha=sha,
+                person_names=tuple(m.get("person_names") or ()),
             )
         )
         if len(hits) >= k:

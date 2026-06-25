@@ -90,6 +90,22 @@ def _build_tool_and_config(
     return [tool], tool_config
 
 
+def _combine_people(parts: list[PersonFilter]) -> PersonFilter:
+    """Fold N per-name person filters into one with AND (intersection) semantics.
+
+    A query naming several people arrives as several parallel filter_by_person
+    calls — one per name. The user means photos that contain EVERYONE named, so
+    we intersect the per-name photo sets. A single call passes through unchanged
+    (intersection of one set).
+    """
+    shas = parts[0].matched_shas
+    for p in parts[1:]:
+        shas = shas & p.matched_shas
+    names = tuple(dict.fromkeys(n for p in parts for n in p.names))
+    query = " + ".join(p.query for p in parts)
+    return PersonFilter(query=query, names=names, matched_shas=frozenset(shas))
+
+
 def _roster_block() -> str:
     """Append the known-people roster to the system instruction (allow-listed
     callers only). Empty when no aliases are loaded, so routing is unchanged then.
@@ -155,6 +171,7 @@ async def route_query(
         return Filters()
 
     filters = Filters()
+    person_parts: list[PersonFilter] = []
 
     for raw in outcome.calls:
         if raw.name not in TOOL_REGISTRY:
@@ -191,6 +208,12 @@ async def route_query(
                 filters = replace(filters, proximity=result)
         elif raw.name == "filter_by_person":
             if isinstance(result, PersonFilter):
-                filters = replace(filters, person=result)
+                person_parts.append(result)
+
+    # Several names in one query arrive as parallel filter_by_person calls; AND
+    # them so only photos containing EVERYONE named survive. A single call is an
+    # intersection of one set — identical to the old single-person behavior.
+    if person_parts:
+        filters = replace(filters, person=_combine_people(person_parts))
 
     return filters
