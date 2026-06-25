@@ -460,8 +460,9 @@
       .header-row { flex-direction: column; align-items: center; gap: 3px; }
       .header-side, .header-side.right { text-align: center; flex: none; }
       .name { font-size: 1.95rem; }
-      .job-row { flex-wrap: wrap; }
-      .job-company, .job-dates { flex: none; text-align: left; }
+      /* Declutter the job header: hide role + dates, leave the company name centered */
+      .job-role, .job-dates { display: none; }
+      .job-company { flex: 1 1 100%; text-align: center; padding: 0; white-space: normal; }
       #theme-toggle { top: 12px; right: 12px; }
     }
 

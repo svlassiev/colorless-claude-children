@@ -22,10 +22,8 @@ __pycache__/
 .pytest_cache/
 .coverage
 
-# Per-package build narrative (gitignored at root level too — defensive;
-# each package may also have its own /PLAN.md gitignore)
-PLAN.md
-HIKING-PLAN.md
+# Internal planning
+*PLAN.md
 
 # Stray photos dropped at repo root during testing
 /photo_*.jpg
