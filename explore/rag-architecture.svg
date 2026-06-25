@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="700" viewBox="0 0 1180 700">
+  <defs>
+    <marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#5F6368"/>
+    </marker>
+    <filter id="sh" x="-20%" y="-30%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#000000" flood-opacity="0.16"/>
+    </filter>
+    <style>
+      text { font-family: Helvetica, Arial, sans-serif; }
+      .gt   { font-size:13px; font-weight:700; }
+      .gsub { font-size:10px; fill:#5F6368; }
+      .bt   { font-size:13.5px; font-weight:600; fill:#202124; text-anchor:middle; }
+      .bs   { font-size:10px; fill:#5F6368; text-anchor:middle; }
+      .nm   { font-size:11.5px; fill:#202124; text-anchor:middle; }
+      .conn { stroke:#5F6368; stroke-width:1.6; fill:none; }
+      .el   { font-size:10px; fill:#3C4043; text-anchor:middle; }
+    </style>
+  </defs>
+
+  <rect width="1180" height="700" fill="#FFFFFF"/>
+
+  <!-- ===================== GROUP CONTAINERS ===================== -->
+  <rect x="24"  y="34" width="180" height="150" rx="8" fill="#F6F1FB" stroke="#9C6ADE"/>
+  <text class="gt"   x="38" y="55" fill="#6A41B0">Auth &amp; Quota</text>
+
+  <rect x="222" y="34" width="288" height="150" rx="8" fill="#EDF7EF" stroke="#34A853"/>
+  <text class="gt"   x="236" y="55" fill="#1E7E34">Tools · query filters</text>
+  <text class="gsub" x="236" y="70">Gemini Flash function-calling · AUTO · 0..N parallel</text>
+
+  <rect x="612" y="34" width="392" height="150" rx="8" fill="#F1F3F4" stroke="#80868B"/>
+  <text class="gt"   x="626" y="55" fill="#3C4043">Models · Gemini API</text>
+
+  <rect x="150" y="528" width="970" height="150" rx="8" fill="#F8F9FA" stroke="#9AA0A6"/>
+  <text class="gt"   x="164" y="550" fill="#3C4043">Data / Index</text>
+  <text class="gsub" x="248" y="550">— built offline (indexer · embedder · place_baker)</text>
+
+  <!-- ===================== CONNECTORS (under boxes) ===================== -->
+  <!-- module -> step -->
+  <path class="conn" d="M114,184 L116,294" marker-end="url(#arr)"/>
+  <path class="conn" d="M360,184 L322,294" marker-end="url(#arr)"/>
+  <path class="conn" d="M712,172 L716,294" marker-end="url(#arr)"/>
+  <path class="conn" d="M912,172 L916,294" marker-end="url(#arr)"/>
+  <!-- step -> data -->
+  <path class="conn" d="M510,360 L500,560" marker-end="url(#arr)"/>
+  <path class="conn" d="M318,360 L312,566" marker-end="url(#arr)"/>
+  <path class="conn" d="M720,360 L792,566" marker-end="url(#arr)"/>
+  <path class="conn" d="M916,360 L838,566" marker-end="url(#arr)"/>
+
+  <!-- ===================== MODULE CHILD BOXES ===================== -->
+  <!-- Auth -->
+  <rect x="38"  y="70"  width="152" height="38" rx="4" fill="#FFFFFF" stroke="#9C6ADE"/>
+  <text class="nm" x="114" y="94">Firebase Auth</text>
+  <rect x="38"  y="116" width="152" height="56" rx="4" fill="#FFFFFF" stroke="#9C6ADE"/>
+  <text class="nm" x="114" y="139">Firestore</text>
+  <text class="bs" x="114" y="156">rate-limit (pre-Generate)</text>
+
+  <!-- Tools -->
+  <rect x="236" y="92"  width="126" height="38" rx="4" fill="#FFFFFF" stroke="#34A853"/>
+  <text class="nm" x="299" y="116">Location filter</text>
+  <rect x="372" y="92"  width="126" height="38" rx="4" fill="#FFFFFF" stroke="#34A853"/>
+  <text class="nm" x="435" y="116">Date filter</text>
+  <rect x="236" y="138" width="126" height="38" rx="4" fill="#FFFFFF" stroke="#34A853"/>
+  <text class="nm" x="299" y="162">Proximity filter</text>
+  <rect x="372" y="138" width="126" height="38" rx="4" fill="#FEF3D0" stroke="#F9AB00" stroke-dasharray="5 3"/>
+  <text class="nm" x="435" y="162">Person filter</text>
+
+  <!-- Models (note shapes) -->
+  <path d="M628,90 L778,90 L794,106 L794,168 L628,168 Z M778,90 L778,106 L794,106"
+        fill="#FFFFFF" stroke="#80868B" stroke-linejoin="round"/>
+  <text class="nm" x="711" y="124">Gemini 2.5</text>
+  <text class="nm" x="711" y="142">Flash</text>
+  <path d="M828,90 L978,90 L994,106 L994,168 L828,168 Z M978,90 L978,106 L994,106"
+        fill="#FFFFFF" stroke="#80868B" stroke-linejoin="round"/>
+  <text class="nm" x="911" y="124">Gemini 2.5</text>
+  <text class="nm" x="911" y="142">Pro</text>
+
+  <!-- ===================== MAIN FLOW ===================== -->
+  <!-- flow arrows -->
+  <path class="conn" d="M198,330 L242,330" marker-end="url(#arr)"/>
+  <path class="conn" d="M404,330 L448,330" marker-end="url(#arr)"/>
+  <path class="conn" d="M610,330 L654,330" marker-end="url(#arr)"/>
+  <path class="conn" d="M816,330 L860,330" marker-end="url(#arr)"/>
+  <path class="conn" d="M1022,330 L1058,330" marker-end="url(#arr)"/>
+
+  <g filter="url(#sh)">
+    <rect x="40"   y="299" width="158" height="62" rx="11" fill="#E8F0FE" stroke="#4285F4"/>
+    <rect x="244"  y="299" width="160" height="62" rx="11" fill="#E8F0FE" stroke="#4285F4"/>
+    <rect x="450"  y="299" width="160" height="62" rx="11" fill="#E8F0FE" stroke="#4285F4"/>
+    <rect x="656"  y="299" width="160" height="62" rx="11" fill="#E8F0FE" stroke="#4285F4"/>
+    <rect x="862"  y="299" width="160" height="62" rx="11" fill="#E8F0FE" stroke="#4285F4"/>
+    <rect x="1058" y="299" width="106" height="62" rx="11" fill="#E8F0FE" stroke="#4285F4"/>
+  </g>
+
+  <text class="bt" x="119"  y="326">Read request</text>
+  <text class="bs" x="119"  y="344">auth · parse query</text>
+  <text class="bt" x="324"  y="326">Route query</text>
+  <text class="bs" x="324"  y="344">Gemini Flash · function-calling</text>
+  <text class="bt" x="530"  y="326">Retrieve</text>
+  <text class="bs" x="530"  y="344">embed · cosine top-k</text>
+  <text class="bt" x="736"  y="326">Rerank</text>
+  <text class="bs" x="736"  y="344">Gemini Flash · vision (k≥20)</text>
+  <text class="bt" x="942"  y="326">Generate</text>
+  <text class="bs" x="942"  y="344">Gemini Pro · augment</text>
+  <text class="bt" x="1111" y="330">Done</text>
+
+  <!-- ===================== DATA STORES ===================== -->
+  <!-- Photo metadata -->
+  <rect x="224" y="572" width="176" height="86" rx="4" fill="#FFFFFF" stroke="#9AA0A6"/>
+  <text class="nm" x="312" y="600">Photo metadata</text>
+  <text class="bs" x="312" y="617">place labels · coords</text>
+  <text class="bs" x="312" y="631">captions · EXIF dates</text>
+
+  <!-- Vector index (cylinder) -->
+  <path d="M432,576 a76,11 0 0 1 152,0 l0,66 a76,11 0 0 1 -152,0 Z" fill="#FFFFFF" stroke="#9AA0A6"/>
+  <ellipse cx="508" cy="576" rx="76" ry="11" fill="#FFFFFF" stroke="#9AA0A6"/>
+  <text class="nm" x="508" y="624">Vector index</text>
+  <text class="bs" x="508" y="640">(embeddings)</text>
+
+  <!-- Raw photos (document) -->
+  <path d="M762,574 L922,574 L922,646 q-40,-18 -80,0 q-40,18 -80,0 Z" fill="#FFFFFF" stroke="#9AA0A6"/>
+  <text class="nm" x="842" y="606">Raw photos</text>
+  <text class="bs" x="842" y="622">(GCS)</text>
+
+  <!-- Face index (cylinder, amber dashed) -->
+  <path d="M966,576 a76,11 0 0 1 152,0 l0,66 a76,11 0 0 1 -152,0 Z" fill="#FEF8E6" stroke="#F9AB00" stroke-dasharray="5 3"/>
+  <ellipse cx="1042" cy="576" rx="76" ry="11" fill="#FEF8E6" stroke="#F9AB00" stroke-dasharray="5 3"/>
+  <text class="nm" x="1042" y="624">Face index</text>
+  <text class="bs" x="1042" y="640">+ labels</text>
+
+  <!-- ===================== EDGE LABELS ===================== -->
+  <g>
+    <rect x="80"  y="232" width="74"  height="15" fill="#FFFFFF" opacity="0.9"/>
+    <text class="el" x="117" y="243">verify token</text>
+    <rect x="318" y="226" width="66"  height="15" fill="#FFFFFF" opacity="0.9"/>
+    <text class="el" x="351" y="237">invoke 0..N</text>
+    <rect x="676" y="224" width="74"  height="15" fill="#FFFFFF" opacity="0.9"/>
+    <text class="el" x="713" y="235">vision rerank</text>
+    <rect x="888" y="224" width="48"  height="15" fill="#FFFFFF" opacity="0.9"/>
+    <text class="el" x="912" y="235">answer</text>
+    <rect x="466" y="452" width="70"  height="15" fill="#FFFFFF" opacity="0.9"/>
+    <text class="el" x="501" y="463">cosine top-k</text>
+    <rect x="246" y="452" width="116" height="15" fill="#FFFFFF" opacity="0.9"/>
+    <text class="el" x="304" y="463">labels · coords · dates</text>
+    <rect x="724" y="452" width="66"  height="15" fill="#FFFFFF" opacity="0.9"/>
+    <text class="el" x="757" y="463">image bytes</text>
+    <rect x="846" y="452" width="66"  height="15" fill="#FFFFFF" opacity="0.9"/>
+    <text class="el" x="879" y="463">image bytes</text>
+  </g>
+
+  <!-- ===================== LEGEND ===================== -->
+  <rect x="24" y="408" width="176" height="96" rx="6" fill="#FEF8E6" stroke="#F9AB00"/>
+  <text x="36" y="428" font-size="11" font-weight="700" fill="#9A6A00" font-family="Helvetica, Arial, sans-serif">Added for face recognition</text>
+  <text x="36" y="446" font-size="10.5" fill="#3C4043" font-family="Helvetica, Arial, sans-serif">• Person filter  (Tool)</text>
+  <text x="36" y="463" font-size="10.5" fill="#3C4043" font-family="Helvetica, Arial, sans-serif">• Face index + labels  (Data)</text>
+  <text x="36" y="480" font-size="10.5" fill="#3C4043" font-family="Helvetica, Arial, sans-serif">• face detect/embed model</text>
+  <text x="46" y="496" font-size="10.5" fill="#3C4043" font-family="Helvetica, Arial, sans-serif">(offline build)</text>
+</svg>
