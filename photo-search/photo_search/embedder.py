@@ -214,9 +214,9 @@ def main() -> int:
 
     ensure_cache_dir()
     np.savez_compressed(INDEX_PATH, vectors=vectors)
-    # Fields copied from manifest into meta. Place fields (added by
-    # place_baker.py) only land in meta when present on the manifest row;
-    # rows without them stay clean.
+    # Fields copied from manifest into meta. Optional fields (place_* added by
+    # place_baker.py, person_names added by face_promote.py) only land in meta
+    # when present on the manifest row; rows without them stay clean.
     META_REQUIRED = ("id", "gcs_uri", "blob_path", "exif_date_iso", "exif_gps", "caption", "sha")
     META_OPTIONAL = (
         "place_names",
@@ -225,6 +225,7 @@ def main() -> int:
         "place_context",
         "place_coord",
         "place_coord_source",
+        "person_names",
     )
     with META_PATH.open("w", encoding="utf-8") as f:
         for r in rows:

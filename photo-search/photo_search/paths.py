@@ -45,6 +45,20 @@ MANIFEST_PATH = CACHE_ROOT / "manifest.jsonl"
 INDEX_PATH = CACHE_ROOT / "index.npz"
 META_PATH = CACHE_ROOT / "manifest_meta.jsonl"
 
+# ─── Face search (offline pipeline) ─────────────────────────────────────
+# Face vectors are biometric data: kept laptop-local under CACHE_ROOT (outside
+# the repo) and never synced to GCS. person_aliases.json is the one committed
+# artifact — read at serving time, exactly like place_aliases.json.
+FACES_PATH = CACHE_ROOT / "faces.jsonl"          # detected faces + embeddings
+FACE_REVIEW_DIR = CACHE_ROOT / "face_review"     # per-cluster montages for naming
+PERSON_ALIASES_PATH = Path(__file__).parent / "data" / "person_aliases.json"
+
+# Thresholds — starting guesses, tuned during the review rounds.
+FACE_DET_MIN = 0.6        # min RetinaFace detection score to keep a face
+FACE_MIN_PX = 40         # min face bounding-box side in pixels (smaller is noisy)
+HDBSCAN_MIN_CLUSTER = 4  # min faces to form a cluster (smaller is treated as noise)
+FACE_ASSIGN_COS = 0.55   # (family phase) min cosine to attach a face to an identity
+
 
 def ensure_cache_dir() -> Path:
     CACHE_ROOT.mkdir(parents=True, exist_ok=True)

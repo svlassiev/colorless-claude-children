@@ -15,6 +15,13 @@ manifest_meta.jsonl
 caption_cache/
 caption_cache.jsonl
 
+# Face search — biometric data + naming work, local only, never published
+faces.jsonl
+identities.json
+face_review/
+cluster_labels.json
+cluster_proposals.json
+
 # Local secrets and env
 .env
 .env.*
