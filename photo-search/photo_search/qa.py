@@ -19,6 +19,14 @@ from photo_search.paths import BUCKET, GENERATE_MODEL
 from photo_search.retriever import Hit, search
 from photo_search.tools.base import Filters
 
+# Gemini 2.5 Pro draws thinking AND the visible answer from ONE output-token pool.
+# Cap thinking so it can't consume the whole pool and truncate the answer mid-word;
+# size the pool as that cap plus a FLOORED, per-hit visible allowance so even a 1-2
+# photo result still gets a complete, reasonably full reply.
+GEN_THINKING_BUDGET = 1024  # ceiling on Pro's reasoning tokens for this task
+MIN_VISIBLE_TOKENS = 900    # floor on the visible-answer budget (small result sets)
+PER_HIT_VISIBLE_TOKENS = 220  # visible budget grows with how many photos to cover
+
 GENERATION_PROMPT = """\
 You are answering a question about a family photo collection.
 
@@ -144,17 +152,18 @@ def generate(
     When `prefetched_bytes` is provided (sha → bytes), reuse those instead
     of re-downloading — the rerank pipeline already fetched them.
 
-    `max_output_tokens` caps Gemini's TOTAL output (thinking + visible).
-    When None, scales with retrieval depth: 250 * len(hits). At k=8 → 2000
-    (the prior fixed default); at k=20 → 5000, so the visible answer isn't
-    starved when the model has more photos to summarize. Gemini 2.5 Pro is
-    a reasoning model — thinking tokens count toward this budget and toward
-    billing.
+    `max_output_tokens` caps Gemini's TOTAL output (thinking + visible). When
+    None it is GEN_THINKING_BUDGET + max(MIN_VISIBLE_TOKENS, PER_HIT_VISIBLE_TOKENS
+    * len(hits)), paired with a thinking_budget cap below. This guarantees the
+    visible answer a floor (so a 1-2 photo result still gets a complete reply)
+    and stops Pro's reasoning from eating the pool and truncating mid-word.
+    Gemini 2.5 Pro is a reasoning model — thinking + visible both bill as output.
 
     Returns (answer_text, usage_dict).
     """
     if max_output_tokens is None:
-        max_output_tokens = 250 * max(1, len(hits))
+        visible_budget = max(MIN_VISIBLE_TOKENS, PER_HIT_VISIBLE_TOKENS * len(hits))
+        max_output_tokens = GEN_THINKING_BUDGET + visible_budget
 
     # Resolve bytes for every hit: prefer the prefetched map, otherwise
     # download what's missing in parallel. After this block every hit has
@@ -193,7 +202,11 @@ def generate(
     resp = gen_client.models.generate_content(
         model=GENERATE_MODEL,
         contents=contents,
-        config=types.GenerateContentConfig(max_output_tokens=max_output_tokens),
+        config=types.GenerateContentConfig(
+            max_output_tokens=max_output_tokens,
+            # Cap reasoning so it can't starve the visible answer (see budget note).
+            thinking_config=types.ThinkingConfig(thinking_budget=GEN_THINKING_BUDGET),
+        ),
     )
 
     usage: dict = {"tokens_in": 0, "tokens_out": 0, "tokens_thoughts": 0, "cost": None}
