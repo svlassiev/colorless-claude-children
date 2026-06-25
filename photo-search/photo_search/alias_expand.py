@@ -48,6 +48,41 @@ CLUSTER_LABELS_PATH = FACES_PATH.parent / "cluster_labels.json"
 _CYRILLIC = re.compile(r"[А-Яа-яЁё]")
 _morph = pymorphy3.MorphAnalyzer()
 
+# Deterministic given-name linking. Generic Russian given-name groups (universal
+# linguistic knowledge — no private data): if a person's base forms include any
+# trigger diminutive, the FORMAL name(s) + Latin equivalents are added so everyone
+# sharing a first name cross-links on the formal form, regardless of the model's
+# per-run output. Only the formal base is added (not other people's diminutives),
+# so e.g. "Саша" still won't pull in a "Саня" — but "Александр" unions them all.
+# (formal_ru_to_add, trigger_forms_normalized, latin_to_add)
+_NAME_GROUPS: list[tuple[list[str], set[str], list[str]]] = [
+    (["Александр"], {"саша", "саня", "шура", "александр", "сашка"}, ["Aleksandr", "Alexander"]),
+    (["Сергей"], {"серёжа", "сережа", "серёга", "серега", "сергей", "серж"}, ["Sergei", "Sergey"]),
+    (["Владимир"], {"вова", "володя", "влад", "вовка", "владимир"}, ["Vladimir"]),
+    (["Михаил"], {"миша", "михаил", "мишка", "мишаня"}, ["Mikhail", "Michael"]),
+    (["Евгений", "Евгения", "Женя"], {"женя", "женечка", "евгений", "евгения", "женька"}, ["Zhenya", "Evgeny", "Evgenia"]),
+    (["Ксения"], {"ксюша", "ксеня", "ксения", "ксюха"}, ["Ksenia", "Kseniya"]),
+    (["Екатерина"], {"катя", "катюша", "екатерина"}, ["Ekaterina"]),
+    (["Мария"], {"маша", "маня", "мария", "машка"}, ["Maria"]),
+    (["Игорь"], {"игорь", "игорёк"}, ["Igor"]),
+    (["Анастасия"], {"настя", "анастасия"}, ["Anastasia"]),
+    (["Наталья"], {"наташа", "наталья", "ната"}, ["Natalia", "Natasha"]),
+    (["Татьяна"], {"таня", "татьяна"}, ["Tatiana", "Tanya"]),
+    (["Ирина"], {"ира", "ирина"}, ["Irina"]),
+    (["Валерия"], {"лера", "валерия"}, ["Valeria"]),
+    (["Валентина"], {"валя", "валентина"}, ["Valentina"]),
+    (["Надежда"], {"надя", "надежда"}, ["Nadezhda"]),
+    (["Анна"], {"аня", "анна", "анюта"}, ["Anna"]),
+    (["Варвара"], {"варя", "варвара"}, ["Varvara", "Barbara"]),
+    (["Даниил"], {"данила", "даня", "даниил"}, ["Daniil", "Danila"]),
+    (["Алексей"], {"лёша", "леша", "алексей", "алёша", "лёха"}, ["Alexey", "Lyosha"]),
+    (["Павел"], {"паша", "павел", "павлик"}, ["Pavel", "Pasha"]),
+    (["Николай"], {"коля", "николай"}, ["Nikolai", "Kolya"]),
+    (["Борис"], {"боря", "борис"}, ["Boris"]),
+    (["Олег"], {"олег", "олежка"}, ["Oleg"]),
+    (["Полина"], {"поля", "полина"}, ["Polina"]),
+]
+
 _PROMPT = """\
 These are people in a personal photo collection (mixed Russian given names, some
 with a surname):
@@ -153,12 +188,23 @@ def main() -> int:
         excl = {_norm(w) for w in exclude.get(name, [])}
         ru_bases = {w for w in ru_bases if _norm(w) not in excl}
 
+        # Deterministic given-name linking: add the formal base + Latin for any
+        # matched name group, so people sharing a first name cross-link on the
+        # formal form regardless of the model's per-run output (see _NAME_GROUPS).
+        group_lat: set[str] = set()
+        norm_bases = {_norm(w) for w in ru_bases}
+        for formal_list, triggers, lat_list in _NAME_GROUPS:
+            if norm_bases & triggers:
+                ru_bases |= set(formal_list)
+                group_lat |= {_norm(w) for w in lat_list}
+
         forms: set[str] = set()
         for w in ru_bases:
             forms |= _decline(w)
         forms |= _colloquial(forms)
         forms |= {_norm(w) for w in g.get("lat", [])}
         forms |= {_norm(w) for w in extras.get(name, {}).get("lat", [])}
+        forms |= group_lat
         forms.add(_norm(name))
 
         for w in exclude.get(name, []):

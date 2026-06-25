@@ -114,9 +114,17 @@ def _roster_block() -> str:
     if not names:
         return ""
     return (
-        "\n\nKnown people in this collection — call filter_by_person when the query "
-        "names one of them (a name, nickname or surname), emitting it as written:\n"
-        + ", ".join(names)
+        "\n\nPERSON SEARCH. A filter_by_person tool is available. Call it whenever the "
+        "query contains ANY personal name — a given name, nickname, patronymic, or "
+        "SURNAME, including a plural family surname (a Russian surname ending -овы/-евы/"
+        "-ины names that whole family). Emit the name EXACTLY as written. This is "
+        "INDEPENDENT of place and date: when the query has BOTH a person and a place or "
+        "year (e.g. a surname followed by a place name, or a name with a year), emit "
+        "filter_by_person AND the place/date tools TOGETHER — never drop the person just "
+        "because a place or date is also present. "
+        "Calling filter_by_person for a word that is not a known person is harmless (it "
+        "matches nobody), so PREFER to call it whenever a token plausibly names a person. "
+        "Known people in this collection include:\n" + ", ".join(names)
     )
 
 
