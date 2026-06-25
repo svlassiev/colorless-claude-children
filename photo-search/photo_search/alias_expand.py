@@ -146,6 +146,33 @@ def _decline(word: str) -> set[str]:
     return out
 
 
+_TRANSLIT = {
+    "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "yo",
+    "ж": "zh", "з": "z", "и": "i", "й": "y", "к": "k", "л": "l", "м": "m",
+    "н": "n", "о": "o", "п": "p", "р": "r", "с": "s", "т": "t", "у": "u",
+    "ф": "f", "х": "kh", "ц": "ts", "ч": "ch", "ш": "sh", "щ": "shch",
+    "ъ": "", "ы": "y", "ь": "", "э": "e", "ю": "yu", "я": "ya",
+}
+
+
+def _translit(word: str) -> set[str]:
+    """Deterministic Cyrillic->Latin transliterations of one base form, with a few
+    common spelling variants so typical English renderings of a name/surname match
+    (e.g. ya/ia, yu/iu, kh/h). Single Cyrillic word only; {} otherwise. This gives
+    every name and surname a baseline Latin form; idiosyncratic spellings a scheme
+    can't predict are still added via the owner's lat extras. Over-generation is
+    harmless — an unused alias just sits there.
+    """
+    w = word.strip().lower()
+    if not w or " " in w or not _CYRILLIC.search(w):
+        return set()
+    out = {"".join(_TRANSLIT.get(ch, ch) for ch in w)}
+    for a, b in (("yo", "e"), ("yo", "io"), ("ya", "ia"), ("yu", "iu"),
+                 ("kh", "h"), ("ts", "c"), ("yev", "iev")):
+        out |= {f.replace(a, b) for f in list(out) if a in f}
+    return out
+
+
 def _colloquial(forms: set[str]) -> set[str]:
     """Colloquial instrumental forms pymorphy3 doesn't emit. Hushing-stem names have
     a spoken instrumental -ой beside the standard -ей (e.g. ...шей -> ...шой).
@@ -201,6 +228,7 @@ def main() -> int:
         forms: set[str] = set()
         for w in ru_bases:
             forms |= _decline(w)
+            forms |= _translit(w)  # baseline Latin for every name/surname
         forms |= _colloquial(forms)
         forms |= {_norm(w) for w in g.get("lat", [])}
         forms |= {_norm(w) for w in extras.get(name, {}).get("lat", [])}
