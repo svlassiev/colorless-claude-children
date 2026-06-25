@@ -61,6 +61,21 @@ class ProximityFilter:
 
 
 @dataclass(frozen=True)
+class PersonFilter:
+    """Set of photo shas containing any of the resolved identities.
+
+    A query name may resolve to SEVERAL identities (a shared first name, or a
+    shared family surname, can match more than one person), so `names` is the
+    resolved identity set and `matched_shas` is the UNION of their photos.
+    `query` is what the user/model wrote — kept for the SSE display label.
+    """
+
+    query: str
+    names: tuple[str, ...]
+    matched_shas: frozenset[str]
+
+
+@dataclass(frozen=True)
 class Filters:
     """All filters resolved by the router for one query. Any slot may be
     None — the retriever treats None as 'no constraint on this axis.'"""
@@ -68,7 +83,13 @@ class Filters:
     date: DateFilter | None = None
     location: LocationFilter | None = None
     proximity: ProximityFilter | None = None
+    person: PersonFilter | None = None
 
     @property
     def is_empty(self) -> bool:
-        return self.date is None and self.location is None and self.proximity is None
+        return (
+            self.date is None
+            and self.location is None
+            and self.proximity is None
+            and self.person is None
+        )

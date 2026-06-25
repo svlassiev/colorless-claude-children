@@ -92,3 +92,18 @@ async def get_subject(
         raise HTTPException(status_code=401, detail="email not allow-listed")
 
     return AuthedSubject(email=email, uid=decoded.get("uid", ""))
+
+
+def is_people_allowed(subject: Subject) -> bool:
+    """True iff this caller may use person/face search.
+
+    Additive capability check — does NOT touch get_subject, so the log corpus
+    gate (which relies on AuthedSubject ⇒ email ∈ allowed_emails) is unchanged.
+    For owner-only setup the owner sits on BOTH allow-lists. A fully separate
+    face-only-no-log member would need the get_subject union refactor (deferred).
+    """
+    return (
+        settings.face_search_enabled
+        and isinstance(subject, AuthedSubject)
+        and subject.email in settings.face_allowed_emails
+    )

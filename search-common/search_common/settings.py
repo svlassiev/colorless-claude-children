@@ -17,6 +17,11 @@ class Settings:
     firebase_project_id: str
     allowed_emails: frozenset[str]
     log_tab_enabled: bool
+    # Face/person search — a SEPARATE, owner-only allow-list, kept independent of
+    # `allowed_emails` so log access and people-search can be toggled separately.
+    # `face_search_enabled` is the master kill-switch (mirrors `log_tab_enabled`).
+    face_allowed_emails: frozenset[str]
+    face_search_enabled: bool
     # Model selection — every Gemini/embedding model is chosen here so a new
     # model available in `location` is a one-env-var swap (EXPLORE_*_MODEL).
     # `gemini_location` records the endpoint generation *should* use. Today all
@@ -49,12 +54,17 @@ def _load() -> Settings:
     raw_emails = os.environ.get("EXPLORE_ALLOWED_EMAILS", "")
     allowed = frozenset(e.strip().lower() for e in raw_emails.split(",") if e.strip())
     log_tab = os.environ.get("EXPLORE_LOG_TAB_ENABLED", "false").lower() == "true"
+    raw_face_emails = os.environ.get("EXPLORE_FACE_ALLOWED_EMAILS", "")
+    face_allowed = frozenset(e.strip().lower() for e in raw_face_emails.split(",") if e.strip())
+    face_enabled = os.environ.get("EXPLORE_FACE_SEARCH_ENABLED", "false").lower() == "true"
     return Settings(
         project=project,
         location=location,
         firebase_project_id=firebase_project_id,
         allowed_emails=allowed,
         log_tab_enabled=log_tab,
+        face_allowed_emails=face_allowed,
+        face_search_enabled=face_enabled,
         gemini_location=os.environ.get("EXPLORE_GEMINI_LOCATION", location),
         generate_model=os.environ.get("EXPLORE_GENERATE_MODEL", "gemini-2.5-pro"),
         routing_model=os.environ.get("EXPLORE_ROUTING_MODEL", "gemini-2.5-flash"),

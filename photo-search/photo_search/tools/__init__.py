@@ -18,12 +18,14 @@ from __future__ import annotations
 from photo_search.tools import (
     filter_by_date_range,
     filter_by_location,
+    filter_by_person,
     filter_by_proximity,
 )
 from photo_search.tools.base import (
     DateFilter,
     Filters,
     LocationFilter,
+    PersonFilter,
     ProximityFilter,
 )
 
@@ -43,6 +45,11 @@ TOOL_REGISTRY = {
         filter_by_proximity.Args,
         filter_by_proximity.execute,
     ),
+    "filter_by_person": (
+        filter_by_person.DECLARATION,
+        filter_by_person.Args,
+        filter_by_person.execute,
+    ),
 }
 
 ALL_DECLARATIONS = [entry[0] for entry in TOOL_REGISTRY.values()]
@@ -52,6 +59,7 @@ __all__ = [
     "DateFilter",
     "Filters",
     "LocationFilter",
+    "PersonFilter",
     "ProximityFilter",
     "TOOL_REGISTRY",
 ]

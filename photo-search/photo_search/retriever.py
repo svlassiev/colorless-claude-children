@@ -25,7 +25,13 @@ from dataclasses import dataclass
 import numpy as np
 
 from photo_search.paths import INDEX_PATH, MAX_K, META_PATH
-from photo_search.tools.base import DateFilter, Filters, LocationFilter, ProximityFilter
+from photo_search.tools.base import (
+    DateFilter,
+    Filters,
+    LocationFilter,
+    PersonFilter,
+    ProximityFilter,
+)
 
 _YEAR_RE = re.compile(r"\b(19\d{2}|20\d{2})\b")
 _SEASON_YEAR_RE = re.compile(
@@ -155,6 +161,15 @@ def _proximity_mask(metas: list[dict], pf: ProximityFilter) -> np.ndarray:
     return np.array([m["sha"] in pf.matched_shas for m in metas], dtype=bool)
 
 
+def _person_mask(metas: list[dict], pf: PersonFilter) -> np.ndarray:
+    """Boolean mask: True only for shas in the person filter's set.
+
+    The executor resolved the queried name to one or more identities and unioned
+    their photos' shas; here we just AND-mask by membership, exactly like the
+    location and proximity filters."""
+    return np.array([m["sha"] in pf.matched_shas for m in metas], dtype=bool)
+
+
 def search(
     query_vec: np.ndarray,
     vectors: np.ndarray,
@@ -180,6 +195,8 @@ def search(
             mask &= _location_mask(metas, filters.location)
         if filters.proximity is not None:
             mask &= _proximity_mask(metas, filters.proximity)
+        if filters.person is not None:
+            mask &= _person_mask(metas, filters.person)
         sims = np.where(mask, sims, -np.inf)
 
     # Backfill dedup: pull more candidates than k, dedup by content sha,

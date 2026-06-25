@@ -19,10 +19,14 @@ dependencies = [
 # Offline face pipeline only. Installed on the laptop with `uv sync --extra face`;
 # NOT part of the deployed explore image, which installs main deps only.
 # (pillow is already a main dep, so it is not repeated here.)
+# pymorphy3 declines Russian names through all 6 cases in alias_expand — used
+# OFFLINE to pre-bake person_aliases.json; the serving side never imports it.
 face = [
     "insightface>=0.7.3",
     "onnxruntime>=1.17.0",
     "scikit-learn>=1.3",
+    "pymorphy3",
+    "pymorphy3-dicts-ru",
 ]
 
 [tool.uv.sources]

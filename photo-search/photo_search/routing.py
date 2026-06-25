@@ -37,7 +37,9 @@ from photo_search.tools import (
     DateFilter,
     Filters,
     LocationFilter,
+    PersonFilter,
     ProximityFilter,
+    filter_by_person,
 )
 from search_common.generation import tool_call
 # 8 s wasn't enough for the cold first call after server startup — the
@@ -68,7 +70,9 @@ return no function calls.
 """
 
 
-def _build_tool_and_config() -> tuple[list[types.Tool], types.ToolConfig]:
+def _build_tool_and_config(
+    declarations: list[types.FunctionDeclaration],
+) -> tuple[list[types.Tool], types.ToolConfig]:
     """Bundle declarations into the SDK's `Tool` wrapper and pick AUTO mode.
 
     AUTO is the right mode for routing: the model decides whether to call
@@ -77,7 +81,7 @@ def _build_tool_and_config() -> tuple[list[types.Tool], types.ToolConfig]:
     that the model would otherwise produce free text — not what we want
     in production).
     """
-    tool = types.Tool(function_declarations=ALL_DECLARATIONS)
+    tool = types.Tool(function_declarations=declarations)
     tool_config = types.ToolConfig(
         function_calling_config=types.FunctionCallingConfig(
             mode=types.FunctionCallingConfigMode.AUTO,
@@ -86,11 +90,26 @@ def _build_tool_and_config() -> tuple[list[types.Tool], types.ToolConfig]:
     return [tool], tool_config
 
 
+def _roster_block() -> str:
+    """Append the known-people roster to the system instruction (allow-listed
+    callers only). Empty when no aliases are loaded, so routing is unchanged then.
+    """
+    names = filter_by_person.roster()
+    if not names:
+        return ""
+    return (
+        "\n\nKnown people in this collection — call filter_by_person when the query "
+        "names one of them (a name, nickname or surname), emitting it as written:\n"
+        + ", ".join(names)
+    )
+
+
 async def route_query(
     query: str,
     metas: list[dict],
     gen_client: genai.Client,
     *,
+    allow_person: bool = False,
     timeout_s: float = ROUTING_TIMEOUT_S,
 ) -> Filters:
     """Ask Flash which filters apply, validate, dispatch, return Filters.
@@ -103,7 +122,20 @@ async def route_query(
     Always returns a `Filters` instance, never raises. Empty `Filters()`
     on timeout, on zero tool calls, or on every call failing validation.
     """
-    tools, tool_config = _build_tool_and_config()
+    # Gate the person tool: only declare it — and inject the roster of known
+    # people — for allow-listed callers, so anonymous users never learn that
+    # person search exists.
+    if allow_person:
+        declarations = ALL_DECLARATIONS
+        system_instruction = _SYSTEM_INSTRUCTION + _roster_block()
+    else:
+        declarations = [
+            decl
+            for name, (decl, *_rest) in TOOL_REGISTRY.items()
+            if name != "filter_by_person"
+        ]
+        system_instruction = _SYSTEM_INSTRUCTION
+    tools, tool_config = _build_tool_and_config(declarations)
 
     outcome = await tool_call(
         gen_client,
@@ -112,7 +144,7 @@ async def route_query(
         tools=tools,
         tool_config=tool_config,
         timeout_s=timeout_s,
-        system_instruction=_SYSTEM_INSTRUCTION,
+        system_instruction=system_instruction,
     )
 
     if outcome.error:
@@ -127,6 +159,10 @@ async def route_query(
     for raw in outcome.calls:
         if raw.name not in TOOL_REGISTRY:
             print(f"routing: unknown tool '{raw.name}' — skipping", file=sys.stderr)
+            continue
+        # Belt-and-suspenders: never honour a person call from a non-allowed
+        # caller, even if the declaration somehow reached the model.
+        if raw.name == "filter_by_person" and not allow_person:
             continue
         _decl, ArgsModel, executor = TOOL_REGISTRY[raw.name]
         try:
@@ -153,5 +189,8 @@ async def route_query(
         elif raw.name == "filter_by_proximity":
             if isinstance(result, ProximityFilter):
                 filters = replace(filters, proximity=result)
+        elif raw.name == "filter_by_person":
+            if isinstance(result, PersonFilter):
+                filters = replace(filters, person=result)
 
     return filters

@@ -25,6 +25,18 @@ __pycache__/
 # Internal planning
 *PLAN.md
 
+# Face search — biometric / personally-identifying data, NEVER public.
+# (Defensive globs; the real files live in ~/.cache/photo-search/, outside the repo.)
+**/person_aliases.json
+**/person_extras.json
+**/faces.jsonl
+**/faces_done.txt
+**/identities.json
+**/clusters.json
+**/cluster_labels.json
+**/cluster_proposals.json
+**/face_review/
+
 # Stray photos dropped at repo root during testing
 /photo_*.jpg
 /photo_*.png

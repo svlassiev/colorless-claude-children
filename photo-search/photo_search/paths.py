@@ -46,12 +46,15 @@ INDEX_PATH = CACHE_ROOT / "index.npz"
 META_PATH = CACHE_ROOT / "manifest_meta.jsonl"
 
 # ─── Face search (offline pipeline) ─────────────────────────────────────
-# Face vectors are biometric data: kept laptop-local under CACHE_ROOT (outside
-# the repo) and never synced to GCS. person_aliases.json is the one committed
-# artifact — read at serving time, exactly like place_aliases.json.
+# Face data is biometric / personally identifying — ALL of it stays private.
+# faces.jsonl AND person_aliases.json (which carries the people's names) live
+# under CACHE_ROOT (outside the repo, gitignored). Unlike place_aliases.json
+# (committed, public place names), person_aliases.json is NOT committed — it is
+# synced to the private GCS bucket and pulled at serving startup.
 FACES_PATH = CACHE_ROOT / "faces.jsonl"          # detected faces + embeddings
 FACE_REVIEW_DIR = CACHE_ROOT / "face_review"     # per-cluster montages for naming
-PERSON_ALIASES_PATH = Path(__file__).parent / "data" / "person_aliases.json"
+PERSON_ALIASES_PATH = CACHE_ROOT / "person_aliases.json"  # name → forms (private)
+PERSON_EXTRAS_PATH = CACHE_ROOT / "person_extras.json"    # owner extras/exclude (private)
 
 # Thresholds — starting guesses, tuned during the review rounds.
 FACE_DET_MIN = 0.6        # min RetinaFace detection score to keep a face

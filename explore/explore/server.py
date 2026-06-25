@@ -38,7 +38,15 @@ from photo_search.rerank import rerank_hits as photo_rerank_hits
 from photo_search.retriever import load_index as load_photo_index, parse_date_filter
 from photo_search.site import site_url_for
 from photo_search.tools.base import DateFilter, Filters
-from search_common.auth import AnonSubject, AuthedSubject, Subject, get_subject
+from photo_search.tools import filter_by_person
+from photo_search.paths import PERSON_ALIASES_PATH
+from search_common.auth import (
+    AnonSubject,
+    AuthedSubject,
+    Subject,
+    get_subject,
+    is_people_allowed,
+)
 from search_common.generation import safe_generate
 from search_common.rate_limit import enforce_rate_limit, get_remaining
 from search_common.settings import settings
@@ -67,6 +75,11 @@ async def lifespan(_: FastAPI):
     _state["photo_vectors"] = vectors
     _state["photo_metas"] = metas
     print(f"explore: loaded photo index — {len(metas)} vectors", file=sys.stderr)
+
+    # Person/face aliases (private; pulled into the cache by photo_pull above).
+    # Loaded into the filter_by_person reverse index; empty/no-op if absent.
+    n_people = filter_by_person.load(PERSON_ALIASES_PATH)
+    print(f"explore: loaded person aliases — {n_people} identities", file=sys.stderr)
 
     if settings.log_tab_enabled:
         n = log_pull()
@@ -198,12 +211,14 @@ async def auth_status(subject: Subject = Depends(get_subject)):
             "authed": True,
             "email": subject.email,
             "log_tab_enabled": settings.log_tab_enabled,
+            "people_enabled": is_people_allowed(subject),
             "quota_remaining": remaining,
             "quota_cap": cap,
         }
     return {
         "authed": False,
         "log_tab_enabled": False,
+        "people_enabled": False,
         "quota_remaining": remaining,
         "quota_cap": cap,
     }
@@ -249,6 +264,8 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
     """
     # Layer 1: route-handler corpus authorisation
     authorize_corpus(req.corpus, subject)
+    # Person/face search is gated to the face allow-list; anon never sees the tool.
+    people_allowed = is_people_allowed(subject)
 
     db = _state["firestore"]
     auth_label = (
@@ -266,6 +283,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
             req.query,
             _state["photo_metas"],
             _state["gen_client"],
+            allow_person=people_allowed,
         )
         # Step B: cheap deterministic date parser as a fast-path for
         # patterns the regex handles ('summer 2017', '2014'). Only fills
@@ -317,6 +335,11 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
         if photo_filters.proximity
         else None
     )
+    # Resolved identity name(s) for display; only ever set for allow-listed callers
+    # (the person tool isn't offered to anyone else).
+    person_filter = (
+        ", ".join(photo_filters.person.names) if photo_filters.person else None
+    )
 
     def _build_citations(ordered_hits, gen_shas: set[str]) -> list[dict]:
         """Return list[dict] (already JSON-serialisable) so we can drop the
@@ -365,6 +388,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                     "date_filter": date_filter,
                     "location_filter": location_filter,
                     "proximity_filter": proximity_filter,
+                    "person_filter": person_filter,
                     "auth_state": auth_label,
                     "quota_used": cap - remaining,
                     "quota_remaining": remaining,
@@ -393,6 +417,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                     "date_filter": date_filter,
                     "location_filter": location_filter,
                     "proximity_filter": proximity_filter,
+                    "person_filter": person_filter,
                     "auth_state": auth_label,
                     "quota_used": cap - remaining,
                     "quota_remaining": remaining,
@@ -450,6 +475,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                 "date_filter": date_filter,
                 "location_filter": location_filter,
                 "proximity_filter": proximity_filter,
+                "person_filter": person_filter,
                 "auth_state": auth_label,
                 "quota_used": quota_used,
             },
@@ -467,6 +493,8 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                 _notes.append(f"near {proximity_filter}")
             if date_filter:
                 _notes.append(f"dates {date_filter}")
+            if person_filter:
+                _notes.append(f"person = {person_filter}")
             outcome = await safe_generate(
                 photo_qa.generate,
                 req.query,

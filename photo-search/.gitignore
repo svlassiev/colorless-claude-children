@@ -17,10 +17,14 @@ caption_cache.jsonl
 
 # Face search — biometric data + naming work, local only, never published
 faces.jsonl
+faces_done.txt
 identities.json
 face_review/
+clusters.json
 cluster_labels.json
 cluster_proposals.json
+person_aliases.json
+person_extras.json
 
 # Local secrets and env
 .env
