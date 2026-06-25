@@ -32,7 +32,16 @@
 .vscode/
 .DS_Store
 
-**/PLAN.md
+# Private build narrative & scratch assets — NEVER bake into the public image.
+# COPY does not honor .gitignore, so the root `.gitignore` `*PLAN.md` rule must
+# be re-stated here. `**/PLAN.md` only matched a file literally named PLAN.md;
+# the broader `**/*PLAN.md` also catches FACE_SEARCH_PLAN.md (real names) and any
+# future *PLAN.md. The screenshots are face-search UI captures (real faces).
+**/*PLAN.md
+**/Screenshot*.png
+**/Screenshot*.jpg
+photo-search/*.png
+photo-search/*.jpg
 
 # =================================================================
 # Repo content unrelated to the explore image. The explore Dockerfile
