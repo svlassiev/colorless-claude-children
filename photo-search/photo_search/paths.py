@@ -45,6 +45,13 @@ MANIFEST_PATH = CACHE_ROOT / "manifest.jsonl"
 INDEX_PATH = CACHE_ROOT / "index.npz"
 META_PATH = CACHE_ROOT / "manifest_meta.jsonl"
 
+# Hiking share links: maps a GCS blob path -> the hiking-api imageId (the UUID
+# used in /share/hiking/image/<imageId>). Built OFFLINE from hiking-api (no
+# runtime coupling) by `photo_search.hiking_links`. PRIVATE — it exposes the
+# bucket layout / image IDs, so it is gitignored and synced via the private GCS
+# bucket, NEVER committed (like person_aliases.json, unlike public albums.json).
+HIKING_IMAGE_IDS_PATH = CACHE_ROOT / "hiking_image_ids.json"
+
 # ─── Face search (offline pipeline) ─────────────────────────────────────
 # Face data is biometric / personally identifying — ALL of it stays private.
 # faces.jsonl AND person_aliases.json (which carries the people's names) live

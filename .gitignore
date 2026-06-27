@@ -29,6 +29,8 @@ __pycache__/
 # (Defensive globs; the real files live in ~/.cache/photo-search/, outside the repo.)
 **/person_aliases.json
 **/person_extras.json
+# Hiking share-link map — exposes the bucket layout / image IDs; private, GCS-synced.
+**/hiking_image_ids.json
 **/faces.jsonl
 **/faces_done.txt
 **/identities.json

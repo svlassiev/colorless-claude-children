@@ -21,6 +21,7 @@ from photo_search.paths import (
     CAPTION_CACHE,
     GCS_CACHE_BUCKET,
     GCS_CACHE_PREFIX,
+    HIKING_IMAGE_IDS_PATH,
     INDEX_PATH,
     MANIFEST_PATH,
     META_PATH,
@@ -29,9 +30,13 @@ from photo_search.paths import (
     ensure_cache_dir,
 )
 
-# person_aliases.json is private (family names) but lives in the same private
-# bucket — synced so the serving instance can pull it at startup.
-SYNC_FILES: list[Path] = [INDEX_PATH, META_PATH, MANIFEST_PATH, CAPTION_CACHE, PERSON_ALIASES_PATH]
+# person_aliases.json (family names) and hiking_image_ids.json (bucket layout /
+# image IDs) are private but live in the same private bucket — synced so the
+# serving instance can pull them at startup.
+SYNC_FILES: list[Path] = [
+    INDEX_PATH, META_PATH, MANIFEST_PATH, CAPTION_CACHE,
+    PERSON_ALIASES_PATH, HIKING_IMAGE_IDS_PATH,
+]
 
 
 def _bucket() -> storage.Bucket:

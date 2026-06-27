@@ -25,6 +25,7 @@ cluster_labels.json
 cluster_proposals.json
 person_aliases.json
 person_extras.json
+hiking_image_ids.json
 
 # Local secrets and env
 .env
