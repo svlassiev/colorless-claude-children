@@ -68,7 +68,10 @@ def build_map(base: str) -> dict[str, str]:
         for loc in locs:
             m = loc_re.search(loc or "")
             if m:
-                out[m.group(1)] = iid
+                # Strip any query/fragment so a signed/parameterised URL can't
+                # become a dead key that never matches a plain retrieval path.
+                blob = m.group(1).split("?", 1)[0].split("#", 1)[0]
+                out[blob] = iid
     return out
 
 

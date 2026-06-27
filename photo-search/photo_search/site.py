@@ -26,6 +26,7 @@ albums-files.json are public colorless metadata and stay committed at the repo r
 from __future__ import annotations
 
 import json
+import re
 from functools import cache
 from pathlib import Path
 from urllib.parse import quote
@@ -33,6 +34,15 @@ from urllib.parse import quote
 from photo_search.paths import HIKING_IMAGE_IDS_PATH
 
 SITE_BASE = "https://serg.vlassiev.info"
+
+# hiking imageIds are UUIDs (hiking-api uses UUID.randomUUID()). Validate the
+# value before putting it in a URL — the map crosses a trust boundary (it is
+# pulled from the GCS cache), and a poisoned/corrupt entry must not flow into the
+# emitted link. A non-UUID value => no link (fall back to the GCS URI).
+_UUID_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
 
 # This module: photo-search/photo_search/site.py
 # albums.json:  <repo-root>/albums.json   (i.e. parents[2])
@@ -142,7 +152,7 @@ def site_url_for(blob_path: str) -> str | None:
         return url
 
     image_id = _hiking_image_ids().get(blob_path)
-    if image_id:
+    if image_id and _UUID_RE.match(image_id):
         return f"{SITE_BASE}/share/hiking/image/{image_id}"
 
     return None

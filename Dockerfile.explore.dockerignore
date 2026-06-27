@@ -43,6 +43,13 @@
 photo-search/*.png
 photo-search/*.jpg
 
+# Private data caches — NEVER bake into the public image. The real files live in
+# ~/.cache (outside the build context); these guard against an in-repo copy, since
+# COPY ignores .gitignore and the generic **/.cache/ rule wouldn't catch a stray copy.
+**/hiking_image_ids.json
+**/person_aliases.json
+**/person_extras.json
+
 # =================================================================
 # Repo content unrelated to the explore image. The explore Dockerfile
 # only COPYs four package dirs (photo-search, log-search, search-common,
