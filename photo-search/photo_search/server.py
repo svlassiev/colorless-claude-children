@@ -175,7 +175,7 @@ async def ask(req: AskRequest) -> AskResponse:
         return _envelope(citations=_build_citations(hits, {h.sha for h in hits}))
 
     # Rerank only kicks in past the threshold. Below it, all hits go to
-    # Pro and the frontend uses the score-fade baseline instead.
+    # generation and the frontend uses the score-fade baseline instead.
     rerank_used = False
     bytes_by_sha: dict[str, bytes] = {}
     if req.k >= RERANK_THRESHOLD_K:
@@ -186,7 +186,7 @@ async def ask(req: AskRequest) -> AskResponse:
         bytes_by_sha = outcome_rr.bytes_by_sha
         rerank_used = outcome_rr.used
 
-    # At/above the threshold we always trim Pro's input — even when rerank
+    # At/above the threshold we always trim the generator's input — even when rerank
     # falls back to similarity order — so wall time stays bounded.
     gen_hits = (
         hits[:RERANK_KEEP] if req.k >= RERANK_THRESHOLD_K else hits

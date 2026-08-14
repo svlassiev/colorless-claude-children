@@ -7,10 +7,9 @@ LOCATION = settings.location  # regional endpoint for embeddings + project init
 BUCKET = "colorless-days-children"
 
 # Model selection is centralized in search_common.settings, driven by
-# EXPLORE_*_MODEL env vars ("model" or "model@location"). Defaults match the
-# previous hardcoded values, so behavior is unchanged until an env var
-# overrides one. Each generative model carries its own endpoint (the 3.x
-# family is not served regionally); embedding stays on LOCATION always.
+# EXPLORE_*_MODEL env vars ("model" or "model@location"; defaults there —
+# 3.x since 2026-08). Each generative model carries its own endpoint (the
+# 3.x family is mostly global-only); embedding stays on LOCATION always.
 CAPTION_MODEL = settings.photo_caption_model
 CAPTION_LOCATION = settings.photo_caption_location
 EMBED_MODEL = settings.photo_embed_model
@@ -25,10 +24,10 @@ EMBED_DIM = 1408
 MAX_K = 20  # hard cap on retrieval depth — enforced in server / CLI / retriever
 
 # Reranker activates only when the user requests at least this much depth.
-# Below the threshold, all hits go to Pro directly and the frontend falls
-# back to similarity-score fading.
+# Below the threshold, all hits go straight to generation and the frontend
+# falls back to similarity-score fading.
 RERANK_THRESHOLD_K = 20
-# Number of top reranked hits passed to Pro for the answer step. Hits
+# Number of top reranked hits passed to generation for the answer step. Hits
 # beyond this are still shown to the user (faded) but not summarised.
 RERANK_KEEP = 10
 # Per-image batch size for parallel Flash calls. RERANK_THRESHOLD_K must be
@@ -36,7 +35,7 @@ RERANK_KEEP = 10
 RERANK_BATCH_SIZE = 5
 # Soft timeout for the entire rerank step (downloads + Flash). On timeout
 # we fall back to similarity ordering and still send top-RERANK_KEEP to
-# Pro — guarantees a fast response when Flash is slow.
+# the generator — guarantees a fast response when the reranker is slow.
 RERANK_TIMEOUT_S = 15.0
 
 # Cloud cache (Phase 5b). Same private bucket as log-search, sibling prefix.

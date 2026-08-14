@@ -275,7 +275,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(prog="log-search-captioner")
     parser.add_argument(
         "--workers", type=int, default=5,
-        help="concurrent caption requests (default 5; Pro tier has lower rate limits than Flash)",
+        help="concurrent caption requests (default 5 — modest, to stay clear of rate limits)",
     )
     parser.add_argument(
         "--dry-run", action="store_true",

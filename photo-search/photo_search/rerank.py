@@ -3,21 +3,21 @@ retrieved photos and returns them sorted by LLM-judged relevance.
 
 Why: at high retrieval depth (k=20) embedding similarity is too noisy —
 the bottom of the list is often unrelated to the query. Sending all 20
-images to Pro means Pro spends its input budget and its thinking on
-photos it will end up calling out as irrelevant. That's the long wait
+images to the generator means it spends its input budget and its thinking
+on photos it will end up calling out as irrelevant. That's the long wait
 the user sees.
 
 How: split the hits into batches of RERANK_BATCH_SIZE (default 5),
 fan them out to Flash in parallel with structured output, and sort by
-the resulting score. Pro then only sees the top RERANK_KEEP. Bytes are
-downloaded once (in parallel) and shared with Pro via the prefetched
+the resulting score. The generator then only sees the top RERANK_KEEP. Bytes are
+downloaded once (in parallel) and shared with the generator via the prefetched
 path — no double upload work.
 
 Failure model: this is a soft-fast layer. Any timeout or exception in
 download or rerank → return hits in their original similarity order.
-The caller still trims to RERANK_KEEP for Pro, which preserves the
-"don't make Pro chew through 20 images" promise even when Flash is
-unreachable.
+The caller still trims to RERANK_KEEP for generation, which preserves the
+"don't make the generator chew through 20 images" promise even when the
+reranker is unreachable.
 """
 
 from __future__ import annotations
@@ -201,7 +201,7 @@ async def rerank_hits(
 
     if not flash_scores:
         # Every batch failed — nothing useful to do. Stay in similarity
-        # order; caller still trims for Pro.
+        # order; caller still trims for the generator.
         return RerankOutcome(hits=hits, bytes_by_sha=bytes_by_sha, used=False)
 
     # --- Step 3: sort by Flash, similarity as tiebreaker ----------------

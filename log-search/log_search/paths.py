@@ -9,21 +9,21 @@ CHUNKS_PATH = CACHE_ROOT / "chunks.jsonl"
 INDEX_PATH = CACHE_ROOT / "index.npz"
 META_PATH = CACHE_ROOT / "chunks_meta.jsonl"
 # sha (image bytes prefix) → caption text. Persisted across runs so we
-# don't re-bill Gemini Pro for unchanged images.
+# don't re-bill the caption model for unchanged images.
 IMAGE_CAPTION_CACHE = CACHE_ROOT / "image_caption_cache.jsonl"
 
 PROJECT = settings.project
-LOCATION = settings.location  # regional endpoint for embeddings + generation
+LOCATION = settings.location  # regional endpoint — embeddings only
 # Model selection centralized in search_common.settings (EXPLORE_* env vars,
-# "model" or "model@location"). Defaults match the previous hardcoded values.
+# "model" or "model@location"; defaults there — 3.x since 2026-08).
 # Embedding always uses the regional LOCATION client; generation/captioning
 # use their own per-model endpoints — the server and CLI build separate
 # clients for the two roles.
 EMBED_MODEL = settings.log_embed_model
 GENERATE_MODEL = settings.generate_model
 GENERATE_LOCATION = settings.generate_location
-# Image captions go through Pro (not Flash) so they're verbose enough to
-# act as load-bearing chunk content for retrieval — see captioner.py.
+# Image captions go through a strong tier (CAPTION_MODEL) so they're verbose
+# enough to act as load-bearing chunk content for retrieval — see captioner.py.
 CAPTION_MODEL = settings.log_caption_model
 CAPTION_LOCATION = settings.log_caption_location
 EMBED_DIM = 768

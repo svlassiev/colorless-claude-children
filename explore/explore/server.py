@@ -261,16 +261,16 @@ _SSE_HEADERS = {
 @app.post("/explore/api/ask")
 async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
     """Stream the retrieval pipeline as SSE so the client can render
-    citations as soon as they're known and append the answer when Pro
+    citations as soon as they're known and append the answer when generation
     finishes — instead of waiting ~15-20 s for everything at once.
 
     Event sequence:
       - `citations` — emitted after retrieve (+ rerank). Always first when
         we have anything to retrieve. Carries the full citation list,
         rerank_used, corpus, date_filter, current quota.
-      - `answer` *or* `answer_error` — emitted after Pro succeeds or
+      - `answer` *or* `answer_error` — emitted after generation succeeds or
         soft-fails. Skipped when `retrieve_only=true`.
-      - `done` — last event. Carries refreshed quota numbers (post Pro
+      - `done` — last event. Carries refreshed quota numbers (post generation
         increment).
 
     Auth + corpus + rate-limit failures happen *before* the stream begins
@@ -384,7 +384,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                 heading_path=h.heading_path,
                 text=h.text,
                 # Log corpus has no rerank yet — every retrieved chunk goes
-                # to Pro, so in_generation stays at its default True.
+                # to the generator, so in_generation stays at its default True.
             ).model_dump()
             for h in ordered_hits
         ]
@@ -470,7 +470,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
             photo_bytes_by_sha = outcome_rr.bytes_by_sha
             rerank_used = outcome_rr.used
 
-        # At/above the photo rerank threshold we always trim Pro's input —
+        # At/above the photo rerank threshold we always trim the generator's input —
         # even when rerank fell back to similarity order — so wall time
         # stays bounded.
         if req.corpus == "photo" and req.k >= RERANK_THRESHOLD_K:
@@ -478,7 +478,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
         else:
             gen_hits = local_hits
 
-        # Event 1: citations — render now, even though Pro hasn't started.
+        # Event 1: citations — render now, even though generation hasn't started.
         yield _sse(
             "citations",
             {
@@ -509,15 +509,15 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
             if date_filter:
                 _notes.append(f"dates {date_filter}")
             # Person is deliberately NOT folded into this metadata "ground truth"
-            # note. That note tells Pro "treat these as established fact", which
+            # note. That note tells the generator "treat these as established fact", which
             # made it assert the named people were visible and then map names onto
             # faces (misnaming them). Person handling goes through the dedicated
             # flags below: person_active vouches for the face-tag SELECTION, and
-            # show_people (people-gated) lets Pro report the authoritative tags
+            # show_people (people-gated) lets the generator report the authoritative tags
             # per photo — never a visual guess.
             #
             # person_resolution maps each search TERM to the people it resolved to
-            # (people-gated), so Pro can connect a per-photo tag (canonical name)
+            # (people-gated), so the generator can connect a per-photo tag (canonical name)
             # back to the term the user typed (often a surname) instead of grabbing
             # a similar-looking tag. Only built when a person filter is active.
             person_resolution = None
@@ -566,7 +566,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                 },
             )
 
-        # Event 3: done — refreshed quota after Pro's increment.
+        # Event 3: done — refreshed quota after generation's increment.
         remaining, cap = get_remaining(subject, db)
         yield _sse(
             "done",

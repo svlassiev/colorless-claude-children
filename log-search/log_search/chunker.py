@@ -9,7 +9,7 @@ Strategy:
   can match parent terms — fine-grained chunks still respond to broad
   queries.
 - Inline image references (`![](…)` and GitHub-style `<img src="…"/>`)
-  are augmented with the image's Pro-generated caption, looked up from
+  are augmented with the image's model-generated caption, looked up from
   IMAGE_CAPTION_CACHE. The caption is what makes screenshots reachable
   via prose queries.
 - Tiny chunks (< MIN_CHUNK_CHARS, after caption injection) are merged

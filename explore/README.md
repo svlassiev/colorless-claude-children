@@ -5,7 +5,7 @@ FastAPI service that backs `serg.vlassiev.info/explore` — the unified entry po
 ## What it does
 
 - Serves a single static HTML page at `/explore/` with a search box and a `photos` / `log` tab toggle.
-- Exposes `POST /explore/api/ask`, which **streams Server-Sent Events**: a `citations` event lands as soon as retrieval (+ rerank) finishes, then an `answer` event when Pro is done, then a `done` event with refreshed quota numbers. The frontend renders photos under the search box ~5–10 s in and appends the answer ~10–15 s later — instead of staring at a spinner for the full pipeline.
+- Exposes `POST /explore/api/ask`, which **streams Server-Sent Events**: a `citations` event lands as soon as retrieval (+ rerank) finishes, then an `answer` event when generation is done, then a `done` event with refreshed quota numbers. The frontend renders photos under the search box a few seconds in and appends the answer several seconds later — instead of staring at a spinner for the full pipeline.
 - Enforces auth + rate-limiting via the shared [`search-common`](../search-common/README.md) library:
   - **Anonymous** users can query the public photo corpus, capped at **20 queries/day globally**.
   - **Allow-listed** users (`EXPLORE_ALLOWED_EMAILS` env var) can also query the private log corpus, capped at **50 queries/day per user**.
@@ -13,7 +13,7 @@ FastAPI service that backs `serg.vlassiev.info/explore` — the unified entry po
 
 ## High-level architecture
 
-The request flow and the logical modules each stage talks to — **Tools** (query filters), **Models** (Gemini Flash / Pro), the **Data / index** layer, and **Auth & quota**.
+The request flow and the logical modules each stage talks to — **Tools** (query filters), **Models** (Gemini routing/rerank/generate tiers — chosen in `search_common.settings`), the **Data / index** layer, and **Auth & quota**.
 
 ![Explore RAG — request flow and the modules it touches](rag-architecture.svg)
 
@@ -33,7 +33,7 @@ Deployment topology — where it runs:
        GCS (private) ─────→ index cache + raw photo bytes
 ```
 
-Cloud Run scales to zero when idle, so steady-state cost is dominated by Gemini calls (Pro is $1.25 / 1M input, $10 / 1M output). The L7 ingress + proxy hop adds ~30 ms p50 vs hitting Cloud Run directly — acceptable for the privacy of keeping `*.run.app` URLs out of the public surface.
+Cloud Run scales to zero when idle, so steady-state cost is dominated by Gemini calls (generation on gemini-3.6-flash: $0.75 / 1M input, $3.75 / 1M output). The L7 ingress + proxy hop adds ~30 ms p50 vs hitting Cloud Run directly — acceptable for the privacy of keeping `*.run.app` URLs out of the public surface.
 
 ## Repository layout
 
@@ -43,8 +43,8 @@ The `/explore` Cloud Run image bundles four sibling packages (declared as `tool.
 |---|---|
 | `explore` | FastAPI app (this dir): routing, CSP, CORS, lifespan, dispatch, frontend HTML. |
 | `search-common` | Shared cross-corpus primitives: auth, rate limit, settings, `safe_generate` wrapper. |
-| `photo-search` | Photo corpus: indexer, retriever, Flash reranker, Pro generator. |
-| `log-search` | Log corpus: chunked-text indexer, retriever, Pro generator. |
+| `photo-search` | Photo corpus: indexer, retriever, Flash reranker, generator. |
+| `log-search` | Log corpus: chunked-text indexer, retriever, generator. |
 
 The `explore` package itself is intentionally thin — its job is composition and policy enforcement; corpus-specific logic lives in `photo-search` / `log-search`.
 
@@ -68,7 +68,7 @@ The `explore` package itself is intentionally thin — its job is composition an
    ┌──────────────────────────────────────────────────────────────────┐
    │ rerank (photo, k≥20)        — 4× parallel Flash batches          │
    │ ─── event: citations ───►   client renders photos NOW            │
-   │ safe_generate               — Pro with asyncio timeout           │
+   │ safe_generate               — generation with asyncio timeout    │
    │ ─── event: answer ───►      (or event: answer_error on failure)  │
    │ ─── event: done ───►        refreshed quota; client closes       │
    └──────────────────────────────────────────────────────────────────┘
@@ -87,20 +87,20 @@ event: done
 data: {"quota_used":3,"quota_remaining":17,"quota_cap":20}
 ```
 
-`retrieve_only=true` skips the Pro call entirely — the stream emits `citations` then `done`, no rate-limit charge. Empty results emit `citations` (with empty list) + `answer` (with the empty-result message — `{"answer": "no matching photos found."}`, no token/cost fields since no Pro call ran) + `done`.
+`retrieve_only=true` skips the generation call entirely — the stream emits `citations` then `done`, no rate-limit charge. Empty results emit `citations` (with empty list) + `answer` (with the empty-result message — `{"answer": "no matching photos found."}`, no token/cost fields since no generation call ran) + `done`.
 
 A few load-bearing details:
 
 **Lifespan startup.** [`server.py:lifespan`](explore/server.py) pulls the vector index from the private `cdc-search-cache` bucket if remote is newer than local, then loads the photo index (~6k vectors) and (when enabled) the log index into memory. Four long-lived clients are constructed once and reused across requests:
 
 - `MultiModalEmbeddingModel` (Vertex AI) — embeds the photo query at request time (`multimodalembedding@001`).
-- `genai.Client` (Vertex AI) — embeds the log query (`text-embedding-005`), and runs Flash rerank + Pro generation.
+- `genai.Client` (Vertex AI) — one client **per distinct endpoint**, mapped to per-purpose slots (routing / rerank / generate / embed). The 3.x generative models serve from `global` (routing's gemini-3.5-flash also `europe-west3`); the log-query embedding client always stays on the regional `EXPLORE_LOCATION` (`text-embedding-005` is regional-only).
 - `storage.Client` (GCS) — pulls per-photo JPEG bytes for the rerank + generation steps.
 - `firestore.Client` — reads/increments the daily rate-limit counter.
 
 **Retrieval.** Cosine top-k over the in-memory index plus an optional EXIF / folder-name date filter parsed out of the query (`"summer 2017"`, `"2014"`). For the log corpus, embeddings come from `text-embedding-005`; for photos, from `multimodalembedding@001`.
 
-**Rerank (photo, depth ≥ 20).** When the caller picks depth 20, [`photo_search.rerank.rerank_hits`](../photo-search/photo_search/rerank.py) downloads the 20 image bytes in parallel, fans them out to **four parallel Flash-tier calls of five images each** (gemini-3.5-flash-lite) with a structured `response_schema`, sorts the hits by relevance score (cosine as tiebreaker), and trims to `RERANK_KEEP=10` for Pro. Bytes are kept in a sha-keyed map and reused — Pro never re-downloads what Flash already saw. The whole rerank step is bounded by `RERANK_TIMEOUT_S=15s`; on timeout or any exception we fall back to similarity order, **but Pro's input is still trimmed to 10** — wall time stays bounded even when Flash is unreachable.
+**Rerank (photo, depth ≥ 20).** When the caller picks depth 20, [`photo_search.rerank.rerank_hits`](../photo-search/photo_search/rerank.py) downloads the 20 image bytes in parallel, fans them out to **four parallel Flash-tier calls of five images each** (gemini-3.5-flash-lite) with a structured `response_schema`, sorts the hits by relevance score (cosine as tiebreaker), and trims to `RERANK_KEEP=10` for generation. Bytes are kept in a sha-keyed map and reused — the generator never re-downloads what the reranker already saw. The whole rerank step is bounded by `RERANK_TIMEOUT_S=15s`; on timeout or any exception we fall back to similarity order, **but the generator's input is still trimmed to 10** — wall time stays bounded even when Flash is unreachable.
 
 **Generation.** The generate model (gemini-3.6-flash) receives the (possibly reranked, possibly trimmed) hits inline as JPEG bytes plus dates and captions. The output budget scales with hit count so the visible answer doesn't get starved by reasoning tokens at high depth.
 
@@ -132,13 +132,13 @@ The rate-limit increment fires **after** retrieval and **before** generation. Re
 
 | Failure | Handling |
 |---|---|
-| Gemini call slow / timed out | Citations event already on the client. Server emits `answer_error` event with `"generation timed out (>60s) — showing matches only"`, then `done`. Pro's rate-limit unit was already charged before the stream began (we don't know if upstream actually billed). |
+| Gemini call slow / timed out | Citations event already on the client. Server emits `answer_error` event with `"generation timed out (>60s) — showing matches only"`, then `done`. The rate-limit unit was already charged before the stream began (we don't know if upstream actually billed). |
 | Gemini call raised | Same as timeout, but with a generic `"generation failed — showing matches only"`. Full exception logged server-side; not surfaced to the client. |
-| Flash rerank batch failed | Logged to stderr. Other batches continue. If every batch fails, we fall back to similarity order; if a subset fails, missing hits sink to the bottom. **Pro still receives top-10** either way. |
-| Byte download for rerank failed | Skip rerank entirely; Pro receives the cosine-top-10 (still trimmed because depth ≥ threshold). |
+| Flash rerank batch failed | Logged to stderr. Other batches continue. If every batch fails, we fall back to similarity order; if a subset fails, missing hits sink to the bottom. **The generator still receives top-10** either way. |
+| Byte download for rerank failed | Skip rerank entirely; the generator receives the cosine-top-10 (still trimmed because depth ≥ threshold). |
 | Firestore unreachable | Pre-stream 5xx (no events sent). We treat rate-limit infra as required — failing open would leak quota. |
 | Firebase Admin verification failed | Pre-stream 401 with no token-introspection details surfaced. |
-| Client disconnects mid-stream | Async generator is cancelled, no further events written. Rate-limit was charged at stream start so it stands; the in-flight Pro call (if any) keeps running in its worker thread until it returns and the result is discarded. |
+| Client disconnects mid-stream | Async generator is cancelled, no further events written. Rate-limit was charged at stream start so it stands; the in-flight generation call (if any) keeps running in its worker thread until it returns and the result is discarded. |
 | Cloud Run cold start | First request takes ~3–5 s to load the vector index from local cache. Cache miss adds another 1–2 s of GCS reads. |
 
 Front-end mirrors the backend per event:
@@ -156,7 +156,13 @@ All settings come from env vars at process start (see [`search_common.settings`]
 | Env var | Default | Purpose |
 |---|---|---|
 | `EXPLORE_PROJECT` | `thematic-acumen-225120` | GCP project for Vertex / Firestore / GCS. |
-| `EXPLORE_LOCATION` | `europe-west4` | Vertex AI region. Must match the indexer's region. |
+| `EXPLORE_LOCATION` | `europe-west4` | Regional Vertex endpoint — embeddings (and any bare-named model). Must match the indexer's region. |
+| `EXPLORE_GENERATE_MODEL` | `gemini-3.6-flash@global` | Generation (photo + log). Accepts `model` or `model@location` — the endpoint travels with the model. |
+| `EXPLORE_ROUTING_MODEL` | `gemini-3.5-flash@europe-west3` | Query-filter routing. 3.5-flash matched the 2.5 baseline 20/20 in the migration eval; Frankfurt is the closest 3.x region. |
+| `EXPLORE_RERANK_MODEL` | `gemini-3.5-flash-lite@global` | Depth-20 photo rerank. |
+| `EXPLORE_PHOTO_CAPTION_MODEL` | `gemini-3.6-flash@global` | Offline photo captioning (indexer). |
+| `EXPLORE_LOG_CAPTION_MODEL` | `gemini-3.6-flash@global` | Offline log-image captioning. |
+| `EXPLORE_GEMINI_LOCATION` | = `EXPLORE_LOCATION` | Default endpoint for a bare model name (no `@location`). Rollback to 2.5 = set the bare 2.5 model names. |
 | `EXPLORE_FIREBASE_PROJECT_ID` | same as `EXPLORE_PROJECT` | Audience claim for ID-token verification. |
 | `EXPLORE_ALLOWED_EMAILS` | empty | Comma-separated allow-list. Lower-cased, trimmed. |
 | `EXPLORE_LOG_TAB_ENABLED` | `false` | Master kill-switch for the log corpus tab + endpoint. |
@@ -199,7 +205,7 @@ gcloud run deploy explore --image="$IMAGE" --region=europe-west4 --project=thema
 Reached on the public domain via the small nginx-proxy pod on the existing GKE cluster ([`k8s/explore-proxy.yml`](../k8s/explore-proxy.yml) + the `/explore` paths in [`k8s/ingress.yml`](../k8s/ingress.yml)). The proxy:
 
 - Forwards `/explore/*` path-as-is (no rewrite); sets SNI + `Host` for Cloud Run's `*.run.app` certificate.
-- Bumps `proxy_read_timeout` to **130 s** so we surface upstream 504s instead of pre-empting at nginx's default 90 s — covers the worst-case Pro generation tail.
+- Bumps `proxy_read_timeout` to **130 s** so we surface upstream 504s instead of pre-empting at nginx's default 90 s — covers the worst-case generation tail.
 - Sets **`proxy_buffering off`** + **`proxy_cache off`** so SSE frames from `/explore/api/ask` flush in real time rather than coalescing into a single buffered response. The FastAPI handler also sets `Cache-Control: no-cache` and `X-Accel-Buffering: no` per response (`server.py:217-220`) as belt-and-suspenders, so the streaming UX survives even if a non-bypassed proxy sits in the path.
 
 Cloud Run's URL is hidden behind the Ingress — no DNS change required.

@@ -31,7 +31,7 @@ from log_search.paths import (
 )
 
 # IMAGE_CAPTION_CACHE rides along so a fresh checkout/clone doesn't have
-# to re-pay Pro for captions that have already been generated. Mirrors
+# to re-pay the caption model for captions already generated. Mirrors
 # the photo-search caption_cache.jsonl convention.
 SYNC_FILES: list[Path] = [INDEX_PATH, META_PATH, CHUNKS_PATH, IMAGE_CAPTION_CACHE]
 

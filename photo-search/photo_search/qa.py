@@ -143,7 +143,7 @@ def fetch_image_bytes(
     across rerank → generate.
 
     Used by the rerank pipeline to fetch once and reuse for both Flash and
-    Pro. `generate()` accepts the result via `prefetched_bytes`.
+    the generator. `generate()` accepts the result via `prefetched_bytes`.
     """
     if not hits:
         return {}
@@ -179,7 +179,7 @@ def generate(
     None it is GEN_THINKING_BUDGET + max(MIN_VISIBLE_TOKENS, PER_HIT_VISIBLE_TOKENS
     * len(hits)), paired with a thinking_budget cap below. This guarantees the
     visible answer a floor (so a 1-2 photo result still gets a complete reply)
-    and stops Pro's reasoning from eating the pool and truncating mid-word.
+    and stops the model's reasoning from eating the pool and truncating mid-word.
     The generate models think by default — thinking + visible both bill as output.
 
     Returns (answer_text, usage_dict).
