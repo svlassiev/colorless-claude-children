@@ -43,6 +43,17 @@
 photo-search/*.png
 photo-search/*.jpg
 
+# Stray top-level media in ANY copied package dir (e.g. an image saved next
+# to the code while debugging). The packages ship no images at their roots —
+# real UI assets live under */static/, which these patterns don't touch.
+explore/*.png
+explore/*.jpg
+explore/*.jpeg
+log-search/*.png
+log-search/*.jpg
+search-common/*.png
+search-common/*.jpg
+
 # Private data caches — NEVER bake into the public image. The real files live in
 # ~/.cache (outside the build context); these guard against an in-repo copy, since
 # COPY ignores .gitignore and the generic **/.cache/ rule wouldn't catch a stray copy.
