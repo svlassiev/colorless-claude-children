@@ -18,6 +18,7 @@ from vertexai.vision_models import MultiModalEmbeddingModel
 from photo_search.paths import BUCKET, GENERATE_MODEL
 from photo_search.retriever import Hit, search
 from photo_search.tools.base import Filters
+from search_common.pricing import generation_cost
 
 # Gemini 2.5 Pro draws thinking AND the visible answer from ONE output-token pool.
 # Cap thinking so it can't consume the whole pool and truncate the answer mid-word;
@@ -239,12 +240,11 @@ def generate(
         in_tok = getattr(meta, "prompt_token_count", 0) or 0
         visible_out = getattr(meta, "candidates_token_count", 0) or 0
         thoughts = getattr(meta, "thoughts_token_count", 0) or 0
-        # Gemini 2.5 Pro: $1.25/1M input (≤200k context), $10/1M output.
         # Output billing covers thinking + visible — bill on the sum.
         billable_out = visible_out + thoughts
         usage["tokens_in"] = in_tok
         usage["tokens_out"] = visible_out
         usage["tokens_thoughts"] = thoughts
-        usage["cost"] = in_tok * 1.25 / 1_000_000 + billable_out * 10 / 1_000_000
+        usage["cost"] = generation_cost(GENERATE_MODEL, in_tok, billable_out)
 
     return (resp.text or "").strip(), usage

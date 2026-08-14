@@ -65,9 +65,24 @@ async def lifespan(_: FastAPI):
 
     vertexai.init(project=settings.project, location=settings.location)
     _state["embed_model"] = MultiModalEmbeddingModel.from_pretrained(PHOTO_EMBED_MODEL)
-    _state["gen_client"] = genai.Client(
-        vertexai=True, project=settings.project, location=settings.location
-    )
+    # One genai client per distinct endpoint, mapped to per-purpose slots.
+    # The 2.5 family serves regionally; the 3.x family only from "global"
+    # (gemini-3.5-flash also europe-west3), so each model setting carries its
+    # own endpoint. Query embedding ALWAYS uses the regional client — the
+    # embedding models aren't served from global.
+    _clients: dict[str, genai.Client] = {}
+
+    def _client_for(location: str) -> genai.Client:
+        if location not in _clients:
+            _clients[location] = genai.Client(
+                vertexai=True, project=settings.project, location=location
+            )
+        return _clients[location]
+
+    _state["routing_client"] = _client_for(settings.routing_location)
+    _state["rerank_client"] = _client_for(settings.rerank_location)
+    _state["gen_client"] = _client_for(settings.generate_location)
+    _state["embed_client"] = _client_for(settings.location)
     _state["storage_client"] = storage.Client(project=settings.project)
     _state["firestore"] = firestore.Client(project=settings.project)
 
@@ -282,7 +297,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
         photo_filters = await photo_routing.route_query(
             req.query,
             _state["photo_metas"],
-            _state["gen_client"],
+            _state["routing_client"],
             allow_person=people_allowed,
         )
         # Step B: cheap deterministic date parser as a fast-path for
@@ -311,7 +326,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
     else:  # corpus == "log"
         hits, (date_lo, date_hi) = log_qa.retrieve(
             req.query,
-            _state["gen_client"],
+            _state["embed_client"],
             _state["log_vectors"],
             _state["log_metas"],
             _state["log_texts"],
@@ -448,7 +463,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
             outcome_rr = await photo_rerank_hits(
                 req.query,
                 local_hits,
-                _state["gen_client"],
+                _state["rerank_client"],
                 _state["storage_client"],
             )
             local_hits = outcome_rr.hits

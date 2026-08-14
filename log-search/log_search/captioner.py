@@ -35,10 +35,10 @@ from google import genai
 from google.genai import types
 
 from log_search.paths import (
+    CAPTION_LOCATION,
     CAPTION_MODEL,
     CORPUS_ROOT,
     IMAGE_CAPTION_CACHE,
-    LOCATION,
     PROJECT,
     ensure_cache_dir,
 )
@@ -303,7 +303,7 @@ def main() -> int:
                 print(f"  {label:6}  … and {len(group) - 5} more")
         return 0
 
-    client = genai.Client(vertexai=True, project=PROJECT, location=LOCATION)
+    client = genai.Client(vertexai=True, project=PROJECT, location=CAPTION_LOCATION)
     caption_all(all_refs, client, workers=args.workers)
     return 0
 

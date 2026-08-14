@@ -7,7 +7,7 @@ import sys
 
 from google import genai
 
-from log_search.paths import LOCATION, MAX_K, PROJECT
+from log_search.paths import GENERATE_LOCATION, LOCATION, MAX_K, PROJECT
 from log_search.qa import generate, retrieve
 from log_search.retriever import Hit, load_index
 
@@ -51,7 +51,12 @@ def main() -> int:
             print(h.text[:400] + ("..." if len(h.text) > 400 else ""))
         return 0
 
-    answer, usage = generate(query, hits, client)
+    gen_client = (
+        client
+        if GENERATE_LOCATION == LOCATION
+        else genai.Client(vertexai=True, project=PROJECT, location=GENERATE_LOCATION)
+    )
+    answer, usage = generate(query, hits, gen_client)
     print(answer)
     _print_citations(hits)
 

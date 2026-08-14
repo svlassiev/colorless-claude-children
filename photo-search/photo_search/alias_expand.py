@@ -37,8 +37,8 @@ from google.genai import types
 
 from photo_search.paths import (
     FACES_PATH,
+    GENERATE_LOCATION,
     GENERATE_MODEL,
-    LOCATION,
     PERSON_ALIASES_PATH,
     PERSON_EXTRAS_PATH,
     PROJECT,
@@ -210,7 +210,7 @@ def main() -> int:
     extras, exclude = _load_extras()
 
     print(f"expanding {len(names)} names via {GENERATE_MODEL} + pymorphy3...", file=sys.stderr)
-    client = genai.Client(vertexai=True, project=PROJECT, location=LOCATION)
+    client = genai.Client(vertexai=True, project=PROJECT, location=GENERATE_LOCATION)
     resp = client.models.generate_content(
         model=GENERATE_MODEL,
         contents=_PROMPT.format(roster="\n".join(f"- {n}" for n in names)),

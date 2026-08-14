@@ -32,6 +32,7 @@ from PIL import ExifTags, Image
 from photo_search.paths import (
     BUCKET,
     CAPTION_CACHE,
+    CAPTION_LOCATION,
     CAPTION_MODEL,
     LOCATION,
     MANIFEST_PATH,
@@ -256,7 +257,7 @@ def main() -> int:
 
     client: genai.Client | None = None
     if to_caption and not args.dry_run:
-        client = genai.Client(vertexai=True, project=PROJECT, location=LOCATION)
+        client = genai.Client(vertexai=True, project=PROJECT, location=CAPTION_LOCATION)
 
     # Process uncached blobs concurrently. The genai Client is thread-safe;
     # each worker handles download + EXIF + caption for one photo. Wall-clock

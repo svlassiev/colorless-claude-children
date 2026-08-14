@@ -7,15 +7,19 @@ LOCATION = settings.location  # regional endpoint for embeddings + project init
 BUCKET = "colorless-days-children"
 
 # Model selection is centralized in search_common.settings, driven by
-# EXPLORE_*_MODEL env vars. Defaults match the previous hardcoded values, so
-# behavior is unchanged until an env var overrides one. (Endpoint stays
-# LOCATION; moving generation to a "global"-only model also needs settings.
-# gemini_location + a regional embed client — see that field's note.)
+# EXPLORE_*_MODEL env vars ("model" or "model@location"). Defaults match the
+# previous hardcoded values, so behavior is unchanged until an env var
+# overrides one. Each generative model carries its own endpoint (the 3.x
+# family is not served regionally); embedding stays on LOCATION always.
 CAPTION_MODEL = settings.photo_caption_model
+CAPTION_LOCATION = settings.photo_caption_location
 EMBED_MODEL = settings.photo_embed_model
 GENERATE_MODEL = settings.generate_model
+GENERATE_LOCATION = settings.generate_location
 RERANK_MODEL = settings.rerank_model
+RERANK_LOCATION = settings.rerank_location
 ROUTING_MODEL = settings.routing_model
+ROUTING_LOCATION = settings.routing_location
 EMBED_DIM = 1408
 
 MAX_K = 20  # hard cap on retrieval depth — enforced in server / CLI / retriever

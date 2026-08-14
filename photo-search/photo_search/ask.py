@@ -10,7 +10,7 @@ from google import genai
 from google.cloud import storage
 from vertexai.vision_models import MultiModalEmbeddingModel
 
-from photo_search.paths import EMBED_MODEL, LOCATION, MAX_K, PROJECT
+from photo_search.paths import EMBED_MODEL, GENERATE_LOCATION, LOCATION, MAX_K, PROJECT
 from photo_search.qa import generate, retrieve
 from photo_search.retriever import Hit, load_index
 from photo_search.site import site_url_for
@@ -66,7 +66,7 @@ def main() -> int:
         _print_citations(hits)
         return 0
 
-    gen_client = genai.Client(vertexai=True, project=PROJECT, location=LOCATION)
+    gen_client = genai.Client(vertexai=True, project=PROJECT, location=GENERATE_LOCATION)
     storage_client = storage.Client(project=PROJECT)
     answer, usage = generate(query, hits, gen_client, storage_client)
     print(answer)

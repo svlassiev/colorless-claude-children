@@ -8,6 +8,7 @@ from google.genai import types
 
 from log_search.paths import EMBED_MODEL, GENERATE_MODEL
 from log_search.retriever import Hit, parse_date_filter, search
+from search_common.pricing import generation_cost
 
 PROMPT_TEMPLATE = """\
 You are answering a question about Sergey's working journal.
@@ -93,6 +94,6 @@ def generate(
         usage["tokens_in"] = in_tok
         usage["tokens_out"] = visible_out
         usage["tokens_thoughts"] = thoughts
-        usage["cost"] = in_tok * 1.25 / 1_000_000 + billable_out * 10 / 1_000_000
+        usage["cost"] = generation_cost(GENERATE_MODEL, in_tok, billable_out)
 
     return (resp.text or "").strip(), usage

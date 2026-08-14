@@ -23,20 +23,25 @@ class Settings:
     face_allowed_emails: frozenset[str]
     face_search_enabled: bool
     # Model selection — every Gemini/embedding model is chosen here so a new
-    # model available in `location` is a one-env-var swap (EXPLORE_*_MODEL).
-    # `gemini_location` records the endpoint generation *should* use. Today all
-    # clients run in `location` (europe-west4), which serves the 2.5 family.
-    # The newest models (*-latest aliases, gemini-3-*) only serve from "global";
-    # adopting one means EXPLORE_GEMINI_LOCATION=global AND splitting the shared
-    # client so query-embedding stays regional (multimodalembedding@001 /
-    # text-embedding-005 are not served from global). Until that split lands,
-    # this field documents intent rather than rewiring clients.
+    # model available on its endpoint is a one-env-var swap (EXPLORE_*_MODEL).
+    # Each generative model env var accepts "model" or "model@location": the
+    # 3.x Gemini family serves only from specific endpoints (verified 2026-08:
+    # everything from "global", gemini-3.5-flash also europe-west3), while the
+    # 2.5 family and both embedding models are regional. The parsed *_location
+    # fields drive per-purpose clients; embedding clients ALWAYS stay on
+    # `location` (multimodalembedding@001 / text-embedding-005 are regional).
+    # `gemini_location` is the default endpoint for a bare model name.
     gemini_location: str
     generate_model: str
+    generate_location: str
     routing_model: str
+    routing_location: str
     rerank_model: str
+    rerank_location: str
     photo_caption_model: str
+    photo_caption_location: str
     log_caption_model: str
+    log_caption_location: str
     photo_embed_model: str
     log_embed_model: str
     # Google Geocoding API key — used at request time by filter_by_proximity to
@@ -45,6 +50,19 @@ class Settings:
     # for places that have coordinated photos). Restrict the key to the
     # Geocoding API; results are cached in-memory per server instance.
     geocoding_api_key: str
+
+
+def _model_spec(env: str, default_model: str, default_location: str) -> tuple[str, str]:
+    """Parse an EXPLORE_*_MODEL env var into (model, endpoint location).
+
+    Accepts "gemini-2.5-pro" (endpoint = default_location) or an explicit
+    "gemini-3.5-flash@europe-west3". Keeping the endpoint next to the model
+    name in one env var means a model swap can never silently pair a model
+    with an endpoint that doesn't serve it.
+    """
+    raw = os.environ.get(env, default_model)
+    model, sep, loc = raw.partition("@")
+    return model, (loc if sep else default_location)
 
 
 def _load() -> Settings:
@@ -57,6 +75,22 @@ def _load() -> Settings:
     raw_face_emails = os.environ.get("EXPLORE_FACE_ALLOWED_EMAILS", "")
     face_allowed = frozenset(e.strip().lower() for e in raw_face_emails.split(",") if e.strip())
     face_enabled = os.environ.get("EXPLORE_FACE_SEARCH_ENABLED", "false").lower() == "true"
+    gemini_location = os.environ.get("EXPLORE_GEMINI_LOCATION", location)
+    generate_model, generate_location = _model_spec(
+        "EXPLORE_GENERATE_MODEL", "gemini-2.5-pro", gemini_location
+    )
+    routing_model, routing_location = _model_spec(
+        "EXPLORE_ROUTING_MODEL", "gemini-2.5-flash", gemini_location
+    )
+    rerank_model, rerank_location = _model_spec(
+        "EXPLORE_RERANK_MODEL", "gemini-2.5-flash", gemini_location
+    )
+    photo_caption_model, photo_caption_location = _model_spec(
+        "EXPLORE_PHOTO_CAPTION_MODEL", "gemini-2.5-flash", gemini_location
+    )
+    log_caption_model, log_caption_location = _model_spec(
+        "EXPLORE_LOG_CAPTION_MODEL", "gemini-2.5-pro", gemini_location
+    )
     return Settings(
         project=project,
         location=location,
@@ -65,14 +99,17 @@ def _load() -> Settings:
         log_tab_enabled=log_tab,
         face_allowed_emails=face_allowed,
         face_search_enabled=face_enabled,
-        gemini_location=os.environ.get("EXPLORE_GEMINI_LOCATION", location),
-        generate_model=os.environ.get("EXPLORE_GENERATE_MODEL", "gemini-2.5-pro"),
-        routing_model=os.environ.get("EXPLORE_ROUTING_MODEL", "gemini-2.5-flash"),
-        rerank_model=os.environ.get("EXPLORE_RERANK_MODEL", "gemini-2.5-flash"),
-        photo_caption_model=os.environ.get(
-            "EXPLORE_PHOTO_CAPTION_MODEL", "gemini-2.5-flash"
-        ),
-        log_caption_model=os.environ.get("EXPLORE_LOG_CAPTION_MODEL", "gemini-2.5-pro"),
+        gemini_location=gemini_location,
+        generate_model=generate_model,
+        generate_location=generate_location,
+        routing_model=routing_model,
+        routing_location=routing_location,
+        rerank_model=rerank_model,
+        rerank_location=rerank_location,
+        photo_caption_model=photo_caption_model,
+        photo_caption_location=photo_caption_location,
+        log_caption_model=log_caption_model,
+        log_caption_location=log_caption_location,
         photo_embed_model=os.environ.get(
             "EXPLORE_PHOTO_EMBED_MODEL", "multimodalembedding@001"
         ),

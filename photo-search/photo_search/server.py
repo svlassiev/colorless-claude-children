@@ -29,6 +29,7 @@ from search_common.generation import safe_generate
 from photo_search.cloud_cache import pull_from_gcs
 from photo_search.paths import (
     EMBED_MODEL,
+    GENERATE_LOCATION,
     LOCATION,
     MAX_K,
     PROJECT,
@@ -55,7 +56,9 @@ async def lifespan(_: FastAPI):
 
     vertexai.init(project=PROJECT, location=LOCATION)
     _state["embed_model"] = MultiModalEmbeddingModel.from_pretrained(EMBED_MODEL)
-    _state["gen_client"] = genai.Client(vertexai=True, project=PROJECT, location=LOCATION)
+    _state["gen_client"] = genai.Client(
+        vertexai=True, project=PROJECT, location=GENERATE_LOCATION
+    )
     _state["storage_client"] = storage.Client(project=PROJECT)
     vectors, metas = load_index()
     _state["vectors"] = vectors

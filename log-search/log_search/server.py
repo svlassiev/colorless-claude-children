@@ -20,7 +20,7 @@ from google import genai
 from pydantic import BaseModel, field_validator
 
 from log_search.cloud_cache import pull_from_gcs
-from log_search.paths import LOCATION, MAX_K, PROJECT
+from log_search.paths import GENERATE_LOCATION, LOCATION, MAX_K, PROJECT
 from log_search.qa import generate, retrieve
 from log_search.retriever import load_index
 
@@ -37,7 +37,14 @@ async def lifespan(_: FastAPI):
     if n:
         print(f"pulled {n} cache file(s) from GCS", file=sys.stderr)
 
+    # Two clients: embedding is regional-only (text-embedding-005), while the
+    # generate model may live on another endpoint (3.x family = global).
     _state["client"] = genai.Client(vertexai=True, project=PROJECT, location=LOCATION)
+    _state["gen_client"] = (
+        _state["client"]
+        if GENERATE_LOCATION == LOCATION
+        else genai.Client(vertexai=True, project=PROJECT, location=GENERATE_LOCATION)
+    )
     vectors, metas, texts = load_index()
     _state["vectors"] = vectors
     _state["metas"] = metas
@@ -124,7 +131,7 @@ async def ask(req: AskRequest) -> AskResponse:
     if req.retrieve_only:
         return _envelope(citations=citations)
 
-    answer, usage = generate(q, hits, _state["client"])
+    answer, usage = generate(q, hits, _state["gen_client"])
     if usage["cost"] is not None:
         _state["session_cost"] += usage["cost"]
     return _envelope(
