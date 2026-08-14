@@ -1,8 +1,8 @@
 """Retrieve + generate primitives shared by the CLI and the FastAPI server.
 
 Multimodal embedding side uses `vertexai.vision_models.MultiModalEmbeddingModel`
-(same client used in Phase 2). Generation side uses google-genai's Gemini 2.5
-Pro, which can read GCS URIs directly via Part.from_uri.
+(same client used in Phase 2). Generation side uses google-genai with the
+model/endpoint chosen in search_common.settings (GENERATE_MODEL).
 """
 
 from __future__ import annotations
@@ -20,11 +20,13 @@ from photo_search.retriever import Hit, search
 from photo_search.tools.base import Filters
 from search_common.pricing import generation_cost
 
-# Gemini 2.5 Pro draws thinking AND the visible answer from ONE output-token pool.
-# Cap thinking so it can't consume the whole pool and truncate the answer mid-word;
-# size the pool as that cap plus a FLOORED, per-hit visible allowance so even a 1-2
-# photo result still gets a complete, reasonably full reply.
-GEN_THINKING_BUDGET = 1024  # ceiling on Pro's reasoning tokens for this task
+# The Gemini generate models draw thinking AND the visible answer from ONE
+# output-token pool. Cap thinking so it can't consume the whole pool and truncate
+# the answer mid-word; size the pool as that cap plus a FLOORED, per-hit visible
+# allowance so even a 1-2 photo result still gets a complete, reasonably full
+# reply. (thinking_budget is accepted by both the 2.5 and 3.x families —
+# verified against 3.5-flash/-lite and 3.6-flash in the migration eval.)
+GEN_THINKING_BUDGET = 1024  # ceiling on the model's reasoning tokens for this task
 MIN_VISIBLE_TOKENS = 900    # floor on the visible-answer budget (small result sets)
 PER_HIT_VISIBLE_TOKENS = 220  # visible budget grows with how many photos to cover
 
@@ -178,7 +180,7 @@ def generate(
     * len(hits)), paired with a thinking_budget cap below. This guarantees the
     visible answer a floor (so a 1-2 photo result still gets a complete reply)
     and stops Pro's reasoning from eating the pool and truncating mid-word.
-    Gemini 2.5 Pro is a reasoning model — thinking + visible both bill as output.
+    The generate models think by default — thinking + visible both bill as output.
 
     Returns (answer_text, usage_dict).
     """

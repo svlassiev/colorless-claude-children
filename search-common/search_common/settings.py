@@ -76,20 +76,30 @@ def _load() -> Settings:
     face_allowed = frozenset(e.strip().lower() for e in raw_face_emails.split(",") if e.strip())
     face_enabled = os.environ.get("EXPLORE_FACE_SEARCH_ENABLED", "false").lower() == "true"
     gemini_location = os.environ.get("EXPLORE_GEMINI_LOCATION", location)
+    # Defaults migrated 2.5 → 3.x on 2026-08-14 (2.5 discontinued on Vertex
+    # 2026-10-20; ELA price hike 2027-01-28). Choices are eval-backed — see
+    # ~/Documents/gemini3-migration-eval/ANALYSIS.md:
+    #   - routing: 3.5-flash was the only candidate matching 2.5-flash 20/20
+    #     on the golden set (3.5-flash-lite invents year ranges for season
+    #     queries). Frankfurt endpoint — closest 3.x region to the compute.
+    #   - generation/captions: 3.6-flash ≥ 2.5-pro on our tasks at ~half cost.
+    #   - rerank: 3.5-flash-lite matches 2.5-flash orderings at equal price.
+    # Rollback: put the old 2.5 name in the env var — the 2.5 family serves
+    # unchanged (regionally) until 2027-01-28.
     generate_model, generate_location = _model_spec(
-        "EXPLORE_GENERATE_MODEL", "gemini-2.5-pro", gemini_location
+        "EXPLORE_GENERATE_MODEL", "gemini-3.6-flash@global", gemini_location
     )
     routing_model, routing_location = _model_spec(
-        "EXPLORE_ROUTING_MODEL", "gemini-2.5-flash", gemini_location
+        "EXPLORE_ROUTING_MODEL", "gemini-3.5-flash@europe-west3", gemini_location
     )
     rerank_model, rerank_location = _model_spec(
-        "EXPLORE_RERANK_MODEL", "gemini-2.5-flash", gemini_location
+        "EXPLORE_RERANK_MODEL", "gemini-3.5-flash-lite@global", gemini_location
     )
     photo_caption_model, photo_caption_location = _model_spec(
-        "EXPLORE_PHOTO_CAPTION_MODEL", "gemini-2.5-flash", gemini_location
+        "EXPLORE_PHOTO_CAPTION_MODEL", "gemini-3.6-flash@global", gemini_location
     )
     log_caption_model, log_caption_location = _model_spec(
-        "EXPLORE_LOG_CAPTION_MODEL", "gemini-2.5-pro", gemini_location
+        "EXPLORE_LOG_CAPTION_MODEL", "gemini-3.6-flash@global", gemini_location
     )
     return Settings(
         project=project,

@@ -21,7 +21,7 @@ Type queries like *"girl playing cards"*, *"snake in the forest"*, *"people gath
 ```
 photos in GCS
      │
-     ├── ingest  ── Gemini 2.5 Flash Vision ──▶ caption
+     ├── ingest  ── Gemini Flash captioning ──▶ caption
      │           ── EXIF (Pillow)            ──▶ metadata (date, gps)
      │
      └── embed   ── multimodalembedding@001  ──▶ 1408-dim vector
@@ -32,7 +32,7 @@ photos in GCS
                                                        ▼ (server pulls on startup)
                                         in-memory NumPy + cosine similarity
                                                        │
-query ── embed ── top-k + sha-dedup + date filter ── Gemini 2.5 Pro (reads images) ── narrative + thumbnails
+query ── embed ── top-k + sha-dedup + date filter ── Gemini 3.6 Flash (reads images) ── narrative + thumbnails
 ```
 
 **No Vertex AI Vector Search.** at this corpus size (~6 k images × 1408-dim × 4 bytes ≈ 35 MB), in-memory NumPy `argsort` outperforms any RPC-based vector store, and the managed service costs ~$360/mo for zero benefit. The same code path scales to it at 100 k+ images.
@@ -42,8 +42,8 @@ query ── embed ── top-k + sha-dedup + date filter ── Gemini 2.5 Pro 
 | Layer | Choice | Why |
 |---|--|---|
 | Embeddings | `multimodalembedding@001` (1408-dim) | Shared text+image space — a text query lands near matching images without a caption bottleneck |
-| Ingest captioning | Gemini 2.5 Flash Vision | Cheap, fast; captions are displayed metadata + extra context for the generator, not the primary retrieval signal |
-| Query-time generation | Gemini 2.5 Pro | Reads images directly via `Part.from_bytes`; rich visual reasoning over retrieved images |
+| Ingest captioning | Gemini 3.6 Flash (`EXPLORE_PHOTO_CAPTION_MODEL`) | Cheap, fast; captions are displayed metadata + extra context for the generator, not the primary retrieval signal |
+| Query-time generation | Gemini 3.6 Flash (`EXPLORE_GENERATE_MODEL`) | Reads images directly via `Part.from_bytes`; matched 2.5 Pro on guardrails/quality in the 2026-08 eval at ~half cost |
 | Vector store | In-memory NumPy + cosine similarity | 6 k × 1408-dim ≈ 35 MB; trivially fits, faster than any RPC |
 | Date filter | EXIF `DateTimeOriginal` + folder-name heuristic fallback | ~91% of photos have EXIF; remainder fall back to folder-name year inference |
 | Dedup | Content-SHA cleanup + retrieval-side backfill | Bucket has 448 byte-identical pairs across case + zero-padding variants |
@@ -152,19 +152,19 @@ Bound to `127.0.0.1:8081` only — never reachable from the network. Stop with C
 
 Vertex AI is pay-per-use; this project has no subscription, reservation, or hourly endpoint. There are three distinct cost surfaces:
 
-**1. One-off ingest** (already paid: ~$1.62) — Gemini 2.5 Flash Vision generates a caption for each photo. Per image: 258 image-tokens + ~30 prompt tokens at $0.30/1M input, ~50 output tokens at $2.50/1M output ≈ **~$0.00025 per image**. Path-keyed cache makes re-runs idempotent — only newly-uploaded photos re-bill.
+**1. One-off ingest** (already paid: ~$1.62) — a Gemini Flash tier generates a caption for each photo. Per image: 258 image-tokens + ~30 prompt tokens, ~50 output tokens at Flash-tier rates ≈ **~$0.00025 per image**. Path-keyed cache makes re-runs idempotent — only newly-uploaded photos re-bill.
 
 **2. One-off embed** (already paid: ~$1.30) — `multimodalembedding@001` produces one 1408-dim vector per photo at **~$0.0002 per image**. SHA-keyed cache; failed embeddings retry for free on rerun.
 
-**3. Per-query** — only the moment you click `explore`. The query is embedded (negligible) and Gemini 2.5 Pro reads `depth` photos and writes a narrative. **Cost scales linearly with the `depth` preset:**
+**3. Per-query** — only the moment you click `explore`. The query is embedded (negligible) and the generate model (Gemini 3.6 Flash) reads `depth` photos and writes a narrative. **Cost scales linearly with the `depth` preset:**
 
 | depth | full Gemini per query | `retrieve only` per query |
 |---|---|---|
-| **8 (default)** | ~$0.005–$0.008 | ~$0.0002 |
-| 12 | ~$0.008–$0.012 | ~$0.0002 |
-| 20 | ~$0.013–$0.020 | ~$0.0002 |
+| **8 (default)** | ~$0.004–$0.008 | ~$0.0002 |
+| 12 | ~$0.006–$0.011 | ~$0.0002 |
+| 20 | ~$0.009–$0.016 | ~$0.0002 |
 
-Each extra image adds 258 input tokens to Gemini Pro ($1.25/1M input, $10/1M output, ≤200k context). The `retrieve only` mode skips Gemini entirely and bills only the query embedding — three orders of magnitude cheaper, ideal for iterating on prompts or debugging retrieval quality.
+Each extra image adds 258 input tokens to the generate model (Gemini 3.6 Flash: $0.75/1M input, $3.75/1M output; measured ~$0.0065–0.0079 at depth 5 in the 2026-08 eval). The `retrieve only` mode skips Gemini entirely and bills only the query embedding — three orders of magnitude cheaper, ideal for iterating on prompts or debugging retrieval quality.
 
 **Idle = $0.** No Vertex AI Vector Search endpoint (the alternative would be ~$0.50/hr while deployed → ~$360/mo). No Cloud Run. The FastAPI server is a Python process holding ~35 MB of vectors in RAM — it bills only when you query.
 
@@ -177,7 +177,7 @@ Each extra image adds 258 input tokens to Gemini Pro ($1.25/1M input, $10/1M out
 | `indexer` full (~6.5k photos) | ~$1.62 | One-off; path-cached so re-runs cost $0 |
 | `embedder` full (~6.5k photos) | ~$1.30 | One-off; sha-cached |
 | `dedup` | $0 | Local file processing only |
-| `ask` / server, depth=8 | ~$0.005–$0.008 per query | Default; cost printed in stderr / page footer |
+| `ask` / server, depth=8 | ~$0.004–$0.008 per query | Default; cost printed in stderr / page footer |
 | `ask` / server, depth=12 | ~$0.008–$0.012 per query | +50% photos, +50% input tokens |
 | `ask` / server, depth=20 | ~$0.013–$0.020 per query | Useful for broad "show me everything …" queries |
 | `ask --retrieve-only` | ~$0.0002 per query | One text-side embedding call; no Gemini |

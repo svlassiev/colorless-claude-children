@@ -1,4 +1,4 @@
-"""Flash reranker — runs Gemini 2.5 Flash in parallel batches over the
+"""Flash reranker — runs the RERANK_MODEL (a Flash tier) in parallel batches over the
 retrieved photos and returns them sorted by LLM-judged relevance.
 
 Why: at high retrieval depth (k=20) embedding similarity is too noisy —

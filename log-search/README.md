@@ -50,7 +50,7 @@ This module is **never published as a public demo**. It is for personal use and 
                                     ▼ (server pulls on startup)
                        in-memory NumPy + cosine similarity
                                     │
-query ── embed ── top-k ── Gemini 2.5 Pro ── answer + citations
+query ── embed ── top-k ── Gemini 3.6 Flash ── answer + citations
 ```
 
 **No Vertex AI Vector Search.** The corpus is small enough (~1 k chunks, ~1 MB of vectors) to fit in memory; running the managed service for it would cost ~$360/mo for zero benefit. This is the right engineering call: "I evaluated Vector Search and rejected it for this corpus size; the same code path scales to it at 100 k+ chunks."
@@ -63,7 +63,7 @@ query ── embed ── top-k ── Gemini 2.5 Pro ── answer + citations
 | Embeddings | `text-embedding-005` (768-dim)           | Cheaper than `gemini-embedding-001`, more than enough for 1 k chunks |
 | Index | In-memory NumPy + cosine similarity      | 1 k chunks × 768-dim ≈ 6 MB — trivially fits |
 | Retrieval | Top-k (k=5) + optional date-range filter | Date metadata enables temporal queries without re-embedding |
-| Generation | Gemini 2.5 Pro                           | Long context, strong synthesis over multiple chunks |
+| Generation | Gemini 3.6 Flash (`EXPLORE_GENERATE_MODEL`) | Matched/beat 2.5 Pro on this corpus in the 2026-08 migration eval, at ~⅓ the cost |
 | UI (MVP) | FastAPI + vanilla HTML, `127.0.0.1:8080` only | Visually consistent with the rest of `serg.vlassiev.info` (Verdana, retro palette). Localhost-only, single-user, no auth |
 | UI (stretch) | Same FastAPI app, authed at `serg.vlassiev.info/log` | Phase 5 — three deployment options ranked, decision deferred |
 
@@ -142,15 +142,15 @@ Vertex AI is pay-per-use; this project has no subscription, reservation, or hour
 
 **2. One-off embed** (already paid: ~$0.025) — `text-embedding-005` at $0.000025 per 1k input characters. ~1 k chunks of ~600 chars each ≈ **~$0.025 for the full corpus**. SHA-keyed cache; editing one journal entry only re-bills that chunk.
 
-**3. Per-query** — only the moment you click `ask`. The query is embedded (negligible) and Gemini 2.5 Pro reads `depth` chunks and writes the answer. **Cost scales linearly with the `depth` preset:**
+**3. Per-query** — only the moment you click `ask`. The query is embedded (negligible) and the generate model (Gemini 3.6 Flash) reads `depth` chunks and writes the answer. **Cost scales linearly with the `depth` preset:**
 
 | depth | full Gemini per query | `retrieve only` per query |
 |---|---|---|
-| **8 (default)** | ~$0.004–$0.007 | ~$0.0001 |
-| 12 | ~$0.005–$0.009 | ~$0.0001 |
-| 20 | ~$0.008–$0.014 | ~$0.0001 |
+| **8 (default)** | ~$0.006–$0.010 | ~$0.0001 |
+| 12 | ~$0.009–$0.015 | ~$0.0001 |
+| 20 | ~$0.015–$0.025 | ~$0.0001 |
 
-Gemini 2.5 Pro: $1.25/1M input, $10/1M output (≤200k context). Each extra chunk adds ~200 input tokens. The `retrieve only` mode skips Gemini entirely and bills only the query embedding — much cheaper, ideal for iterating on prompts or debugging retrieval quality.
+Gemini 3.6 Flash: $0.75/1M input, $3.75/1M output (measured per-query costs above are from the 2026-08 migration eval; the old 2.5 Pro numbers ran ~2.5× higher on the same queries). Each extra chunk adds ~200 input tokens. The `retrieve only` mode skips Gemini entirely and bills only the query embedding — much cheaper, ideal for iterating on prompts or debugging retrieval quality.
 
 **Idle = $0.** No Vertex AI Vector Search endpoint, no Cloud Run, no recurring infrastructure. The FastAPI server is a Python process holding ~6 MB of vectors in RAM — it bills only when you query.
 
@@ -161,9 +161,9 @@ Gemini 2.5 Pro: $1.25/1M input, $10/1M output (≤200k context). Each extra chun
 | `chunker` | $0 | Local file processing only |
 | `embedder` (full corpus, ~1 k chunks) | ~$0.025 | One-off; cached by SHA |
 | `embedder` (incremental, ~10 changed chunks) | <$0.001 | Cache hits skip the API call |
-| `ask` / server, depth=8 | ~$0.004–$0.007 per query | Default; cost printed in stderr / page footer |
-| `ask` / server, depth=12 | ~$0.005–$0.009 per query | +50% chunks |
-| `ask` / server, depth=20 | ~$0.008–$0.014 per query | Useful for broad "summarise everything …" queries |
+| `ask` / server, depth=8 | ~$0.006–$0.010 per query | Default; cost printed in stderr / page footer |
+| `ask` / server, depth=12 | ~$0.009–$0.015 per query | +50% chunks |
+| `ask` / server, depth=20 | ~$0.015–$0.025 per query | Useful for broad "summarise everything …" queries |
 | `ask --retrieve-only` | ~$0.0001 per query | One embedding call for the query; no Gemini |
 | Idle | $0 | No deployed services, no recurring infra |
 

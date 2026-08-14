@@ -28,7 +28,7 @@ Deployment topology — where it runs:
                                                    │               │
        Firebase Auth ←──── id_token ────→ Firebase Admin verify    │
                                                                    ↓
-       Vertex AI ─────────→ Gemini 2.5 (embed / rerank Flash / generate Pro)
+       Vertex AI ─────────→ Gemini (regional embeds; 3.x routing/rerank/generate — see `search_common.settings`)
        Firestore ─────────→ daily rate-limit counters
        GCS (private) ─────→ index cache + raw photo bytes
 ```
@@ -100,9 +100,9 @@ A few load-bearing details:
 
 **Retrieval.** Cosine top-k over the in-memory index plus an optional EXIF / folder-name date filter parsed out of the query (`"summer 2017"`, `"2014"`). For the log corpus, embeddings come from `text-embedding-005`; for photos, from `multimodalembedding@001`.
 
-**Rerank (photo, depth ≥ 20).** When the caller picks depth 20, [`photo_search.rerank.rerank_hits`](../photo-search/photo_search/rerank.py) downloads the 20 image bytes in parallel, fans them out to **four parallel Gemini 2.5 Flash calls of five images each** with a structured `response_schema`, sorts the hits by relevance score (cosine as tiebreaker), and trims to `RERANK_KEEP=10` for Pro. Bytes are kept in a sha-keyed map and reused — Pro never re-downloads what Flash already saw. The whole rerank step is bounded by `RERANK_TIMEOUT_S=15s`; on timeout or any exception we fall back to similarity order, **but Pro's input is still trimmed to 10** — wall time stays bounded even when Flash is unreachable.
+**Rerank (photo, depth ≥ 20).** When the caller picks depth 20, [`photo_search.rerank.rerank_hits`](../photo-search/photo_search/rerank.py) downloads the 20 image bytes in parallel, fans them out to **four parallel Flash-tier calls of five images each** (gemini-3.5-flash-lite) with a structured `response_schema`, sorts the hits by relevance score (cosine as tiebreaker), and trims to `RERANK_KEEP=10` for Pro. Bytes are kept in a sha-keyed map and reused — Pro never re-downloads what Flash already saw. The whole rerank step is bounded by `RERANK_TIMEOUT_S=15s`; on timeout or any exception we fall back to similarity order, **but Pro's input is still trimmed to 10** — wall time stays bounded even when Flash is unreachable.
 
-**Generation.** Gemini 2.5 Pro receives the (possibly reranked, possibly trimmed) hits inline as JPEG bytes plus dates and captions. The output budget scales with hit count (`250 * len(hits)`) so the visible answer doesn't get starved by reasoning tokens at high depth.
+**Generation.** The generate model (gemini-3.6-flash) receives the (possibly reranked, possibly trimmed) hits inline as JPEG bytes plus dates and captions. The output budget scales with hit count so the visible answer doesn't get starved by reasoning tokens at high depth.
 
 **Soft-failure wrapper.** Every generation call goes through [`search_common.generation.safe_generate`](../search-common/search_common/generation.py), which dispatches the sync Gemini call to `asyncio.to_thread` under `asyncio.wait_for` (default 60 s). On timeout or exception we return `GenerationOutcome(answer=None, usage=zero, error=<safe string>)` instead of bubbling a 500 — citations still render, and the frontend surfaces the error in a small inline notice.
 

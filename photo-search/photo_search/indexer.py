@@ -40,7 +40,7 @@ from photo_search.paths import (
     ensure_cache_dir,
 )
 
-# Pricing rough-estimate. Gemini 2.5 Flash: $0.30/1M input, $2.50/1M output.
+# Pricing rough-estimate at Flash-tier rates ($0.30-0.75/1M in, $2.50-3.75/1M out).
 # Per image: 258 image tokens + ~30 prompt tokens input, ~50 output tokens.
 # (288 * 0.30 + 50 * 2.50) / 1_000_000 ≈ $0.000211 — call it $0.00025 to be safe.
 PRICE_PER_CAPTION = 0.00025

@@ -68,13 +68,15 @@ def generate(
     """Run Gemini generation over the hits. Returns (answer_text, usage_dict).
 
     `max_output_tokens` caps Gemini's TOTAL output (thinking + visible).
-    When None, scales with retrieval depth: 250 * len(hits). At k=8 → 2000
-    (the prior fixed default); at k=20 → 5000, so the visible answer isn't
-    starved when more chunks are summarised. Gemini 2.5 Pro is a reasoning
-    model — thinking tokens count toward this budget and toward billing.
+    When None, scales with retrieval depth: 300 * len(hits). At k=8 → 2400;
+    at k=20 → 6000, so the visible answer isn't starved when more chunks are
+    summarised. The Gemini generate models think by default — thinking tokens
+    count toward this budget and toward billing. (Raised from 250/hit during
+    the 3.x migration: both 2.5-pro and 3.6-flash truncated long syntheses at
+    the old budget; 2.5-pro worse, since it thinks more.)
     """
     if max_output_tokens is None:
-        max_output_tokens = 250 * max(1, len(hits))
+        max_output_tokens = 300 * max(1, len(hits))
     excerpts = format_excerpts(hits)
     prompt = PROMPT_TEMPLATE.format(query=query, excerpts=excerpts)
     resp = client.models.generate_content(

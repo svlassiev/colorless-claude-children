@@ -1,4 +1,4 @@
-"""Pre-retrieval routing: one Gemini 2.5 Flash call decides which filters
+"""Pre-retrieval routing: one Gemini Flash call (ROUTING_MODEL) decides which filters
 apply to the user's query, before any photo retrieval runs.
 
 Single-turn function calling. The model sees the user query and the list
@@ -44,9 +44,11 @@ from photo_search.tools import (
 from search_common.generation import tool_call
 # 8 s wasn't enough for the cold first call after server startup — the
 # initial Vertex auth handshake + first-token latency can land in the
-# 8-10 s range. 15 s keeps the warm-case latency invisible (Flash p50
-# returns in ~500 ms) while tolerating cold start without timing out.
-ROUTING_TIMEOUT_S = 15.0
+# 8-10 s range. Gemini 3.5 Flash routes with dynamic thinking (that's what
+# keeps it from hallucinating date filters — see the migration eval), so
+# warm p50 is ~2 s with a tail to ~6.5 s; 20 s covers cold start + a
+# thinking spike without letting a stuck call hold the query hostage.
+ROUTING_TIMEOUT_S = 20.0
 
 # System instruction is a small, durable contract with the model: what
 # the job is, what "good" looks like, and what to avoid. Iterate here

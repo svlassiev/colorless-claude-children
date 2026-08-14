@@ -1,20 +1,21 @@
 """Caption inline images referenced from the journal's .md files using
-Gemini 2.5 Pro, then cache the results so the chunker can inline them.
+the CAPTION_MODEL (a strong Gemini tier — captions are load-bearing index
+content), then cache the results so the chunker can inline them.
 
-Why a separate step (and Pro, not Flash):
+Why a separate step (and a strong tier, not the cheapest):
 - The dominant image syntax in the corpus is GitHub-pasted HTML
   `<img src="images/<uuid>.png" …/>` (~80 % of references), the rest are
   standard markdown `![alt](path)`. Both forms are extracted here.
 - Captions act as the *load-bearing text* for image content in chunks —
   retrieval has to find an image through a prose query, so the caption
-  must read like prose, not like a label. Pro gives us 1–2 paragraphs of
-  specific, faithful description (Flash tends to be terser and more
-  generic).
+  must read like prose, not like a label. CAPTION_MODEL is picked for 1–2
+  paragraphs of specific, faithful description (the cheapest tiers tend to
+  be terser and more generic).
 - Captions are deterministic-enough per image; we cache by image-bytes
   sha so re-runs on unchanged corpora cost nothing.
 
-Cost: ~$0.008–0.012 per image (258 image tokens + ~30 prompt + up to
-~1500 output tokens at $1.25/$10 per 1M). For ~95 images today: ~$1.
+Cost: ~$0.003–0.006 per image at 3.6-flash rates (258 image tokens +
+~30 prompt + up to ~1500 output tokens at $0.75/$3.75 per 1M).
 
 Run:  uv run --directory log-search python -m log_search.captioner
 """
@@ -70,8 +71,8 @@ If the image is ambiguous or low-resolution, say so plainly. Output the \
 description as prose — no bullet lists, no markdown headings.
 """
 
-# Generous output budget — Pro is a reasoning model, so leave headroom for
-# thinking tokens. 2 paragraphs is ~400-500 tokens visible; the 1500 cap
+# Generous output budget — the caption model thinks by default, so leave
+# headroom for thinking tokens. 2 paragraphs is ~400-500 tokens visible; the 1500 cap
 # covers thinking + visible without truncating.
 MAX_OUTPUT_TOKENS = 1500
 
