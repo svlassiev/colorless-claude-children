@@ -42,7 +42,7 @@ This module is **never published as a public demo**. It is for personal use and 
         ├── chunk    ── split by `# YYYYMMDD` headers + sliding window for long entries
         │             ── attach {file, date, heading-path} metadata
         │
-        └── embed    ── text-embedding-005 (Vertex AI)
+        └── embed    ── gemini-embedding-001 (Vertex AI, RETRIEVAL_DOCUMENT task type)
                                     │
                                     ▼
                   gs://cdc-search-cache/log-search/   (authoritative store)
@@ -60,8 +60,8 @@ query ── embed ── top-k ── Gemini 3.6 Flash ── answer + citation
 | Layer | Choice                                   | Why |
 |---|------------------------------------------|---|
 | Chunking | Date-header split + sliding window       | Date headers are natural semantic boundaries in this corpus |
-| Embeddings | `text-embedding-005` (768-dim)           | Cheaper than `gemini-embedding-001`, more than enough for 1 k chunks |
-| Index | In-memory NumPy + cosine similarity      | 1 k chunks × 768-dim ≈ 6 MB — trivially fits |
+| Embeddings | `gemini-embedding-001` (3072-dim, `EXPLORE_LOG_EMBED_MODEL`) | Migrated from `text-embedding-005` 2026-08 — stronger multilingual retrieval, task-type asymmetry, path-breadcrumb chunks |
+| Index | In-memory NumPy + cosine similarity      | 1.3 k chunks × 3072-dim ≈ 16 MB — trivially fits |
 | Retrieval | Top-k (k=5) + optional date-range filter | Date metadata enables temporal queries without re-embedding |
 | Generation | Gemini 3.6 Flash (`EXPLORE_GENERATE_MODEL`) | Matched/beat 2.5 Pro on this corpus in the 2026-08 migration eval, at ~⅓ the cost |
 | UI (MVP) | FastAPI + vanilla HTML, `127.0.0.1:8080` only | Visually consistent with the rest of `serg.vlassiev.info` (Verdana, retro palette). Localhost-only, single-user, no auth |
@@ -140,7 +140,7 @@ Vertex AI is pay-per-use; this project has no subscription, reservation, or hour
 
 **1. Chunking** — pure local file processing, $0. Walks markdown, splits on `# YYYYMMDD` headers, no API calls.
 
-**2. One-off embed** (already paid: ~$0.025) — `text-embedding-005` at $0.000025 per 1k input characters. ~1 k chunks of ~600 chars each ≈ **~$0.025 for the full corpus**. SHA-keyed cache; editing one journal entry only re-bills that chunk.
+**2. One-off embed** (~$0.05 for the full corpus) — `gemini-embedding-001` at $0.15/1M tokens. SHA-keyed cache; editing one journal entry only re-bills that chunk. The corpus is indexed from **committed files only** (`python -m log_search.committed_corpus` exports HEAD; point `LOG_CORPUS_ROOT` at it).
 
 **3. Per-query** — only the moment you click `ask`. The query is embedded (negligible) and the generate model (Gemini 3.6 Flash) reads `depth` chunks and writes the answer. **Cost scales linearly with the `depth` preset:**
 

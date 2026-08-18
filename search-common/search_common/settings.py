@@ -113,11 +113,18 @@ def _load() -> Settings:
     log_caption_model, log_caption_location = _model_spec(
         "EXPLORE_LOG_CAPTION_MODEL", "gemini-3.6-flash@global", gemini_location
     )
+    # Embedding defaults migrated 2026-08-18 after the retrieval A/B (see the
+    # private embed-eval/ANALYSIS.md): gemini-embedding-2 fixed every known
+    # photo-retrieval failure (Озеро, байдарки, костёр — Russian↔visual);
+    # gemini-embedding-001 + path-breadcrumb chunks fixed folder-blind log
+    # retrieval ("new job" 2/8 → 8/8 relevant). Rollback: set the env vars to
+    # the bare legacy names (multimodalembedding@001 / text-embedding-005) —
+    # the legacy indexes stay in GCS under the untagged filenames.
     photo_embed_model, photo_embed_location = _model_spec(
-        "EXPLORE_PHOTO_EMBED_MODEL", "multimodalembedding@001", location
+        "EXPLORE_PHOTO_EMBED_MODEL", "gemini-embedding-2@global", location
     )
     log_embed_model, log_embed_location = _model_spec(
-        "EXPLORE_LOG_EMBED_MODEL", "text-embedding-005", location
+        "EXPLORE_LOG_EMBED_MODEL", "gemini-embedding-001@europe-west4", location
     )
     return Settings(
         project=project,

@@ -24,7 +24,7 @@ photos in GCS
      ├── ingest  ── Gemini Flash captioning ──▶ caption
      │           ── EXIF (Pillow)            ──▶ metadata (date, gps)
      │
-     └── embed   ── multimodalembedding@001  ──▶ 1408-dim vector
+     └── embed   ── gemini-embedding-2      ──▶ 3072-dim vector (joint text+image space)
                                                        │
                                                        ▼
                             gs://cdc-search-cache/photo-search/   (authoritative store)
@@ -35,16 +35,16 @@ photos in GCS
 query ── embed ── top-k + sha-dedup + date filter ── Gemini 3.6 Flash (reads images) ── narrative + thumbnails
 ```
 
-**No Vertex AI Vector Search.** at this corpus size (~6 k images × 1408-dim × 4 bytes ≈ 35 MB), in-memory NumPy `argsort` outperforms any RPC-based vector store, and the managed service costs ~$360/mo for zero benefit. The same code path scales to it at 100 k+ images.
+**No Vertex AI Vector Search.** at this corpus size (~6 k images × 3072-dim × 4 bytes ≈ 74 MB), in-memory NumPy `argsort` outperforms any RPC-based vector store, and the managed service costs ~$360/mo for zero benefit. The same code path scales to it at 100 k+ images.
 
 ## Stack
 
 | Layer | Choice | Why |
 |---|--|---|
-| Embeddings | `multimodalembedding@001` (1408-dim) | Shared text+image space — a text query lands near matching images without a caption bottleneck |
+| Embeddings | `gemini-embedding-2` (3072-dim, `EXPLORE_PHOTO_EMBED_MODEL`) | Shared text+image space; migrated from `multimodalembedding@001` 2026-08 — fixed Russian-query retrieval (Озеро/байдарки/костёр) |
 | Ingest captioning | Gemini 3.6 Flash (`EXPLORE_PHOTO_CAPTION_MODEL`) | Cheap, fast; captions are displayed metadata + extra context for the generator, not the primary retrieval signal |
 | Query-time generation | Gemini 3.6 Flash (`EXPLORE_GENERATE_MODEL`) | Reads images directly via `Part.from_bytes`; matched 2.5 Pro on guardrails/quality in the 2026-08 eval at ~half cost |
-| Vector store | In-memory NumPy + cosine similarity | 6 k × 1408-dim ≈ 35 MB; trivially fits, faster than any RPC |
+| Vector store | In-memory NumPy + cosine similarity | 6 k × 3072-dim ≈ 74 MB; trivially fits, faster than any RPC |
 | Date filter | EXIF `DateTimeOriginal` + folder-name heuristic fallback | ~91% of photos have EXIF; remainder fall back to folder-name year inference |
 | Dedup | Content-SHA cleanup + retrieval-side backfill | Bucket has 448 byte-identical pairs across case + zero-padding variants |
 | UI (planned, Phase 4) | FastAPI + vanilla HTML, retro `serg.vlassiev.info` palette | Visual consistency with the rest of the site; click-through citations to existing preview pages |
@@ -85,7 +85,7 @@ uv run python -m photo_search.indexer --limit 10
 # 4. Full ingest: enumerate + EXIF + caption (~$1.62 for ~6.5k photos, ~36 min @ 10 workers).
 uv run python -m photo_search.indexer --workers 10
 
-# 5. Embed: multimodalembedding@001 (~$1.30 for ~6.5k photos, ~30-45 min @ 4 workers).
+# 5. Embed: gemini-embedding-2 (~$1.20 for ~6k photos, ~20 min @ 8 workers).
 #    Sanity-checks before billing — aborts on $0 if the model isn't discriminating.
 uv run python -m photo_search.embedder --workers 4
 
@@ -154,7 +154,7 @@ Vertex AI is pay-per-use; this project has no subscription, reservation, or hour
 
 **1. One-off ingest** (already paid: ~$1.62) — a Gemini Flash tier generates a caption for each photo. Per image: 258 image-tokens + ~30 prompt tokens, ~50 output tokens at Flash-tier rates ≈ **~$0.00025 per image**. Path-keyed cache makes re-runs idempotent — only newly-uploaded photos re-bill.
 
-**2. One-off embed** (already paid: ~$1.30) — `multimodalembedding@001` produces one 1408-dim vector per photo at **~$0.0002 per image**. SHA-keyed cache; failed embeddings retry for free on rerun.
+**2. One-off embed** (~$1.20) — `gemini-embedding-2` produces one 3072-dim vector per photo (**~$0.0002 per image**). SHA-keyed cache per model-tagged index; failed embeddings retry for free on rerun.
 
 **3. Per-query** — only the moment you click `explore`. The query is embedded (negligible) and the generate model (Gemini 3.6 Flash) reads `depth` photos and writes a narrative. **Cost scales linearly with the `depth` preset:**
 
@@ -214,12 +214,13 @@ uv run python -m photo_search.dedup                 # local file processing only
 
 ## Known follow-ups
 
-### `vertexai` SDK deprecation (sunset 2026-06-24)
+### Legacy embedding backend removal
 
-`embedder.py` and `qa.py` import `vertexai.vision_models.MultiModalEmbeddingModel` for `multimodalembedding@001`. That namespace is deprecated as of 2025-06-24 and **removed 2026-06-24**. Captioning and generation already run on the unified `google-genai` SDK; only the embedding path is still on the legacy one because `google-genai` doesn't expose `multimodalembedding@001` yet.
-
-Two viable migration paths (when convenient — not blocking):
-
-1. **Wait** for `google-genai` to expose `multimodalembedding@001`. Swap the imports, no re-embedding.
-2. **Pivot** to a Gemini-based multimodal embedding model via `google-genai`. Re-bills the embedding pass (~$1.30 for ~6.5 k photos) but produces the cleanest end state — one SDK, one client per process. The retriever stays the same; cosine similarity is dimension-agnostic.
+The 2026-08 embedding migration (option 2 of the old plan) moved the default
+to `gemini-embedding-2` via `google-genai`. The deprecated
+`vertexai.vision_models` path survives only as the `_LegacyEmbedder` backend
+in `photo_search/embedding.py`, selected when `EXPLORE_PHOTO_EMBED_MODEL` is
+set back to `multimodalembedding@001` (the rollback path). Once the new index
+has proven itself in production, delete the legacy backend and the old
+untagged index files in GCS.
 
