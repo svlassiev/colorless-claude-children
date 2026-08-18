@@ -54,6 +54,9 @@ generically (a man, two children) and invent no names.
 
 If a photo is genuinely unrelated to the query, say so for that photo. Stay
 concise — 2-3 short paragraphs total.
+
+Answer in the same language as the user query. If the query is mostly
+Russian, write your ENTIRE answer in Russian.
 {filter_block}{person_block}{resolution_block}
 USER QUERY: {query}
 

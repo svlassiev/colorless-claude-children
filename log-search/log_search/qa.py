@@ -17,6 +17,9 @@ Use ONLY the journal excerpts below. Cite each fact as [n] where n is the excerp
 number. If the excerpts do not contain the answer, say so plainly — do not make
 up details. Do not invent dates, names, or numbers that aren't in the excerpts.
 
+Answer in the same language as the question. If the question is mostly
+Russian, write your ENTIRE answer in Russian.
+
 QUESTION:
 {query}
 
