@@ -5,12 +5,11 @@ from __future__ import annotations
 import argparse
 import sys
 
-import vertexai
 from google import genai
 from google.cloud import storage
-from vertexai.vision_models import MultiModalEmbeddingModel
 
-from photo_search.paths import EMBED_MODEL, GENERATE_LOCATION, LOCATION, MAX_K, PROJECT
+from photo_search.embedding import make_photo_embedder
+from photo_search.paths import GENERATE_LOCATION, MAX_K, PROJECT
 from photo_search.qa import generate, retrieve
 from photo_search.retriever import Hit, load_index
 from photo_search.site import site_url_for
@@ -48,13 +47,12 @@ def main() -> int:
 
     query = " ".join(args.query)
 
-    vertexai.init(project=PROJECT, location=LOCATION)
-    embed_model = MultiModalEmbeddingModel.from_pretrained(EMBED_MODEL)
+    embedder = make_photo_embedder()
 
     vectors, metas = load_index()
     print(f"index: {len(vectors)} vectors", file=sys.stderr)
 
-    hits, (date_lo, date_hi) = retrieve(query, embed_model, vectors, metas, k=args.k)
+    hits, (date_lo, date_hi) = retrieve(query, embedder, vectors, metas, k=args.k)
     if date_lo:
         print(f"date filter: {date_lo} .. {date_hi}", file=sys.stderr)
 

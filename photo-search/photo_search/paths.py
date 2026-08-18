@@ -13,13 +13,14 @@ BUCKET = "colorless-days-children"
 CAPTION_MODEL = settings.photo_caption_model
 CAPTION_LOCATION = settings.photo_caption_location
 EMBED_MODEL = settings.photo_embed_model
+EMBED_LOCATION = settings.photo_embed_location
 GENERATE_MODEL = settings.generate_model
 GENERATE_LOCATION = settings.generate_location
 RERANK_MODEL = settings.rerank_model
 RERANK_LOCATION = settings.rerank_location
 ROUTING_MODEL = settings.routing_model
 ROUTING_LOCATION = settings.routing_location
-EMBED_DIM = 1408
+EMBED_DIM = {"multimodalembedding@001": 1408}.get(EMBED_MODEL, 3072)
 
 MAX_K = 20  # hard cap on retrieval depth — enforced in server / CLI / retriever
 
@@ -45,8 +46,17 @@ GCS_CACHE_PREFIX = "photo-search/"
 CACHE_ROOT = Path.home() / ".cache" / "photo-search"
 CAPTION_CACHE = CACHE_ROOT / "caption_cache.jsonl"
 MANIFEST_PATH = CACHE_ROOT / "manifest.jsonl"
-INDEX_PATH = CACHE_ROOT / "index.npz"
-META_PATH = CACHE_ROOT / "manifest_meta.jsonl"
+# Index + meta are embedding-model artefacts, so their filenames carry the
+# model tag (legacy @001 keeps the untagged names). A revision configured
+# for model X pulls only X's files — query embedder and corpus vectors can
+# never mismatch mid-migration. Manifest/captions are model-independent.
+_TAG = (
+    ""
+    if EMBED_MODEL == "multimodalembedding@001"
+    else f"-{EMBED_MODEL.replace('@', '-')}"
+)
+INDEX_PATH = CACHE_ROOT / f"index{_TAG}.npz"
+META_PATH = CACHE_ROOT / f"manifest_meta{_TAG}.jsonl"
 
 # Hiking share links: maps a GCS blob path -> the hiking-api imageId (the UUID
 # used in /share/hiking/image/<imageId>). Built OFFLINE from hiking-api (no

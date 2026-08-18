@@ -1,18 +1,18 @@
-"""Phase 2: embed each photo with multimodalembedding@001, persist as index.npz.
+"""Phase 2: embed each photo with EMBED_MODEL, persist as the tagged index.
 
-multimodalembedding@001 puts images and text into the same 1408-dim space,
-so a text query at retrieval time lands near matching image vectors without
-a captioning detour. Captions remain useful as displayed metadata.
+The embedding model puts images and text into one joint space
+(multimodalembedding@001: 1408-dim; gemini-embedding-2: 3072-dim), so a text
+query at retrieval time lands near matching image vectors without a
+captioning detour. Captions remain useful as displayed metadata.
 
 Cost-aware:
-- $0.0002 per image. ~6,488 photos = ~$1.30.
-- Sanity check on one image + its caption (cosine > 0.10) gates the batch.
-- SHA-keyed cache: re-runs on unchanged photos cost $0.
+- Sanity check on one image + its caption (cosine margin) gates the batch.
+- SHA-keyed cache per model-tagged index: re-runs on unchanged photos cost $0;
+  switching models starts a fresh tagged index and re-embeds everything.
 - ThreadPoolExecutor concurrency for ~10× wall-clock speedup.
 
-Note: uses the older `vertexai.vision_models` API because google-genai does
-not yet expose multimodalembedding@001. Acceptable — that namespace is not
-part of the June-2026 deprecation that affected log-search's text path.
+The model-specific SDK mechanics live in photo_search.embedding — this file
+only orchestrates.
 """
 
 from __future__ import annotations
@@ -24,22 +24,22 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import numpy as np
-import vertexai
 from google.cloud import storage
-from vertexai.vision_models import Image, MultiModalEmbeddingModel
 
+from photo_search.embedding import PhotoEmbedder, make_photo_embedder
 from photo_search.paths import (
     BUCKET,
     EMBED_DIM,
     EMBED_MODEL,
     INDEX_PATH,
-    LOCATION,
     MANIFEST_PATH,
     META_PATH,
     PROJECT,
     ensure_cache_dir,
 )
 
+# Rough per-image estimate: @001 bills $0.0002/image flat; gemini-embedding-2
+# bills image tokens at $0.45/1M (ballpark similar magnitude per photo).
 PRICE_PER_EMBED = 0.0002
 
 
@@ -47,19 +47,8 @@ def _cosine(a: np.ndarray, b: np.ndarray) -> float:
     return float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b)))
 
 
-def _embed_image_bytes(model: MultiModalEmbeddingModel, img_bytes: bytes) -> np.ndarray:
-    img = Image(image_bytes=img_bytes)
-    embs = model.get_embeddings(image=img)
-    return np.array(embs.image_embedding, dtype=np.float32)
-
-
-def _embed_text(model: MultiModalEmbeddingModel, text: str) -> np.ndarray:
-    embs = model.get_embeddings(contextual_text=text[:1024])
-    return np.array(embs.text_embedding, dtype=np.float32)
-
-
 def _sanity_check(
-    model: MultiModalEmbeddingModel,
+    embedder: PhotoEmbedder,
     storage_client: storage.Client,
     sample_blob_path: str,
     sample_caption: str,
@@ -73,10 +62,10 @@ def _sanity_check(
     """
     blob = storage_client.bucket(BUCKET).blob(sample_blob_path)
     img_bytes = blob.download_as_bytes()
-    img_vec = _embed_image_bytes(model, img_bytes)
+    img_vec = embedder.embed_image(img_bytes)
 
-    matched_vec = _embed_text(model, sample_caption)
-    unrelated_vec = _embed_text(model, "modern city skyline at night with traffic and skyscrapers")
+    matched_vec = embedder.embed_text(sample_caption)
+    unrelated_vec = embedder.embed_text("modern city skyline at night with traffic and skyscrapers")
 
     matched_sim = _cosine(img_vec, matched_vec)
     unrelated_sim = _cosine(img_vec, unrelated_vec)
@@ -110,7 +99,7 @@ def _load_existing_index() -> dict[str, np.ndarray]:
 def _process_one(
     blob_path: str,
     storage_client: storage.Client,
-    model: MultiModalEmbeddingModel,
+    embedder: PhotoEmbedder,
 ) -> tuple[str, np.ndarray]:
     blob = storage_client.bucket(BUCKET).blob(blob_path)
     img_bytes = blob.download_as_bytes()
@@ -119,7 +108,7 @@ def _process_one(
     backoffs = [5, 15, 30, 60, 90]
     for attempt, delay in enumerate(backoffs):
         try:
-            vec = _embed_image_bytes(model, img_bytes)
+            vec = embedder.embed_image(img_bytes)
             return blob_path, vec
         except Exception as e:  # noqa: BLE001
             msg = str(e)
@@ -167,12 +156,12 @@ def main() -> int:
         file=sys.stderr,
     )
 
-    vertexai.init(project=PROJECT, location=LOCATION)
-    model = MultiModalEmbeddingModel.from_pretrained(EMBED_MODEL)
+    print(f"model: {EMBED_MODEL} ({EMBED_DIM}-dim) -> {INDEX_PATH.name}", file=sys.stderr)
+    embedder = make_photo_embedder()
     storage_client = storage.Client(project=PROJECT)
 
     if not args.skip_sanity and to_embed:
-        _sanity_check(model, storage_client, rows[0]["blob_path"], rows[0]["caption"])
+        _sanity_check(embedder, storage_client, rows[0]["blob_path"], rows[0]["caption"])
 
     vectors = np.zeros((len(rows), EMBED_DIM), dtype=np.float32)
     for i, r in enumerate(rows):
@@ -189,7 +178,7 @@ def main() -> int:
         failed = 0
         with ThreadPoolExecutor(max_workers=workers) as ex:
             futures = {
-                ex.submit(_process_one, r["blob_path"], storage_client, model): r
+                ex.submit(_process_one, r["blob_path"], storage_client, embedder): r
                 for r in to_embed
             }
             for fut in as_completed(futures):

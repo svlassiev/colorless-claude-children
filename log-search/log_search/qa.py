@@ -37,8 +37,18 @@ def format_excerpts(hits: list[Hit]) -> str:
     return "\n\n---\n\n".join(parts)
 
 
+# Query-side task type — pairs with the embedder's RETRIEVAL_DOCUMENT.
+_QUERY_EMBED_CONFIG = (
+    types.EmbedContentConfig(task_type="RETRIEVAL_QUERY")
+    if EMBED_MODEL.startswith("gemini-embedding")
+    else None
+)
+
+
 def embed_query(text: str, client: Client) -> np.ndarray:
-    result = client.models.embed_content(model=EMBED_MODEL, contents=text)
+    result = client.models.embed_content(
+        model=EMBED_MODEL, contents=text, config=_QUERY_EMBED_CONFIG
+    )
     return np.array(result.embeddings[0].values, dtype=np.float32)
 
 

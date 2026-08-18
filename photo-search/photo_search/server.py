@@ -16,21 +16,18 @@ from pathlib import Path
 from typing import Any
 
 import uvicorn
-import vertexai
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from google import genai
 from google.cloud import storage
 from pydantic import BaseModel, field_validator
-from vertexai.vision_models import MultiModalEmbeddingModel
 
 from search_common.generation import safe_generate
 
 from photo_search.cloud_cache import pull_from_gcs
+from photo_search.embedding import make_photo_embedder
 from photo_search.paths import (
-    EMBED_MODEL,
     GENERATE_LOCATION,
-    LOCATION,
     MAX_K,
     PROJECT,
     RERANK_KEEP,
@@ -54,8 +51,7 @@ async def lifespan(_: FastAPI):
     if n:
         print(f"pulled {n} cache file(s) from GCS", file=sys.stderr)
 
-    vertexai.init(project=PROJECT, location=LOCATION)
-    _state["embed_model"] = MultiModalEmbeddingModel.from_pretrained(EMBED_MODEL)
+    _state["photo_embedder"] = make_photo_embedder()
     _state["gen_client"] = genai.Client(
         vertexai=True, project=PROJECT, location=GENERATE_LOCATION
     )
@@ -132,7 +128,7 @@ async def ask(req: AskRequest) -> AskResponse:
 
     hits, (date_lo, date_hi) = retrieve(
         q,
-        _state["embed_model"],
+        _state["photo_embedder"],
         _state["vectors"],
         _state["metas"],
         k=req.k,

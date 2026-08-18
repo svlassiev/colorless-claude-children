@@ -15,9 +15,12 @@ import time
 import numpy as np
 from google import genai
 
+from google.genai import types as genai_types
+
 from log_search.paths import (
     CHUNKS_PATH,
     EMBED_DIM,
+    EMBED_LOCATION,
     EMBED_MODEL,
     INDEX_PATH,
     LOCATION,
@@ -29,6 +32,16 @@ from log_search.paths import (
 BATCH_SIZE = 25
 PRICE_PER_1K_CHARS = 0.000025
 
+# Task-type asymmetry (corpus side). The gemini-embedding family produces
+# better retrieval when documents and queries are embedded with their roles
+# declared; text-embedding-005 keeps its historical no-config call so the
+# legacy index stays byte-reproducible.
+DOC_EMBED_CONFIG = (
+    genai_types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT")
+    if EMBED_MODEL.startswith("gemini-embedding")
+    else None
+)
+
 
 def _cosine(a: np.ndarray, b: np.ndarray) -> float:
     return float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b)))
@@ -39,7 +52,7 @@ def _sanity_check(client: genai.Client) -> None:
         "We deployed the new feature to production after the code review.",
         "The pull request was merged once it passed all tests in CI.",
     ]
-    result = client.models.embed_content(model=EMBED_MODEL, contents=pair)
+    result = client.models.embed_content(model=EMBED_MODEL, contents=pair, config=DOC_EMBED_CONFIG)
     a = np.array(result.embeddings[0].values, dtype=np.float32)
     b = np.array(result.embeddings[1].values, dtype=np.float32)
     sim = _cosine(a, b)
@@ -79,10 +92,10 @@ def main() -> int:
     print(f"corpus: {n} chunks, {char_total:,} chars, full re-embed cost ${est_cost:.4f}")
     print(f"cached: {cached_count} chunks reused")
     print(f"to embed: {len(to_embed_idx)} chunks, {new_chars:,} new chars, cost ~${new_cost:.4f}")
-    print(f"model: {EMBED_MODEL}, region: {LOCATION}")
+    print(f"model: {EMBED_MODEL}, endpoint: {EMBED_LOCATION}")
     print()
 
-    client = genai.Client(vertexai=True, project=PROJECT, location=LOCATION)
+    client = genai.Client(vertexai=True, project=PROJECT, location=EMBED_LOCATION)
 
     if to_embed_idx:
         _sanity_check(client)
@@ -102,7 +115,9 @@ def main() -> int:
 
             for attempt in range(5):
                 try:
-                    result = client.models.embed_content(model=EMBED_MODEL, contents=batch_texts)
+                    result = client.models.embed_content(
+                        model=EMBED_MODEL, contents=batch_texts, config=DOC_EMBED_CONFIG
+                    )
                     break
                 except Exception as e:  # noqa: BLE001
                     msg = str(e)

@@ -269,13 +269,21 @@ def chunk_file(path: Path, captions: dict[str, str]) -> list[Chunk]:
 
     chunks: list[Chunk] = []
     for r in raw:
-        # Prepend the heading breadcrumb to the embedded text so parent
-        # terms participate in retrieval. Date is duplicated only when
-        # not already implied by the breadcrumb's H1.
-        prefix = f"[{r.heading_path}]\n\n" if r.heading_path != "(whole file)" else ""
+        # Prepend the file-path AND heading breadcrumb to the embedded text
+        # so folder/file terms ("new job", company names in dir names) and
+        # parent headings all participate in retrieval — the folder tree is
+        # meaningful structure in this corpus, invisible to the vectors
+        # before this prefix carried it.
+        if r.heading_path != "(whole file)":
+            prefix = f"[{relative} :: {r.heading_path}]\n\n"
+        else:
+            prefix = f"[{relative}]\n\n"
         full_text = (prefix + r.body).strip()
 
         for piece in _sliding_window(full_text):
+            # Hash the exact embedded text: any change to what gets embedded
+            # (including the breadcrumb prefix on the first window) must
+            # change the sha, or the embedder would reuse a stale vector.
             sha = _sha(f"{relative}|{r.heading_path}|{piece}")
             chunks.append(
                 Chunk(
@@ -344,8 +352,10 @@ def _orphan_chunks(captions: dict[str, str]) -> list[Chunk]:
         filename = Path(rel_path).name
         date_iso = _date_from_filename(filename)
         heading_path = f"(image) {filename}"
-        text = f"[{heading_path}]\n\n*Image: {caption}*"
-        sha = _sha(f"{rel_path}|{heading_path}|{caption}")
+        # Folder path in the embedded text, same as md chunks — an orphan
+        # screenshot in "new job/lovable/" should surface for job queries.
+        text = f"[{parent} :: {heading_path}]\n\n*Image: {caption}*"
+        sha = _sha(f"{rel_path}|{heading_path}|{caption}|v2-pathprefix")
         chunks.append(
             Chunk(
                 id=sha,

@@ -42,8 +42,14 @@ class Settings:
     photo_caption_location: str
     log_caption_model: str
     log_caption_location: str
+    # Embedding models also take "model@location". Their default endpoint is
+    # the regional `location` (NOT gemini_location): the legacy embedders are
+    # regional-only, while gemini-embedding-2 (multimodal) serves only from
+    # "global" and carries its endpoint explicitly in the model spec.
     photo_embed_model: str
+    photo_embed_location: str
     log_embed_model: str
+    log_embed_location: str
     # Google Geocoding API key — used at request time by filter_by_proximity to
     # turn a "near <place>" query into a coordinate when no labeled photo
     # anchors the place. Empty disables the fallback (proximity then only works
@@ -59,10 +65,16 @@ def _model_spec(env: str, default_model: str, default_location: str) -> tuple[st
     "gemini-3.5-flash@europe-west3". Keeping the endpoint next to the model
     name in one env var means a model swap can never silently pair a model
     with an endpoint that doesn't serve it.
+
+    The suffix after the LAST "@" is treated as a location only when it is
+    shaped like one ("global" or a hyphenated region) — model ids themselves
+    may contain "@" (multimodalembedding@001).
     """
     raw = os.environ.get(env, default_model)
-    model, sep, loc = raw.partition("@")
-    return model, (loc if sep else default_location)
+    model, sep, loc = raw.rpartition("@")
+    if sep and (loc == "global" or "-" in loc):
+        return model, loc
+    return raw, default_location
 
 
 def _load() -> Settings:
@@ -101,6 +113,12 @@ def _load() -> Settings:
     log_caption_model, log_caption_location = _model_spec(
         "EXPLORE_LOG_CAPTION_MODEL", "gemini-3.6-flash@global", gemini_location
     )
+    photo_embed_model, photo_embed_location = _model_spec(
+        "EXPLORE_PHOTO_EMBED_MODEL", "multimodalembedding@001", location
+    )
+    log_embed_model, log_embed_location = _model_spec(
+        "EXPLORE_LOG_EMBED_MODEL", "text-embedding-005", location
+    )
     return Settings(
         project=project,
         location=location,
@@ -120,10 +138,10 @@ def _load() -> Settings:
         photo_caption_location=photo_caption_location,
         log_caption_model=log_caption_model,
         log_caption_location=log_caption_location,
-        photo_embed_model=os.environ.get(
-            "EXPLORE_PHOTO_EMBED_MODEL", "multimodalembedding@001"
-        ),
-        log_embed_model=os.environ.get("EXPLORE_LOG_EMBED_MODEL", "text-embedding-005"),
+        photo_embed_model=photo_embed_model,
+        photo_embed_location=photo_embed_location,
+        log_embed_model=log_embed_model,
+        log_embed_location=log_embed_location,
         geocoding_api_key=os.environ.get("GEOCODING_API_KEY", ""),
     )
 

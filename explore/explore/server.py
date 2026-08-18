@@ -15,14 +15,12 @@ from pathlib import Path
 from typing import Any, AsyncGenerator, Optional
 
 import uvicorn
-import vertexai
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from google import genai
 from google.cloud import firestore, storage
 from pydantic import BaseModel, field_validator
-from vertexai.vision_models import MultiModalEmbeddingModel
 
 from dataclasses import replace
 
@@ -32,7 +30,7 @@ from log_search.retriever import load_index as load_log_index
 from photo_search import qa as photo_qa
 from photo_search import routing as photo_routing
 from photo_search.cloud_cache import pull_from_gcs as photo_pull
-from photo_search.paths import EMBED_MODEL as PHOTO_EMBED_MODEL
+from photo_search.embedding import make_photo_embedder
 from photo_search.paths import MAX_K, RERANK_KEEP, RERANK_THRESHOLD_K
 from photo_search.rerank import rerank_hits as photo_rerank_hits
 from photo_search.retriever import load_index as load_photo_index, parse_date_filter
@@ -63,8 +61,9 @@ async def lifespan(_: FastAPI):
     if n:
         print(f"explore: pulled {n} photo cache file(s) from GCS", file=sys.stderr)
 
-    vertexai.init(project=settings.project, location=settings.location)
-    _state["embed_model"] = MultiModalEmbeddingModel.from_pretrained(PHOTO_EMBED_MODEL)
+    # Photo embedder — legacy vertexai SDK or genai depending on the
+    # configured model; construction does any SDK init internally.
+    _state["photo_embedder"] = make_photo_embedder()
     # One genai client per distinct endpoint, mapped to per-purpose slots.
     # The 2.5 family serves regionally; the 3.x family only from "global"
     # (gemini-3.5-flash also europe-west3), so each model setting carries its
@@ -82,7 +81,9 @@ async def lifespan(_: FastAPI):
     _state["routing_client"] = _client_for(settings.routing_location)
     _state["rerank_client"] = _client_for(settings.rerank_location)
     _state["gen_client"] = _client_for(settings.generate_location)
-    _state["embed_client"] = _client_for(settings.location)
+    # Log query embedding — its model carries its own endpoint (regional for
+    # text-embedding-005 / gemini-embedding-001).
+    _state["embed_client"] = _client_for(settings.log_embed_location)
     _state["storage_client"] = storage.Client(project=settings.project)
     _state["firestore"] = firestore.Client(project=settings.project)
 
@@ -314,7 +315,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                 )
         hits = photo_qa.retrieve(
             req.query,
-            _state["embed_model"],
+            _state["photo_embedder"],
             _state["photo_vectors"],
             _state["photo_metas"],
             k=req.k,

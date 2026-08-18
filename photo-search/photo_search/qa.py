@@ -13,8 +13,8 @@ import numpy as np
 from google import genai
 from google.cloud import storage
 from google.genai import types
-from vertexai.vision_models import MultiModalEmbeddingModel
 
+from photo_search.embedding import PhotoEmbedder
 from photo_search.paths import BUCKET, GENERATE_MODEL
 from photo_search.retriever import Hit, search
 from photo_search.tools.base import Filters
@@ -100,14 +100,13 @@ _PERSON_RESOLUTION_BLOCK = (
 )
 
 
-def embed_query(text: str, embed_model: MultiModalEmbeddingModel) -> np.ndarray:
-    embs = embed_model.get_embeddings(contextual_text=text[:1024])
-    return np.array(embs.text_embedding, dtype=np.float32)
+def embed_query(text: str, embedder: PhotoEmbedder) -> np.ndarray:
+    return embedder.embed_text(text)
 
 
 def retrieve(
     query: str,
-    embed_model: MultiModalEmbeddingModel,
+    embedder: PhotoEmbedder,
     vectors: np.ndarray,
     metas: list[dict],
     *,
@@ -122,7 +121,7 @@ def retrieve(
     the search becomes pure vector similarity, same as before this
     layer existed.
     """
-    q_emb = embed_query(query, embed_model)
+    q_emb = embed_query(query, embedder)
     return search(q_emb, vectors, metas, k=k, filters=filters)
 
 
