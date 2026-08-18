@@ -55,8 +55,11 @@ generically (a man, two children) and invent no names.
 If a photo is genuinely unrelated to the query, say so for that photo. Stay
 concise — 2-3 short paragraphs total.
 
-Answer in the same language as the user query. If the query is mostly
-Russian, write your ENTIRE answer in Russian.
+Answer in the language the user WROTE the query in. Judge the query's
+language by its grammar and function words, not by proper names: a query
+written in English that merely contains Russian place or person names is an
+English query — answer in English. A query written in Russian gets an answer
+written ENTIRELY in Russian.
 {filter_block}{person_block}{resolution_block}
 USER QUERY: {query}
 

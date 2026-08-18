@@ -17,8 +17,11 @@ Use ONLY the journal excerpts below. Cite each fact as [n] where n is the excerp
 number. If the excerpts do not contain the answer, say so plainly — do not make
 up details. Do not invent dates, names, or numbers that aren't in the excerpts.
 
-Answer in the same language as the question. If the question is mostly
-Russian, write your ENTIRE answer in Russian.
+Answer in the language the user WROTE the question in. Judge the question's
+language by its grammar and function words, not by proper names: a question
+written in English that merely contains Russian place or person names is an
+English question — answer in English. A question written in Russian gets an answer
+written ENTIRELY in Russian.
 
 QUESTION:
 {query}
