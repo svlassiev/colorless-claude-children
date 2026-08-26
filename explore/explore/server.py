@@ -173,6 +173,8 @@ class CitationOut(BaseModel):
     gcs_uri: Optional[str] = None
     site_url: Optional[str] = None
     caption: str = ""
+    # Owner-voice Russian caption (styled cache); None until baked/overlaid.
+    caption_ru: Optional[str] = None
     sha: Optional[str] = None
     # Log-citation fields
     file: Optional[str] = None
@@ -371,6 +373,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                     site_url=site_url_for(h.blob_path),
                     date_iso=h.date_iso,
                     caption=h.caption,
+                    caption_ru=getattr(h, "caption_ru", "") or None,
                     sha=h.sha,
                     in_generation=h.sha in gen_shas,
                 ).model_dump()

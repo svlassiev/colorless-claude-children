@@ -19,12 +19,13 @@ retriever just AND-masks the candidate pool with it.
 from __future__ import annotations
 
 import json
+import sys
 import re
 from dataclasses import dataclass
 
 import numpy as np
 
-from photo_search.paths import INDEX_PATH, MAX_K, META_PATH
+from photo_search.paths import INDEX_PATH, MAX_K, META_PATH, STYLED_CAPTION_CACHE
 from photo_search.tools.base import (
     DateFilter,
     Filters,
@@ -85,6 +86,8 @@ class Hit:
     gcs_uri: str
     date_iso: str | None
     caption: str
+    # Owner-voice Russian caption (styled cache); empty when not yet baked.
+    caption_ru: str
     sha: str
     # Face-recognition identity tags for this photo (authoritative, NOT a visual
     # guess). Always populated from the meta; only ever SURFACED to allow-listed
@@ -118,9 +121,28 @@ def parse_date_filter(query: str) -> tuple[str | None, str | None]:
 
 
 def load_index() -> tuple[np.ndarray, list[dict]]:
-    """Returns (vectors, metas), filtering out zero-vector failures."""
+    """Returns (vectors, metas), filtering out zero-vector failures.
+
+    When the styled-caption cache exists (owner-voice bilingual captions),
+    its EN text replaces `caption` and RU rides along as `caption_ru` —
+    one overlay point covers display, generation and rerank alike. Photos
+    missing from the cache keep their original caption.
+    """
     arr = np.load(INDEX_PATH)["vectors"]
     metas = [json.loads(line) for line in META_PATH.open()]
+    if STYLED_CAPTION_CACHE.exists():
+        styled = {}
+        for line in STYLED_CAPTION_CACHE.open():
+            row = json.loads(line)
+            styled[row["blob_path"]] = row
+        n = 0
+        for m in metas:
+            row = styled.get(m["blob_path"])
+            if row:
+                m["caption"] = row["en"]
+                m["caption_ru"] = row["ru"]
+                n += 1
+        print(f"styled captions: overlaid {n}/{len(metas)}", file=sys.stderr)
     norms = np.linalg.norm(arr, axis=1)
     mask = norms > 0
     return arr[mask], [m for m, ok in zip(metas, mask) if ok]
@@ -229,6 +251,7 @@ def search(
                 gcs_uri=m["gcs_uri"],
                 date_iso=m.get("exif_date_iso") or _infer_date_iso_from_path(m["blob_path"]),
                 caption=m.get("caption", ""),
+                caption_ru=m.get("caption_ru", ""),
                 sha=sha,
                 person_names=tuple(m.get("person_names") or ()),
             )

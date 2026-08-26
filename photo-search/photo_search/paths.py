@@ -45,6 +45,10 @@ GCS_CACHE_PREFIX = "photo-search/"
 
 CACHE_ROOT = Path.home() / ".cache" / "photo-search"
 CAPTION_CACHE = CACHE_ROOT / "caption_cache.jsonl"
+# Owner-voice bilingual captions (style_captioner output). Serving overlays
+# these onto metas at index load when the file exists; absent file = the
+# original captions serve unchanged.
+STYLED_CAPTION_CACHE = CACHE_ROOT / "caption_cache_styled.jsonl"
 MANIFEST_PATH = CACHE_ROOT / "manifest.jsonl"
 # Index + meta are embedding-model artefacts, so their filenames carry the
 # model tag (legacy @001 keeps the untagged names). A revision configured

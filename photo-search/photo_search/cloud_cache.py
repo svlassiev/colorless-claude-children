@@ -28,13 +28,14 @@ from photo_search.paths import (
     PERSON_ALIASES_PATH,
     PROJECT,
     ensure_cache_dir,
+    STYLED_CAPTION_CACHE,
 )
 
 # person_aliases.json (family names) and hiking_image_ids.json (bucket layout /
 # image IDs) are private but live in the same private bucket — synced so the
 # serving instance can pull them at startup.
 SYNC_FILES: list[Path] = [
-    INDEX_PATH, META_PATH, MANIFEST_PATH, CAPTION_CACHE,
+    INDEX_PATH, META_PATH, MANIFEST_PATH, CAPTION_CACHE, STYLED_CAPTION_CACHE,
     PERSON_ALIASES_PATH, HIKING_IMAGE_IDS_PATH,
 ]
 

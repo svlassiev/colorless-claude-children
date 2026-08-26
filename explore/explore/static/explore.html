@@ -328,6 +328,7 @@ googleProvider.setCustomParameters({ prompt: 'select_account' });
 const GCS_BASE = 'https://storage.googleapis.com/colorless-days-children';
 const form = document.getElementById('ask-form');
 const queryEl = document.getElementById('query');
+let lastQuery = '';
 const btnEl = document.getElementById('ask-btn');
 const retrieveOnlyEl = document.getElementById('retrieve-only');
 const resultEl = document.getElementById('result');
@@ -441,7 +442,7 @@ form.addEventListener('submit', async (e) => {
             method: 'POST',
             headers,
             body: JSON.stringify({
-                query: q,
+                query: (lastQuery = q),
                 corpus: activeTab,
                 retrieve_only: isRetrieveOnly,
                 k
@@ -562,9 +563,10 @@ function renderCitationsHtml(data) {
         html += '</div>';
     } else {
         html += '<div class="photo-grid">';
+        const wantRu = /[А-Яа-яЁё]/.test(lastQuery || '');
         for (const c of data.citations) {
             const date = c.date_iso || '';
-            const cap = c.caption || '';
+            const cap = (wantRu && c.caption_ru) ? c.caption_ru : (c.caption || '');
             const linkHref = c.site_url || (GCS_BASE + '/' + encodeURI(c.blob_path));
             const imgSrc = GCS_BASE + '/' + encodeURI(c.blob_path);
             const cls = isLowRelevance(c) ? 'photo low-relevance' : 'photo';
