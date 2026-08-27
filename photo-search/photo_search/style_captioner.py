@@ -146,7 +146,8 @@ def _generate(
         except Exception as e:  # noqa: BLE001
             last_err = e
             msg = str(e)
-            transient = "429" in msg or "RESOURCE_EXHAUSTED" in msg or "empty" in msg or "503" in msg
+            transient = ("429" in msg or "RESOURCE_EXHAUSTED" in msg or "empty" in msg
+                 or "503" in msg or "timeout" in msg.lower() or "timed out" in msg.lower())
             if transient and attempt < len(backoffs) - 1:
                 time.sleep(delay)
                 continue
@@ -200,7 +201,14 @@ def main() -> int:
         print("nothing to do.", file=sys.stderr)
         return 0
 
-    client = genai.Client(vertexai=True, project=PROJECT, location=CAPTION_LOCATION)
+    # Per-request timeout: without it, a laptop sleep mid-flight leaves all
+    # workers blocked forever on dead sockets (observed 2026-08-27 — the run
+    # hung at 4,051/6,004 after an overnight sleep). 3 min covers slow calls;
+    # a timed-out photo is retried by the transient-error loop.
+    client = genai.Client(
+        vertexai=True, project=PROJECT, location=CAPTION_LOCATION,
+        http_options=types.HttpOptions(timeout=180_000),
+    )
     bucket = storage.Client(project=PROJECT).bucket(BUCKET)
 
     ok = failed = 0
