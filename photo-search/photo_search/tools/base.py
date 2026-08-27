@@ -92,6 +92,11 @@ class Filters:
     location: LocationFilter | None = None
     proximity: ProximityFilter | None = None
     person: PersonFilter | None = None
+    # Answer mode, not a retrieval filter: True when the router judged the
+    # query analytical (request_deep_answer). Carried here because Filters is
+    # the routing outcome the server already consumes; renaming the class
+    # wasn't worth the ripple.
+    deep: bool = False
 
     @property
     def is_empty(self) -> bool:

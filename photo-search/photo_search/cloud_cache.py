@@ -18,6 +18,7 @@ from pathlib import Path
 from google.cloud import storage
 
 from photo_search.paths import (
+    ANSWER_VOICE_PATH,
     CAPTION_CACHE,
     GCS_CACHE_BUCKET,
     GCS_CACHE_PREFIX,
@@ -36,6 +37,7 @@ from photo_search.paths import (
 # serving instance can pull them at startup.
 SYNC_FILES: list[Path] = [
     INDEX_PATH, META_PATH, MANIFEST_PATH, CAPTION_CACHE, STYLED_CAPTION_CACHE,
+    ANSWER_VOICE_PATH,
     PERSON_ALIASES_PATH, HIKING_IMAGE_IDS_PATH,
 ]
 

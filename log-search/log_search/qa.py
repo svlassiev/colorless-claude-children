@@ -16,7 +16,7 @@ You are answering a question about Sergey's working journal.
 Use ONLY the journal excerpts below. Cite each fact as [n] where n is the excerpt
 number. If the excerpts do not contain the answer, say so plainly — do not make
 up details. Do not invent dates, names, or numbers that aren't in the excerpts.
-
+{analysis_block}{voice_block}
 Answer in the language the user WROTE the question in. Judge the question's
 language by its grammar and function words, not by proper names: a question
 written in English that merely contains Russian place or person names is an
@@ -42,6 +42,24 @@ def format_excerpts(hits: list[Hit]) -> str:
         parts.append(f"{meta_line}\n{h.text}")
     return "\n\n---\n\n".join(parts)
 
+
+# Deep mode: synthesis across excerpts instead of a stitched summary.
+_ANALYSIS_BLOCK = (
+    "\nThis question asks for ANALYSIS. Treat the excerpts as one body of"
+    " evidence: synthesize the answer FIRST (the pattern, the comparison, the"
+    " overall picture), then support it, citing [n] for every claim and"
+    " quantifying where the excerpts allow. Name what the excerpts do NOT"
+    " cover instead of stretching them. Up to 4-5 paragraphs.\n"
+)
+
+_VOICE_BLOCK = (
+    "\nWrite in the journal owner's register — these tone rules override any"
+    " default assistant style:\n{voice}\n"
+)
+
+DEEP_THINKING_BUDGET = 8192
+DEEP_PER_HIT_TOKENS = 400
+DEEP_MIN_VISIBLE_TOKENS = 1500
 
 # Query-side task type — pairs with the embedder's RETRIEVAL_DOCUMENT.
 _QUERY_EMBED_CONFIG = (
@@ -80,6 +98,8 @@ def generate(
     client: Client,
     *,
     max_output_tokens: int | None = None,
+    deep: bool = False,
+    voice: str | None = None,
 ) -> tuple[str, dict]:
     """Run Gemini generation over the hits. Returns (answer_text, usage_dict).
 
@@ -92,13 +112,31 @@ def generate(
     the old budget; 2.5-pro worse, since it thinks more.)
     """
     if max_output_tokens is None:
-        max_output_tokens = 300 * max(1, len(hits))
+        if deep:
+            max_output_tokens = DEEP_THINKING_BUDGET + max(
+                DEEP_MIN_VISIBLE_TOKENS, DEEP_PER_HIT_TOKENS * len(hits)
+            )
+        else:
+            max_output_tokens = 300 * max(1, len(hits))
     excerpts = format_excerpts(hits)
-    prompt = PROMPT_TEMPLATE.format(query=query, excerpts=excerpts)
+    prompt = PROMPT_TEMPLATE.format(
+        query=query,
+        excerpts=excerpts,
+        analysis_block=_ANALYSIS_BLOCK if deep else "",
+        voice_block=_VOICE_BLOCK.format(voice=voice) if voice else "",
+    )
+    config = types.GenerateContentConfig(max_output_tokens=max_output_tokens)
+    if deep:
+        # Same reasoning ceiling as the photo side; lookup mode keeps the
+        # model's default thinking behavior it has always had here.
+        config = types.GenerateContentConfig(
+            max_output_tokens=max_output_tokens,
+            thinking_config=types.ThinkingConfig(thinking_budget=DEEP_THINKING_BUDGET),
+        )
     resp = client.models.generate_content(
         model=GENERATE_MODEL,
         contents=prompt,
-        config=types.GenerateContentConfig(max_output_tokens=max_output_tokens),
+        config=config,
     )
 
     usage: dict = {"tokens_in": 0, "tokens_out": 0, "tokens_thoughts": 0, "cost": None}

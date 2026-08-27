@@ -50,6 +50,10 @@ class Settings:
     photo_embed_location: str
     log_embed_model: str
     log_embed_location: str
+    # Deep answers: routing classifies analytical queries into a deeper
+    # generation regime (bigger thinking budget, analysis prompt). False
+    # disables classification AND the UI override — pre-feature behavior.
+    deep_answers: bool
     # Owner-voice styled captions overlay (photo corpus). True = overlay the
     # styled bilingual captions at index load when the cache file exists;
     # false = serve the original captions even if the file is present. The
@@ -134,6 +138,7 @@ def _load() -> Settings:
     styled_captions = (
         os.environ.get("EXPLORE_STYLED_CAPTIONS", "true").lower() == "true"
     )
+    deep_answers = os.environ.get("EXPLORE_DEEP_ANSWERS", "true").lower() == "true" 
     return Settings(
         project=project,
         location=location,
@@ -158,6 +163,7 @@ def _load() -> Settings:
         log_embed_model=log_embed_model,
         log_embed_location=log_embed_location,
         styled_captions=styled_captions,
+        deep_answers=deep_answers,
         geocoding_api_key=os.environ.get("GEOCODING_API_KEY", ""),
     )
 

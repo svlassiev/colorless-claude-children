@@ -223,6 +223,9 @@ async def route_query(
         elif raw.name == "filter_by_person":
             if isinstance(result, PersonFilter):
                 person_parts.append(result)
+        elif raw.name == "request_deep_answer":
+            # Answer mode, not a filter — see Filters.deep.
+            filters = replace(filters, deep=True)
 
     # Several names in one query arrive as parallel filter_by_person calls; AND
     # them so only photos containing EVERYONE named survive. A single call is an

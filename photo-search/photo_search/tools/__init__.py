@@ -20,6 +20,7 @@ from photo_search.tools import (
     filter_by_location,
     filter_by_person,
     filter_by_proximity,
+    request_deep_answer,
 )
 from photo_search.tools.base import (
     DateFilter,
@@ -49,6 +50,11 @@ TOOL_REGISTRY = {
         filter_by_person.DECLARATION,
         filter_by_person.Args,
         filter_by_person.execute,
+    ),
+    "request_deep_answer": (
+        request_deep_answer.DECLARATION,
+        request_deep_answer.Args,
+        request_deep_answer.execute,
     ),
 }
 

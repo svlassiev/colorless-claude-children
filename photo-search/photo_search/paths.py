@@ -49,6 +49,10 @@ CAPTION_CACHE = CACHE_ROOT / "caption_cache.jsonl"
 # these onto metas at index load when the file exists; absent file = the
 # original captions serve unchanged.
 STYLED_CAPTION_CACHE = CACHE_ROOT / "caption_cache_styled.jsonl"
+# Owner-voice tone rules for ANSWERS (deep + lookup) — a hand-distilled,
+# genre-neutral extract of the private caption style card. Private like the
+# card; absent file = no voice block in prompts.
+ANSWER_VOICE_PATH = CACHE_ROOT / "answer_voice.md"
 MANIFEST_PATH = CACHE_ROOT / "manifest.jsonl"
 # Index + meta are embedding-model artefacts, so their filenames carry the
 # model tag (legacy @001 keeps the untagged names). A revision configured

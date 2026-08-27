@@ -8,6 +8,7 @@ Run locally: uv run --directory explore python -m explore.server
 
 from __future__ import annotations
 
+import asyncio
 import json
 import sys
 from contextlib import asynccontextmanager
@@ -31,7 +32,7 @@ from photo_search import qa as photo_qa
 from photo_search import routing as photo_routing
 from photo_search.cloud_cache import pull_from_gcs as photo_pull
 from photo_search.embedding import make_photo_embedder
-from photo_search.paths import MAX_K, RERANK_KEEP, RERANK_THRESHOLD_K
+from photo_search.paths import ANSWER_VOICE_PATH, MAX_K, RERANK_KEEP, RERANK_THRESHOLD_K
 from photo_search.rerank import rerank_hits as photo_rerank_hits
 from photo_search.retriever import load_index as load_photo_index, parse_date_filter
 from photo_search.site import site_url_for
@@ -45,6 +46,7 @@ from search_common.auth import (
     get_subject,
     is_people_allowed,
 )
+from search_common.deep_answer import classify_deep
 from search_common.generation import safe_generate
 from search_common.rate_limit import enforce_rate_limit, get_remaining
 from search_common.settings import settings
@@ -96,6 +98,13 @@ async def lifespan(_: FastAPI):
     # Loaded into the filter_by_person reverse index; empty/no-op if absent.
     n_people = filter_by_person.load(PERSON_ALIASES_PATH)
     print(f"explore: loaded person aliases — {n_people} identities", file=sys.stderr)
+
+    # Owner-voice tone rules for answers (private, GCS-synced; optional).
+    _state["answer_voice"] = (
+        ANSWER_VOICE_PATH.read_text().strip() if ANSWER_VOICE_PATH.exists() else None
+    )
+    print(f"explore: answer voice {'loaded' if _state['answer_voice'] else 'absent'}",
+          file=sys.stderr)
 
     if settings.log_tab_enabled:
         n = log_pull()
@@ -157,6 +166,9 @@ class AskRequest(BaseModel):
     corpus: CorpusName = "photo"
     k: int = 8
     retrieve_only: bool = False
+    # Answer mode: None = auto (routing classifies), True/False = forced by
+    # the UI. settings.deep_answers=False overrides everything to lookup.
+    deep: Optional[bool] = None
 
     @field_validator("k")
     @classmethod
@@ -315,6 +327,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                     photo_filters,
                     date=DateFilter(start_iso=date_lo, end_iso=date_hi),
                 )
+        auto_deep = photo_filters.deep
         hits = photo_qa.retrieve(
             req.query,
             _state["photo_embedder"],
@@ -327,7 +340,11 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
         date_hi = photo_filters.date.end_iso if photo_filters.date else None
         empty_msg = "no matching photos found."
     else:  # corpus == "log"
-        hits, (date_lo, date_hi) = log_qa.retrieve(
+        # Deep classification runs concurrently with embed+top-k: nothing
+        # needs its result until generation, so its latency is hidden. It is
+        # skipped entirely when the mode is forced or the feature is off.
+        retrieve_coro = asyncio.to_thread(
+            log_qa.retrieve,
             req.query,
             _state["embed_client"],
             _state["log_vectors"],
@@ -335,7 +352,21 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
             _state["log_texts"],
             k=req.k,
         )
+        if settings.deep_answers and req.deep is None and not req.retrieve_only:
+            (hits, (date_lo, date_hi)), auto_deep = await asyncio.gather(
+                retrieve_coro,
+                classify_deep(
+                    _state["routing_client"], settings.routing_model, req.query
+                ),
+            )
+        else:
+            hits, (date_lo, date_hi) = await retrieve_coro
+            auto_deep = False
         empty_msg = "no matching journal entries found."
+
+    # Final answer mode: forced value wins, else the router's judgment;
+    # the kill-switch forces lookup regardless.
+    deep = bool(req.deep if req.deep is not None else auto_deep) and settings.deep_answers
 
     # SSE display strings for the citations event. Both filters get a
     # human-readable label so the client can render 'Filtered to Хибины,
@@ -477,9 +508,12 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
         # At/above the photo rerank threshold we always trim the generator's input —
         # even when rerank fell back to similarity order — so wall time
         # stays bounded.
-        if req.corpus == "photo" and req.k >= RERANK_THRESHOLD_K:
+        if req.corpus == "photo" and req.k >= RERANK_THRESHOLD_K and not deep:
             gen_hits = local_hits[:RERANK_KEEP]
         else:
+            # Deep mode keeps the full evidence set: the reranker scores
+            # literal per-photo relevance, which is the wrong razor for
+            # aggregate questions (its ordering is still used).
             gen_hits = local_hits
 
         # Event 1: citations — render now, even though generation hasn't started.
@@ -491,6 +525,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                 ),
                 "rerank_used": rerank_used,
                 "corpus": req.corpus,
+                "deep": deep,
                 "date_filter": date_filter,
                 "location_filter": location_filter,
                 "proximity_filter": proximity_filter,
@@ -541,10 +576,13 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                 person_active=photo_filters.person is not None,
                 show_people=people_allowed,
                 person_resolution=person_resolution,
+                deep=deep,
+                voice=_state.get("answer_voice"),
             )
         else:
             outcome = await safe_generate(
-                log_qa.generate, req.query, gen_hits, _state["gen_client"]
+                log_qa.generate, req.query, gen_hits, _state["gen_client"],
+                deep=deep, voice=_state.get("answer_voice"),
             )
 
         # Event 2: answer or answer_error. Citations are already on the
@@ -567,6 +605,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                     "tokens_in": outcome.usage["tokens_in"],
                     "tokens_out": outcome.usage["tokens_out"],
                     "cost": outcome.usage["cost"],
+                    "deep": deep,
                 },
             )
 

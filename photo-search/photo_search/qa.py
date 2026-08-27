@@ -30,6 +30,13 @@ GEN_THINKING_BUDGET = 1024  # ceiling on the model's reasoning tokens for this t
 MIN_VISIBLE_TOKENS = 900    # floor on the visible-answer budget (small result sets)
 PER_HIT_VISIBLE_TOKENS = 220  # visible budget grows with how many photos to cover
 
+# Deep answer mode — analytical queries (Filters.deep / the UI checkbox).
+# The task shifts from describe-what-you-see to reason-across-the-evidence,
+# so the thinking ceiling rises 8x and the visible answer gets more room.
+DEEP_THINKING_BUDGET = 8192
+DEEP_MIN_VISIBLE_TOKENS = 1500
+DEEP_PER_HIT_VISIBLE_TOKENS = 300
+
 GENERATION_PROMPT = """\
 You are answering a question about a family photo collection.
 
@@ -55,7 +62,7 @@ generically (a man, two children) and invent no names.
 If a photo is genuinely unrelated to the query, say so for that photo. Stay
 concise — 2-3 short paragraphs total.
 
-Answer in the language the user WROTE the query in. Judge the query's
+{analysis_block}{voice_block}Answer in the language the user WROTE the query in. Judge the query's
 language by its grammar and function words, not by proper names: a query
 written in English that merely contains Russian place or person names is an
 English query — answer in English. A query written in Russian gets an answer
@@ -64,6 +71,24 @@ written ENTIRELY in Russian.
 USER QUERY: {query}
 
 ANSWER:"""
+
+# Deep mode: reframes the task from per-photo description to analysis across
+# the evidence set, with citation discipline per claim and explicit gaps.
+_ANALYSIS_BLOCK = (
+    "\nThis query asks for ANALYSIS, not a listing. Reason across ALL the"
+    " photos as one body of evidence: aggregate the pattern the user asks"
+    " about, quantify where the data allows (counts, date ranges), and give"
+    " a synthesized answer FIRST, then the supporting evidence. Cite photo"
+    " numbers [n] for every claim. If the photos cannot answer part of the"
+    " question, say plainly what is missing rather than stretching. You may"
+    " use up to 4-5 paragraphs for this.\n"
+)
+
+# Owner-voice tone rules (private answer_voice.md, loaded by the server).
+_VOICE_BLOCK = (
+    "\nWrite in the collection owner's register — these tone rules override"
+    " any default assistant style:\n{voice}\n"
+)
 
 # Inserted when retrieval was narrowed by place/proximity/date metadata. Without
 # it the model re-judges location/date from pixels alone — and disclaims photos
@@ -169,6 +194,8 @@ def generate(
     person_active: bool = False,
     show_people: bool = False,
     person_resolution: str | None = None,
+    deep: bool = False,
+    voice: str | None = None,
 ) -> tuple[str, dict]:
     """Pass query + retrieved images (with date+caption metadata) to Gemini.
 
@@ -189,9 +216,15 @@ def generate(
 
     Returns (answer_text, usage_dict).
     """
+    thinking_budget = DEEP_THINKING_BUDGET if deep else GEN_THINKING_BUDGET
     if max_output_tokens is None:
-        visible_budget = max(MIN_VISIBLE_TOKENS, PER_HIT_VISIBLE_TOKENS * len(hits))
-        max_output_tokens = GEN_THINKING_BUDGET + visible_budget
+        if deep:
+            visible_budget = max(
+                DEEP_MIN_VISIBLE_TOKENS, DEEP_PER_HIT_VISIBLE_TOKENS * len(hits)
+            )
+        else:
+            visible_budget = max(MIN_VISIBLE_TOKENS, PER_HIT_VISIBLE_TOKENS * len(hits))
+        max_output_tokens = thinking_budget + visible_budget
 
     # Resolve bytes for every hit: prefer the prefetched map, otherwise
     # download what's missing in parallel. After this block every hit has
@@ -215,6 +248,8 @@ def generate(
         # lets the model report these as who-is-present, never mapped to a face.
         if show_people and h.person_names:
             contents.append(f"Known people in this photo: {', '.join(h.person_names)}")
+    analysis_block = _ANALYSIS_BLOCK if deep else ""
+    voice_block = _VOICE_BLOCK.format(voice=voice) if voice else ""
     filter_block = _FILTER_BLOCK.format(note=filters_note) if filters_note else ""
     person_block = _PERSON_BLOCK if person_active else ""
     resolution_block = (
@@ -225,6 +260,8 @@ def generate(
         + GENERATION_PROMPT.format(
             n=len(hits),
             query=query,
+            analysis_block=analysis_block,
+            voice_block=voice_block,
             filter_block=filter_block,
             person_block=person_block,
             resolution_block=resolution_block,
@@ -237,7 +274,7 @@ def generate(
         config=types.GenerateContentConfig(
             max_output_tokens=max_output_tokens,
             # Cap reasoning so it can't starve the visible answer (see budget note).
-            thinking_config=types.ThinkingConfig(thinking_budget=GEN_THINKING_BUDGET),
+            thinking_config=types.ThinkingConfig(thinking_budget=thinking_budget),
         ),
     )
 
