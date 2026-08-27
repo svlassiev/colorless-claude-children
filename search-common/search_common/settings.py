@@ -50,6 +50,11 @@ class Settings:
     photo_embed_location: str
     log_embed_model: str
     log_embed_location: str
+    # Owner-voice styled captions overlay (photo corpus). True = overlay the
+    # styled bilingual captions at index load when the cache file exists;
+    # false = serve the original captions even if the file is present. The
+    # rollback path: --update-env-vars EXPLORE_STYLED_CAPTIONS=false.
+    styled_captions: bool
     # Google Geocoding API key — used at request time by filter_by_proximity to
     # turn a "near <place>" query into a coordinate when no labeled photo
     # anchors the place. Empty disables the fallback (proximity then only works
@@ -126,6 +131,9 @@ def _load() -> Settings:
     log_embed_model, log_embed_location = _model_spec(
         "EXPLORE_LOG_EMBED_MODEL", "gemini-embedding-001@europe-west4", location
     )
+    styled_captions = (
+        os.environ.get("EXPLORE_STYLED_CAPTIONS", "true").lower() == "true"
+    )
     return Settings(
         project=project,
         location=location,
@@ -149,6 +157,7 @@ def _load() -> Settings:
         photo_embed_location=photo_embed_location,
         log_embed_model=log_embed_model,
         log_embed_location=log_embed_location,
+        styled_captions=styled_captions,
         geocoding_api_key=os.environ.get("GEOCODING_API_KEY", ""),
     )
 

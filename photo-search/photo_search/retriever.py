@@ -25,6 +25,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from search_common.settings import settings
 from photo_search.paths import INDEX_PATH, MAX_K, META_PATH, STYLED_CAPTION_CACHE
 from photo_search.tools.base import (
     DateFilter,
@@ -130,7 +131,7 @@ def load_index() -> tuple[np.ndarray, list[dict]]:
     """
     arr = np.load(INDEX_PATH)["vectors"]
     metas = [json.loads(line) for line in META_PATH.open()]
-    if STYLED_CAPTION_CACHE.exists():
+    if settings.styled_captions and STYLED_CAPTION_CACHE.exists():
         styled = {}
         for line in STYLED_CAPTION_CACHE.open():
             row = json.loads(line)
