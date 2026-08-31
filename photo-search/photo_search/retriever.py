@@ -95,6 +95,9 @@ class Hit:
     # callers (the server passes them on to generation / citations behind the
     # people gate). Empty tuple when the photo has no tagged people.
     person_names: tuple[str, ...] = ()
+    # True for hits carried over from the previous conversation turn (the
+    # user may refer to them); they ride along after the fresh hits.
+    carried: bool = False
 
 
 def parse_date_filter(query: str) -> tuple[str | None, str | None]:

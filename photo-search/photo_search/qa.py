@@ -62,7 +62,7 @@ generically (a man, two children) and invent no names.
 If a photo is genuinely unrelated to the query, say so for that photo. Stay
 concise — 2-3 short paragraphs total.
 
-{analysis_block}{voice_block}Answer in the language the user WROTE the query in. Judge the query's
+{history_block}{analysis_block}{voice_block}Answer in the language the user WROTE the query in. Judge the query's
 language by its grammar and function words, not by proper names: a query
 written in English that merely contains Russian place or person names is an
 English query — answer in English. A query written in Russian gets an answer
@@ -82,6 +82,14 @@ _ANALYSIS_BLOCK = (
     " numbers [n] for every claim. If the photos cannot answer part of the"
     " question, say plainly what is missing rather than stretching. You may"
     " use up to 4-5 paragraphs for this.\n"
+)
+
+# Conversational context — prior turns, resolved client-side, capped by the
+# server. The current query has already been used for retrieval (condensed);
+# this block only helps the model interpret references in the wording.
+_HISTORY_BLOCK = (
+    "\nThis is a follow-up in a conversation. Previous exchange, for context"
+    " only — answer the CURRENT query:\n{history}\n"
 )
 
 # Owner-voice tone rules (private answer_voice.md, loaded by the server).
@@ -196,6 +204,7 @@ def generate(
     person_resolution: str | None = None,
     deep: bool = False,
     voice: str | None = None,
+    history: str | None = None,
 ) -> tuple[str, dict]:
     """Pass query + retrieved images (with date+caption metadata) to Gemini.
 
@@ -236,7 +245,8 @@ def generate(
 
     contents: list = []
     for h in hits:
-        header = f"\n\n--- Photo [{h.rank}] (date: {h.date_iso or 'unknown'}, score: {h.score:.3f}) ---"
+        carried_note = ", carried over from the previous answer" if getattr(h, "carried", False) else ""
+        header = f"\n\n--- Photo [{h.rank}] (date: {h.date_iso or 'unknown'}, score: {h.score:.3f}{carried_note}) ---"
         contents.append(header)
         contents.append(
             types.Part.from_bytes(data=bytes_by_sha[h.sha], mime_type="image/jpeg")
@@ -249,6 +259,7 @@ def generate(
         if show_people and h.person_names:
             contents.append(f"Known people in this photo: {', '.join(h.person_names)}")
     analysis_block = _ANALYSIS_BLOCK if deep else ""
+    history_block = _HISTORY_BLOCK.format(history=history) if history else ""
     voice_block = _VOICE_BLOCK.format(voice=voice) if voice else ""
     filter_block = _FILTER_BLOCK.format(note=filters_note) if filters_note else ""
     person_block = _PERSON_BLOCK if person_active else ""
@@ -262,6 +273,7 @@ def generate(
             query=query,
             analysis_block=analysis_block,
             voice_block=voice_block,
+            history_block=history_block,
             filter_block=filter_block,
             person_block=person_block,
             resolution_block=resolution_block,

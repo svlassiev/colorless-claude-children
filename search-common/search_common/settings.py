@@ -50,6 +50,9 @@ class Settings:
     photo_embed_location: str
     log_embed_model: str
     log_embed_location: str
+    # Conversational follow-ups: condense-question rewriting + history block
+    # in generation. False = history/prior_shas fields are ignored entirely.
+    chat_enabled: bool
     # Deep answers: routing classifies analytical queries into a deeper
     # generation regime (bigger thinking budget, analysis prompt). False
     # disables classification AND the UI override — pre-feature behavior.
@@ -138,7 +141,8 @@ def _load() -> Settings:
     styled_captions = (
         os.environ.get("EXPLORE_STYLED_CAPTIONS", "true").lower() == "true"
     )
-    deep_answers = os.environ.get("EXPLORE_DEEP_ANSWERS", "true").lower() == "true" 
+    deep_answers = os.environ.get("EXPLORE_DEEP_ANSWERS", "true").lower() == "true"
+    chat_enabled = os.environ.get("EXPLORE_CHAT", "true").lower() == "true" 
     return Settings(
         project=project,
         location=location,
@@ -164,6 +168,7 @@ def _load() -> Settings:
         log_embed_location=log_embed_location,
         styled_captions=styled_captions,
         deep_answers=deep_answers,
+        chat_enabled=chat_enabled,
         geocoding_api_key=os.environ.get("GEOCODING_API_KEY", ""),
     )
 

@@ -16,7 +16,7 @@ You are answering a question about Sergey's working journal.
 Use ONLY the journal excerpts below. Cite each fact as [n] where n is the excerpt
 number. If the excerpts do not contain the answer, say so plainly — do not make
 up details. Do not invent dates, names, or numbers that aren't in the excerpts.
-{analysis_block}{voice_block}
+{history_block}{analysis_block}{voice_block}
 Answer in the language the user WROTE the question in. Judge the question's
 language by its grammar and function words, not by proper names: a question
 written in English that merely contains Russian place or person names is an
@@ -42,6 +42,11 @@ def format_excerpts(hits: list[Hit]) -> str:
         parts.append(f"{meta_line}\n{h.text}")
     return "\n\n---\n\n".join(parts)
 
+
+_HISTORY_BLOCK = (
+    "\nThis is a follow-up in a conversation. Previous exchange, for context"
+    " only — answer the CURRENT question:\n{history}\n"
+)
 
 # Deep mode: synthesis across excerpts instead of a stitched summary.
 _ANALYSIS_BLOCK = (
@@ -100,6 +105,7 @@ def generate(
     max_output_tokens: int | None = None,
     deep: bool = False,
     voice: str | None = None,
+    history: str | None = None,
 ) -> tuple[str, dict]:
     """Run Gemini generation over the hits. Returns (answer_text, usage_dict).
 
@@ -124,6 +130,7 @@ def generate(
         excerpts=excerpts,
         analysis_block=_ANALYSIS_BLOCK if deep else "",
         voice_block=_VOICE_BLOCK.format(voice=voice) if voice else "",
+        history_block=_HISTORY_BLOCK.format(history=history) if history else "",
     )
     config = types.GenerateContentConfig(max_output_tokens=max_output_tokens)
     if deep:

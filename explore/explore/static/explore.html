@@ -284,18 +284,29 @@ button:disabled { color: #999; cursor: default; }
         <button type="submit" id="ask-btn">explore</button>
     </div>
     <div class="opts">
-        <label><input type="checkbox" id="retrieve-only" /> retrieve only (free)</label>
-        <label><input type="checkbox" id="deep-toggle" /> think deeper</label>
+        <span class="k-presets" title="What kind of answer to generate">answer:
+            <label class="k-btn" title="No AI answer — only the matching results. Free."><input type="radio" name="answer" value="none" />none</label>
+            <label class="k-btn" title="The system decides per question: simple lookups get a short answer, analytical questions get deep reasoning."><input type="radio" name="answer" value="auto" checked />auto</label>
+            <label class="k-btn" title="Force deep analytical reasoning (slower, a bit costlier)."><input type="radio" name="answer" value="deep" />deep</label>
+        </span>
         &nbsp;&middot;&nbsp;
-        <span class="k-presets">depth:
+        <span class="k-presets" title="How many matches to retrieve as evidence">matches:
             <label class="k-btn"><input type="radio" name="k" value="8" checked />8</label>
             <label class="k-btn"><input type="radio" name="k" value="12" />12</label>
             <label class="k-btn"><input type="radio" name="k" value="20" />20</label>
         </span>
+        &nbsp;&middot;&nbsp;
+        <button type="button" id="new-chat" title="Forget this conversation and start fresh">new chat</button>
     </div>
 </form>
 
 <div id="result"></div>
+<style>
+.chat-turn { border-top: 1px dashed #bbb; margin-top: 1.6em; padding-top: 1em; }
+.chat-turn:first-child { border-top: none; margin-top: 0.8em; }
+.turn-q { font-weight: bold; color: #33c; margin-bottom: .5em; font-family: monospace; }
+#new-chat { font-size: 11px; }
+</style>
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
@@ -331,8 +342,7 @@ const form = document.getElementById('ask-form');
 const queryEl = document.getElementById('query');
 let lastQuery = '';
 const btnEl = document.getElementById('ask-btn');
-const retrieveOnlyEl = document.getElementById('retrieve-only');
-const deepToggleEl = document.getElementById('deep-toggle');
+const newChatBtn = document.getElementById('new-chat');
 const resultEl = document.getElementById('result');
 const authLabel = document.getElementById('auth-label');
 const signinBtn = document.getElementById('signin-btn');
@@ -341,6 +351,62 @@ const tabLog = document.getElementById('tab-log');
 
 let currentUser = null;
 let activeTab = 'photo';
+
+// Conversation threads — one per corpus, browser-held (the server is
+// stateless). localStorage may be unavailable (private mode etc.); every
+// access is guarded and absence just means a fresh thread.
+const threads = { photo: [], log: [] };
+function loadThreads() {
+    for (const tab of ['photo', 'log']) {
+        try {
+            const raw = localStorage.getItem('explore-thread-' + tab);
+            if (raw) threads[tab] = JSON.parse(raw);
+        } catch (e) { /* fresh thread */ }
+    }
+}
+function saveThread(tab) {
+    try {
+        localStorage.setItem('explore-thread-' + tab,
+            JSON.stringify(threads[tab].slice(-12)));
+    } catch (e) { /* non-fatal */ }
+}
+function clearThread(tab) {
+    threads[tab] = [];
+    try { localStorage.removeItem('explore-thread-' + tab); } catch (e) {}
+    resultEl.innerHTML = '';
+}
+
+// Per-turn render targets; only one request streams at a time.
+let curSlots = null;
+function appendTurn(q) {
+    const turn = document.createElement('div');
+    turn.className = 'chat-turn';
+    turn.innerHTML =
+        '<div class="turn-q">&gt; ' + esc(q) + '</div>' +
+        '<div class="t-answer"><div class="loading-spinner" aria-label="loading"></div></div>' +
+        '<div class="t-citations"></div><div class="t-meta"></div>';
+    resultEl.appendChild(turn);
+    curSlots = {
+        answer: turn.querySelector('.t-answer'),
+        citations: turn.querySelector('.t-citations'),
+        meta: turn.querySelector('.t-meta'),
+    };
+    turn.scrollIntoView({ block: 'start', behavior: 'smooth' });
+}
+function renderThread(tab) {
+    resultEl.innerHTML = '';
+    for (const turn of threads[tab]) {
+        const el = document.createElement('div');
+        el.className = 'chat-turn';
+        const wantRu = /[А-Яа-яЁё]/.test(turn.q || '');
+        el.innerHTML =
+            '<div class="turn-q">&gt; ' + esc(turn.q) + '</div>' +
+            (turn.answer ? '<div class="t-answer"><div class="answer">' + esc(turn.answer) + '</div></div>' : '') +
+            '<div class="t-citations">' + (turn.citations ? renderCitationsHtml(turn.citations, wantRu) : '') + '</div>' +
+            '<div class="t-meta"></div>';
+        resultEl.appendChild(el);
+    }
+}
 // Sticky notice prepended to the anon-state auth-bar after a non-allow-listed
 // sign-in. Cleared the moment a successful authed status comes back.
 let notAuthorizedMsg = '';
@@ -360,6 +426,7 @@ document.querySelectorAll('.tab').forEach(tab => {
         activeTab = tab.dataset.tab;
         if (activeTab === 'photo') queryEl.placeholder = 'describe a photo...';
         else queryEl.placeholder = 'ask the journal...';
+        renderThread(activeTab);
     });
 });
 
@@ -425,19 +492,38 @@ form.addEventListener('submit', async (e) => {
 
     btnEl.disabled = true;
 
-    // Slot layout: each SSE event updates exactly one slot, so we set up
-    // the skeleton once and then do targeted replacements as events land.
-    resultEl.innerHTML =
-        '<div id="answer-slot"><div class="loading-spinner" aria-label="loading"></div></div>' +
-        '<div id="citations-slot"></div>' +
-        '<div id="meta-slot"></div>';
+    const tab = activeTab;
+    appendTurn(q);
+    queryEl.value = '';
 
     const headers = { 'Content-Type': 'application/json' };
     const token = await getIdToken();
     if (token) headers['Authorization'] = 'Bearer ' + token;
 
     const k = parseInt(document.querySelector('input[name="k"]:checked').value, 10) || 8;
-    const isRetrieveOnly = retrieveOnlyEl.checked;
+    const answerMode = document.querySelector('input[name="answer"]:checked').value;
+    const isRetrieveOnly = answerMode === 'none';
+
+    // History: the last 3 exchanges (6 turns) of this tab's thread.
+    const history = [];
+    for (const turn of threads[tab].slice(-3)) {
+        if (!turn.answer) continue;
+        history.push({ role: 'user', text: turn.q });
+        history.push({ role: 'assistant', text: turn.answer.slice(0, 2000) });
+    }
+    // Photos from the previous answer, so "the second photo" resolves.
+    let priorShas = [];
+    if (tab === 'photo') {
+        for (let i = threads[tab].length - 1; i >= 0; i--) {
+            const c = threads[tab][i].citations;
+            if (c && c.citations) {
+                priorShas = c.citations
+                    .filter(x => x.in_generation && x.sha)
+                    .map(x => x.sha).slice(0, 8);
+                break;
+            }
+        }
+    }
 
     try {
         const res = await fetch('/explore/api/ask', {
@@ -445,10 +531,11 @@ form.addEventListener('submit', async (e) => {
             headers,
             body: JSON.stringify({
                 query: (lastQuery = q),
-                corpus: activeTab,
+                corpus: tab,
                 retrieve_only: isRetrieveOnly,
                 k,
-                ...(deepToggleEl.checked ? { deep: true } : {})
+                ...(answerMode === 'deep' ? { deep: true } : {}),
+                ...(history.length ? { history, prior_shas: priorShas } : {})
             })
         });
         // Auth / quota / corpus failures are still regular JSON 4xx — they
@@ -457,18 +544,24 @@ form.addEventListener('submit', async (e) => {
             const err = await res.json().catch(() => ({ detail: 'HTTP ' + res.status }));
             throw new Error(err.detail || ('HTTP ' + res.status));
         }
+        const turnRec = { q, answer: null, citations: null };
         await streamSSE(res, (event) => {
-            if (event.name === 'citations') renderCitations(event.data, isRetrieveOnly);
-            else if (event.name === 'answer') renderAnswer(event.data);
-            else if (event.name === 'answer_error') renderAnswerError(event.data);
+            if (event.name === 'citations') {
+                turnRec.citations = event.data;
+                renderCitations(event.data, isRetrieveOnly);
+            } else if (event.name === 'answer') {
+                turnRec.answer = event.data.answer || null;
+                renderAnswer(event.data);
+            } else if (event.name === 'answer_error') renderAnswerError(event.data);
             else if (event.name === 'done') fetchAuthStatus();
         });
+        threads[tab].push(turnRec);
+        saveThread(tab);
     } catch (err) {
         // Stream torn mid-flight (or pre-stream HTTP error). If citations
         // already rendered, leave them; replace the answer slot with a
         // visible error so the user knows the answer won't be coming.
-        const slot = document.getElementById('answer-slot');
-        if (slot) slot.innerHTML = '<div class="error">error: ' + esc(err.message) + '</div>';
+        if (curSlots) curSlots.answer.innerHTML = '<div class="error">error: ' + esc(err.message) + '</div>';
     } finally {
         btnEl.disabled = false;
     }
@@ -508,18 +601,18 @@ function parseSSE(frame) {
 }
 
 function renderCitations(data, isRetrieveOnly) {
-    // Citations land first. Replace the global spinner with either a
+    // Citations land first. Replace the turn spinner with either a
     // short-lived "generating answer..." indicator (full path) or nothing
     // (retrieve_only — no answer event will follow).
-    const answerSlot = document.getElementById('answer-slot');
     if (isRetrieveOnly) {
-        answerSlot.innerHTML = '';
+        curSlots.answer.innerHTML = '';
     } else {
-        answerSlot.innerHTML =
+        curSlots.answer.innerHTML =
             '<div class="generating">generating answer<span class="dots"></span></div>';
     }
 
-    document.getElementById('citations-slot').innerHTML = renderCitationsHtml(data);
+    curSlots.citations.innerHTML =
+        renderCitationsHtml(data, /[А-Яа-яЁё]/.test(lastQuery || ''));
 
     // Meta slot now holds date filter + a snapshot of the quota counter.
     // The header bar shows the live quota; this is the per-query record.
@@ -538,10 +631,10 @@ function renderCitations(data, isRetrieveOnly) {
             (data.quota_used != null ? ' · ' + data.quota_used + ' used today' : '') +
             '</div>';
     }
-    document.getElementById('meta-slot').innerHTML = metaHtml;
+    curSlots.meta.innerHTML = metaHtml;
 }
 
-function renderCitationsHtml(data) {
+function renderCitationsHtml(data, wantRu) {
     if (!data.citations || !data.citations.length) return '';
     // Fade signal: when the reranker ran (photo corpus, depth ≥ threshold)
     // trust its in_generation flag — Pro only saw those. Otherwise fall
@@ -566,7 +659,6 @@ function renderCitationsHtml(data) {
         html += '</div>';
     } else {
         html += '<div class="photo-grid">';
-        const wantRu = /[А-Яа-яЁё]/.test(lastQuery || '');
         for (const c of data.citations) {
             const date = c.date_iso || '';
             const cap = (wantRu && c.caption_ru) ? c.caption_ru : (c.caption || '');
@@ -577,7 +669,7 @@ function renderCitationsHtml(data) {
             html += '<a href="' + esc(linkHref) + '" target="_blank" rel="noopener">';
             html += '<img loading="lazy" src="' + esc(imgSrc) + '" alt="' + esc(cap) + '">';
             html += '</a>';
-            html += '<div class="meta-line">[' + c.rank + '] ' + c.score.toFixed(3) + ' · ' + esc(date) + '</div>';
+            html += '<div class="meta-line">[' + c.rank + '] ' + c.score.toFixed(3) + ' · ' + esc(date) + (c.carried ? ' · from previous answer' : '') + '</div>';
             if (cap) html += '<div class="caption-line">' + esc(cap) + '</div>';
             html += '</div>';
         }
@@ -587,20 +679,20 @@ function renderCitationsHtml(data) {
 }
 
 function renderAnswer(data) {
-    document.getElementById('answer-slot').innerHTML =
-        '<div id="answer">' + esc(data.answer || '') + '</div>';
+    curSlots.answer.innerHTML =
+        '<div class="answer">' + esc(data.answer || '') + '</div>';
     appendUsageLine(data);
 }
 
 function renderAnswerError(data) {
-    document.getElementById('answer-slot').innerHTML =
+    curSlots.answer.innerHTML =
         '<div class="notice">' + esc(data.error || 'generation failed') + '</div>';
     appendUsageLine(data);
 }
 
 function appendUsageLine(data) {
     if (data.cost == null) return;
-    const meta = document.getElementById('meta-slot');
+    const meta = curSlots && curSlots.meta;
     if (!meta) return;
     const line = document.createElement('div');
     line.className = 'meta';
@@ -617,6 +709,11 @@ function esc(s) {
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[ch]));
 }
+
+newChatBtn.addEventListener('click', () => clearThread(activeTab));
+
+loadThreads();
+renderThread(activeTab);
 
 // Initial fetchAuthStatus is triggered by the first onAuthStateChanged callback
 // (Firebase fires it once on init, with null user if not signed in).

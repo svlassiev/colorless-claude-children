@@ -34,6 +34,7 @@ from photo_search.cloud_cache import pull_from_gcs as photo_pull
 from photo_search.embedding import make_photo_embedder
 from photo_search.paths import ANSWER_VOICE_PATH, MAX_K, RERANK_KEEP, RERANK_THRESHOLD_K
 from photo_search.rerank import rerank_hits as photo_rerank_hits
+from photo_search.retriever import Hit as PhotoHit
 from photo_search.retriever import load_index as load_photo_index, parse_date_filter
 from photo_search.site import site_url_for
 from photo_search.tools.base import DateFilter, Filters
@@ -46,6 +47,7 @@ from search_common.auth import (
     get_subject,
     is_people_allowed,
 )
+from search_common.condense import condense_query
 from search_common.deep_answer import classify_deep
 from search_common.generation import safe_generate
 from search_common.rate_limit import enforce_rate_limit, get_remaining
@@ -92,6 +94,9 @@ async def lifespan(_: FastAPI):
     vectors, metas = load_photo_index()
     _state["photo_vectors"] = vectors
     _state["photo_metas"] = metas
+    # sha → meta, for re-attaching photos carried over from a previous
+    # conversation turn (chat follow-ups referring to "the second photo").
+    _state["photo_meta_by_sha"] = {m["sha"]: m for m in metas}
     print(f"explore: loaded photo index — {len(metas)} vectors", file=sys.stderr)
 
     # Person/face aliases (private; pulled into the cache by photo_pull above).
@@ -161,6 +166,23 @@ async def csp_and_security_headers(request: Request, call_next):
     return response
 
 
+class ChatTurn(BaseModel):
+    role: str  # "user" | "assistant"
+    text: str
+
+    @field_validator("role")
+    @classmethod
+    def _role(cls, v: str) -> str:
+        if v not in ("user", "assistant"):
+            raise ValueError("role must be user|assistant")
+        return v
+
+    @field_validator("text")
+    @classmethod
+    def _clip(cls, v: str) -> str:
+        return v[:2000]
+
+
 class AskRequest(BaseModel):
     query: str
     corpus: CorpusName = "photo"
@@ -169,6 +191,21 @@ class AskRequest(BaseModel):
     # Answer mode: None = auto (routing classifies), True/False = forced by
     # the UI. settings.deep_answers=False overrides everything to lookup.
     deep: Optional[bool] = None
+    # Conversational context (client-held thread; server stays stateless).
+    # Caps bound prompt size and cost for any caller, anonymous included.
+    history: list[ChatTurn] = []
+    prior_shas: list[str] = []
+
+    @field_validator("history")
+    @classmethod
+    def _cap_history(cls, v: list["ChatTurn"]) -> list["ChatTurn"]:
+        return v[-6:]
+
+    @field_validator("prior_shas")
+    @classmethod
+    def _cap_shas(cls, v: list[str]) -> list[str]:
+        import re as _re
+        return [s for s in v if _re.fullmatch(r"[0-9a-f]{16}", s)][:8]
 
     @field_validator("k")
     @classmethod
@@ -187,6 +224,8 @@ class CitationOut(BaseModel):
     caption: str = ""
     # Owner-voice Russian caption (styled cache); None until baked/overlaid.
     caption_ru: Optional[str] = None
+    # Carried over from the previous conversation turn (not a fresh match).
+    carried: bool = False
     sha: Optional[str] = None
     # Log-citation fields
     file: Optional[str] = None
@@ -302,6 +341,22 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
         f"authed:{subject.email}" if isinstance(subject, AuthedSubject) else "anon"
     )
 
+    # Conversational follow-up: rewrite into a standalone query BEFORE
+    # routing/retrieval — every downstream stage then works on the rewrite.
+    # First turns (empty history) skip this entirely.
+    chat_on = settings.chat_enabled and bool(req.history)
+    history_rows = (
+        [{"role": h.role, "text": h.text} for h in req.history] if chat_on else []
+    )
+    history_text = "\n".join(f"{r['role'].upper()}: {r['text']}" for r in history_rows) or None
+    effective_query = req.query
+    if chat_on:
+        effective_query = await condense_query(
+            _state["routing_client"], settings.routing_model, req.query, history_rows
+        )
+        if effective_query != req.query:
+            print(f"condense: {req.query!r} -> {effective_query!r}", file=sys.stderr)
+
     # Retrieve — corpus-specific. Sync; runs before streaming starts so
     # any embed/index failure is a regular 5xx, not a torn stream.
     photo_filters: Filters = Filters()
@@ -310,7 +365,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
         # one, or several parallel filter calls. Soft-fails to empty
         # Filters() on timeout; retrieval proceeds unfiltered in that case.
         photo_filters = await photo_routing.route_query(
-            req.query,
+            effective_query,
             _state["photo_metas"],
             _state["routing_client"],
             allow_person=people_allowed,
@@ -321,7 +376,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
         # `filter_by_date_range` tool lands, this becomes a fallback
         # rather than the primary path.
         if photo_filters.date is None:
-            date_lo, date_hi = parse_date_filter(req.query)
+            date_lo, date_hi = parse_date_filter(effective_query)
             if date_lo or date_hi:
                 photo_filters = replace(
                     photo_filters,
@@ -329,13 +384,36 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                 )
         auto_deep = photo_filters.deep
         hits = photo_qa.retrieve(
-            req.query,
+            effective_query,
             _state["photo_embedder"],
             _state["photo_vectors"],
             _state["photo_metas"],
             k=req.k,
             filters=photo_filters,
         )
+        # Re-attach photos from the previous answer so follow-ups like "who
+        # is on the second photo?" have their referents in front of the model.
+        if chat_on and req.prior_shas:
+            seen = {h.sha for h in hits}
+            by_sha = _state["photo_meta_by_sha"]
+            for sha in req.prior_shas:
+                m = by_sha.get(sha)
+                if not m or m["sha"] in seen:
+                    continue
+                hits.append(
+                    PhotoHit(
+                        rank=len(hits) + 1,
+                        score=0.0,
+                        blob_path=m["blob_path"],
+                        gcs_uri=m["gcs_uri"],
+                        date_iso=m.get("exif_date_iso"),
+                        caption=m.get("caption", ""),
+                        caption_ru=m.get("caption_ru", ""),
+                        sha=m["sha"],
+                        person_names=tuple(m.get("person_names") or ()),
+                        carried=True,
+                    )
+                )
         date_lo = photo_filters.date.start_iso if photo_filters.date else None
         date_hi = photo_filters.date.end_iso if photo_filters.date else None
         empty_msg = "no matching photos found."
@@ -345,7 +423,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
         # skipped entirely when the mode is forced or the feature is off.
         retrieve_coro = asyncio.to_thread(
             log_qa.retrieve,
-            req.query,
+            effective_query,
             _state["embed_client"],
             _state["log_vectors"],
             _state["log_metas"],
@@ -356,7 +434,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
             (hits, (date_lo, date_hi)), auto_deep = await asyncio.gather(
                 retrieve_coro,
                 classify_deep(
-                    _state["routing_client"], settings.routing_model, req.query
+                    _state["routing_client"], settings.routing_model, effective_query
                 ),
             )
         else:
@@ -405,6 +483,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                     date_iso=h.date_iso,
                     caption=h.caption,
                     caption_ru=getattr(h, "caption_ru", "") or None,
+                    carried=getattr(h, "carried", False),
                     sha=h.sha,
                     in_generation=h.sha in gen_shas,
                 ).model_dump()
@@ -496,7 +575,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
         local_hits = hits
         if req.corpus == "photo" and req.k >= RERANK_THRESHOLD_K:
             outcome_rr = await photo_rerank_hits(
-                req.query,
+                effective_query,
                 local_hits,
                 _state["rerank_client"],
                 _state["storage_client"],
@@ -578,11 +657,12 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                 person_resolution=person_resolution,
                 deep=deep,
                 voice=_state.get("answer_voice"),
+                history=history_text,
             )
         else:
             outcome = await safe_generate(
                 log_qa.generate, req.query, gen_hits, _state["gen_client"],
-                deep=deep, voice=_state.get("answer_voice"),
+                deep=deep, voice=_state.get("answer_voice"), history=history_text,
             )
 
         # Event 2: answer or answer_error. Citations are already on the
