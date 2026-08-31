@@ -284,17 +284,7 @@ button:disabled { color: #999; cursor: default; }
         <button type="submit" id="ask-btn">explore</button>
     </div>
     <div class="opts">
-        <span class="k-presets" title="What kind of answer to generate">answer:
-            <label class="k-btn" title="No AI answer — only the matching results. Free."><input type="radio" name="answer" value="none" />none</label>
-            <label class="k-btn" title="The system decides per question: simple lookups get a short answer, analytical questions get deep reasoning."><input type="radio" name="answer" value="auto" checked />auto</label>
-            <label class="k-btn" title="Force deep analytical reasoning (slower, a bit costlier)."><input type="radio" name="answer" value="deep" />deep</label>
-        </span>
-        &nbsp;&middot;&nbsp;
-        <span class="k-presets" title="How many matches to retrieve as evidence">matches:
-            <label class="k-btn"><input type="radio" name="k" value="8" checked />8</label>
-            <label class="k-btn"><input type="radio" name="k" value="12" />12</label>
-            <label class="k-btn"><input type="radio" name="k" value="20" />20</label>
-        </span>
+        <label title="No AI answer — only the matching results. Free."><input type="checkbox" id="retrieve-only" /> retrieve only (free)</label>
         &nbsp;&middot;&nbsp;
         <button type="button" id="new-chat" title="Forget this conversation and start fresh">new chat</button>
     </div>
@@ -343,6 +333,7 @@ const queryEl = document.getElementById('query');
 let lastQuery = '';
 const btnEl = document.getElementById('ask-btn');
 const newChatBtn = document.getElementById('new-chat');
+const retrieveOnlyEl = document.getElementById('retrieve-only');
 const resultEl = document.getElementById('result');
 const authLabel = document.getElementById('auth-label');
 const signinBtn = document.getElementById('signin-btn');
@@ -500,9 +491,9 @@ form.addEventListener('submit', async (e) => {
     const token = await getIdToken();
     if (token) headers['Authorization'] = 'Bearer ' + token;
 
-    const k = parseInt(document.querySelector('input[name="k"]:checked').value, 10) || 8;
-    const answerMode = document.querySelector('input[name="answer"]:checked').value;
-    const isRetrieveOnly = answerMode === 'none';
+    // Depth is pinned to max — the backend keeps `k` for API callers.
+    const k = 20;
+    const isRetrieveOnly = retrieveOnlyEl.checked;
 
     // History: the last 3 exchanges (6 turns) of this tab's thread.
     const history = [];
@@ -534,7 +525,6 @@ form.addEventListener('submit', async (e) => {
                 corpus: tab,
                 retrieve_only: isRetrieveOnly,
                 k,
-                ...(answerMode === 'deep' ? { deep: true } : {}),
                 ...(history.length ? { history, prior_shas: priorShas } : {})
             })
         });
