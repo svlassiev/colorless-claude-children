@@ -108,7 +108,9 @@ _FILTER_BLOCK = (
     " not by their visible content, to match: {note}. Treat that as established"
     " ground truth — do NOT dismiss a photo just because the place or date isn't"
     " identifiable from the image itself; assume it is correct and answer the"
-    " query on that basis.\n"
+    " query on that basis. EXCEPTION: a photo whose header says 'place"
+    " unconfirmed' has no place metadata — it was included by visual"
+    " similarity; for those, do not assert the place as fact.\n"
 )
 
 # Inserted when the query named a person and we narrowed by face tags. Like the
@@ -246,6 +248,8 @@ def generate(
     contents: list = []
     for h in hits:
         carried_note = ", carried over from the previous answer" if getattr(h, "carried", False) else ""
+        if getattr(h, "place_unconfirmed", False):
+            carried_note += ", place unconfirmed"
         header = f"\n\n--- Photo [{h.rank}] (date: {h.date_iso or 'unknown'}, score: {h.score:.3f}{carried_note}) ---"
         contents.append(header)
         contents.append(

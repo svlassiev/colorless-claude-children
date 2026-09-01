@@ -226,6 +226,8 @@ class CitationOut(BaseModel):
     caption_ru: Optional[str] = None
     # Carried over from the previous conversation turn (not a fresh match).
     carried: bool = False
+    # Included by soft place filtering (no place label) — not a tag match.
+    place_unconfirmed: bool = False
     sha: Optional[str] = None
     # Log-citation fields
     file: Optional[str] = None
@@ -484,6 +486,7 @@ async def ask(req: AskRequest, subject: Subject = Depends(get_subject)):
                     caption=h.caption,
                     caption_ru=getattr(h, "caption_ru", "") or None,
                     carried=getattr(h, "carried", False),
+                    place_unconfirmed=getattr(h, "place_unconfirmed", False),
                     sha=h.sha,
                     in_generation=h.sha in gen_shas,
                 ).model_dump()

@@ -98,6 +98,10 @@ class Hit:
     # True for hits carried over from the previous conversation turn (the
     # user may refer to them); they ride along after the fresh hits.
     carried: bool = False
+    # True when a location/proximity filter was active and this hit entered
+    # as an UNLABELED candidate (soft filtering) rather than a tag match —
+    # generation must not treat its place as established.
+    place_unconfirmed: bool = False
 
 
 def parse_date_filter(query: str) -> tuple[str | None, str | None]:
@@ -171,6 +175,17 @@ def _date_mask(metas: list[dict], df: DateFilter) -> np.ndarray:
     return out
 
 
+def _unlabeled_place_mask(metas: list[dict]) -> np.ndarray:
+    """True for photos with NO place label at all — the soft-filter class.
+
+    A photo labeled with a DIFFERENT place is a known mismatch and stays
+    excluded; only genuinely unlabeled photos may compete on similarity
+    (settings.soft_location). This is what keeps the «река Оять»
+    wrong-river regression impossible: those photos carry other labels.
+    """
+    return np.array([not m.get("place_names") for m in metas], dtype=bool)
+
+
 def _location_mask(metas: list[dict], lf: LocationFilter) -> np.ndarray:
     """Boolean mask: True only for shas in `lf.matched_shas`.
 
@@ -218,14 +233,35 @@ def search(
     # eligibility to win the top-k regardless of their cosine score.
     # This is the core 'metadata gates retrieval, embedding ranks
     # survivors' design.
+    # Tracks which eligible photos matched the place tag vs entered as
+    # unlabeled candidates (soft filtering); drives Hit.place_unconfirmed.
+    # Unlabeled candidates compete on similarity but hold at most ~25% of
+    # the final k (the cap), so lookalikes can never displace a well-tagged
+    # result set — the «река Оять» lesson from the soft-filter A/B. They may
+    # exceed the cap only to fill slots that tagged photos cannot fill.
+    confirmed = np.ones(len(metas), dtype=bool)
+    soft_place_active = False
     if filters and not filters.is_empty:
         mask = np.ones(len(metas), dtype=bool)
         if filters.date is not None:
             mask &= _date_mask(metas, filters.date)
+        soft = settings.soft_location
         if filters.location is not None:
-            mask &= _location_mask(metas, filters.location)
+            place = _location_mask(metas, filters.location)
+            if soft:
+                mask &= place | _unlabeled_place_mask(metas)
+                confirmed &= place
+                soft_place_active = True
+            else:
+                mask &= place
         if filters.proximity is not None:
-            mask &= _proximity_mask(metas, filters.proximity)
+            near = _proximity_mask(metas, filters.proximity)
+            if soft:
+                mask &= near | _unlabeled_place_mask(metas)
+                confirmed &= near
+                soft_place_active = True
+            else:
+                mask &= near
         if filters.person is not None:
             mask &= _person_mask(metas, filters.person)
         sims = np.where(mask, sims, -np.inf)
@@ -235,13 +271,34 @@ def search(
     # past the post-index cleanup. Overshoot factor of 4 covers worst-case
     # clusters of identical content uploaded under many paths.
     overshoot = max(4 * k, k + 10)
-    top_idx = np.argsort(-sims)[:overshoot]
+    if soft_place_active:
+        # Two-pool selection: the confirmed pool is EXACTLY the hard-mode
+        # candidate set (always fully reachable, whatever outscores it),
+        # the unlabeled pool contributes at most its cap. A single global
+        # scan cannot guarantee that — for «река Оять», dozens of unlabeled
+        # river lookalikes outscore every tagged hit and exhaust any
+        # reasonable scan window before a confirmed photo appears.
+        n_conf = int((np.isfinite(sims) & confirmed).sum())
+        max_unconf = max((k + 3) // 4, k - n_conf)
+        conf_sims = np.where(confirmed, sims, -np.inf)
+        unconf_sims = np.where(~confirmed, sims, -np.inf)
+        cand = set(np.argsort(-conf_sims)[:overshoot].tolist())
+        cand |= set(np.argsort(-unconf_sims)[: max_unconf + 10].tolist())
+        top_idx = sorted(cand, key=lambda i: -sims[i])
+    else:
+        max_unconf = k
+        top_idx = np.argsort(-sims)[:overshoot]
+    unconf_used = 0
 
     seen_sha: set[str] = set()
     hits: list[Hit] = []
     for i in top_idx:
         if not np.isfinite(sims[i]):
             break
+        if soft_place_active and not confirmed[i]:
+            if unconf_used >= max_unconf:
+                continue
+            unconf_used += 1
         m = metas[i]
         sha = m["sha"]
         if sha in seen_sha:
@@ -258,6 +315,7 @@ def search(
                 caption_ru=m.get("caption_ru", ""),
                 sha=sha,
                 person_names=tuple(m.get("person_names") or ()),
+                place_unconfirmed=not bool(confirmed[i]),
             )
         )
         if len(hits) >= k:

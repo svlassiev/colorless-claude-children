@@ -50,6 +50,10 @@ class Settings:
     photo_embed_location: str
     log_embed_model: str
     log_embed_location: str
+    # Soft place filtering: a location/proximity filter admits UNLABELED
+    # photos as similarity-ranked candidates alongside tag matches (photos
+    # labeled with a DIFFERENT place stay excluded). False = hard masks.
+    soft_location: bool
     # Conversational follow-ups: condense-question rewriting + history block
     # in generation. False = history/prior_shas fields are ignored entirely.
     chat_enabled: bool
@@ -142,7 +146,8 @@ def _load() -> Settings:
         os.environ.get("EXPLORE_STYLED_CAPTIONS", "true").lower() == "true"
     )
     deep_answers = os.environ.get("EXPLORE_DEEP_ANSWERS", "true").lower() == "true"
-    chat_enabled = os.environ.get("EXPLORE_CHAT", "true").lower() == "true" 
+    chat_enabled = os.environ.get("EXPLORE_CHAT", "true").lower() == "true"
+    soft_location = os.environ.get("EXPLORE_SOFT_LOCATION", "true").lower() == "true" 
     return Settings(
         project=project,
         location=location,
@@ -169,6 +174,7 @@ def _load() -> Settings:
         styled_captions=styled_captions,
         deep_answers=deep_answers,
         chat_enabled=chat_enabled,
+        soft_location=soft_location,
         geocoding_api_key=os.environ.get("GEOCODING_API_KEY", ""),
     )
 
