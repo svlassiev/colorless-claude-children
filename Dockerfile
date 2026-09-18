@@ -1,4 +1,4 @@
-FROM nginx:alpine
+FROM nginx:1.31.4-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY index.html all.html folderIndex.html preview.html /usr/share/nginx/html/
 COPY styles.css app.js albums.json albums-files.json icon.png /usr/share/nginx/html/
