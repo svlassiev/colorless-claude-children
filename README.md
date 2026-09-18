@@ -44,14 +44,48 @@ The workflow needs these repository secrets:
 
 ## Adding new albums
 
-Old-style albums (sequential filenames like `Picture001.jpg`):
-- Add entry to `albums.json` with `title`, `folder`, `count`, `pathName`
-- Thumbnails use `1_` prefix: `1_Picture001.jpg`
+Albums appear in `albums.json` order (the home page shows the last 10), so a new album goes at the end. Photos live in `gs://colorless-days-children/<folder>/`. The site never resizes anything: every size it shows must already be in the bucket.
 
-New-style albums (camera filenames like `IMG_0562.jpg`):
-- Add entry to `albums.json` with `"useFiles": true`
-- Add file list to `albums-files.json`
-- Thumbnails use `_thumbnail` suffix: `IMG_0562_thumbnail.jpg`
+New albums are file-based: `"useFiles": true` in `albums.json`, plus the filenames in `albums-files.json` (list order = display order). For each photo the bucket holds:
+
+| Object | Long edge | Used by |
+|---|---|---|
+| `<stem>.jpg` | original, as shot | archive; the /explore indexer (reads EXIF date + GPS) |
+| `<stem>_thumbnail.jpg` | 80 px | album grid, prev/next in the photo viewer |
+| `<stem>_1024.jpg` | 1024 px | photo viewer, share-link preview image |
+| `<stem>_800.jpg`, `<stem>_2048.jpg` | 800 / 2048 px | not used by the site today; kept to match earlier albums |
+
+"Long edge" means a portrait photo gets 60×80 and 768×1024. These sizes match what the earlier albums already hold in the bucket (hiking-api's uploader made them).
+
+`scripts/add_album.py` handles the sizes, the ordering, the upload and the JSON edits:
+
+1. **Prerequisites:** ImageMagick 7 (`brew install imagemagick`), plus gcloud signed in as `svlassiev@gmail.com` (see the identity guardrail in `CLAUDE.md`).
+2. **Prepare** (local only, free, safe to re-run):
+   ```bash
+   python3 scripts/add_album.py prepare ~/Pictures/<dir> --title "Атлантический трип"
+   ```
+   Takes every `.jpg`/`.jpeg` in the directory, so curate the directory first. It picks the album's folder, orders the photos by EXIF capture time, and writes each original plus the four variants to `.album-staging/<folder>/` (gitignored). Then it prints the order and warns about skipped non-JPEG files, photos without a capture time, missing timezone offsets, mixed cameras, GPS data in the originals, and duplicates. Variants have the EXIF rotation baked in and their EXIF/GPS stripped. Originals are uploaded byte-for-byte.
+   - **Folder = a new UUID**, e.g. `a6c7fc23-a916-47fe-b3f2-63a93d1848da`. That's the same style as the hiking albums' bucket prefixes. The readable names (`Kailash`, `10tradfall`, …) date from the pre-cloud site and aren't used for new albums. The folder is the URL key and can't change later without breaking links.
+   - Ordering uses UTC when EXIF has a timezone offset, so a trip across time zones sorts correctly. Photos received through messengers often have no capture time, or carry the export time instead. Those need placing by hand: edit the `files` list in `.album-staging/<folder>/album.json`. Its order is the album order.
+3. **Publish:**
+   ```bash
+   python3 scripts/add_album.py publish --folder <uuid printed by prepare>
+   ```
+   Uploads the files to the bucket and checks that every thumbnail and `_1024` image is publicly reachable. Only then does it append the album to `albums.json` and `albums-files.json` and delete the staging directory. It refuses a folder that already holds other objects, and it's safe to re-run after an interrupted upload.
+4. **Check locally:** `docker build`/`docker run` (see Local development). Open http://localhost:8080 and check the list, the grid and the viewer.
+5. **Release:** commit `albums.json` and `albums-files.json` and push to `main`. CI deploys in about 2 minutes. Browsers cache `albums.json` for 1h (`nginx.conf`).
+6. **Restart hiking-api** so share links (`/share/<folder>/<n>`) know the new album. It reads `albums.json` once per pod and keeps it:
+   ```bash
+   CTX=gke_thematic-acumen-225120_europe-north1-a_sixty-years-to-death
+   kubectl --context $CTX rollout restart deployment/hiking-api
+   kubectl --context $CTX rollout status deployment/hiking-api
+   curl -s https://serg.vlassiev.info/share/<folder>/1 | grep og:image   # expect the _1024 URL
+   ```
+7. **Optional, and billed:** photos show up in /explore search only after the photo-search index is rebuilt (about $0.0005 per photo, see `photo-search/README.md` "Rebuilding the index") and explore is redeployed, because its image bakes in `albums.json`.
+
+To reorder a published album or hide a photo, edit its list in `albums-files.json`. The bucket objects can stay where they are.
+
+Legacy albums (before ~2011) use sequential names instead: `count` + `pathName` in `albums.json`, `Picture001.jpg`, with a `1_Picture001.jpg` thumbnail. Don't create new ones in this format.
 
 ## TLS certificates
 

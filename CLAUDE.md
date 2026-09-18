@@ -26,6 +26,7 @@ Before running any command that authenticates or pushes to an external service, 
 - Deployed to GKE in project `thematic-acumen-225120`
 - Docker image: `svlassiev/colorless-days-children` (same repo name as before, v2.0+)
 - Domain: `serg.vlassiev.info`
+- Adding a photo album: README "Adding new albums" (`scripts/add_album.py`: UUID folder, 80px thumbnail + 1024px viewer sizes, then hiking-api restart for share links)
 
 ## Progress Journaling
 

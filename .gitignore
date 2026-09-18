@@ -42,3 +42,6 @@ __pycache__/
 # Stray photos dropped at repo root during testing
 /photo_*.jpg
 /photo_*.png
+
+# Local staging for scripts/add_album.py (photos before upload)
+/.album-staging/
