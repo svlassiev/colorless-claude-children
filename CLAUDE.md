@@ -12,16 +12,16 @@ Before running any command that authenticates or pushes to an external service, 
 |---------|------------------|---------------|----------------|
 | **Git (local)** | `svlassiev` personal email | `git config user.email` | `git config user.email <personal-email>` |
 | **GitHub CLI** | `svlassiev` | `gh auth status` | `gh auth login` (re-auth as svlassiev) |
-| **gcloud** | `svlassiev@gmail.com` via `development` config | `gcloud config configurations list` | `gcloud config configurations activate development` |
+| **gcloud** | `svlassiev@gmail.com`, project `thematic-acumen-225120` | `gcloud config get-value account` | `gcloud config set account svlassiev@gmail.com` |
 | **Docker Hub** | `svlassiev` | `docker info \| grep Username` | `docker login -u svlassiev` |
 
 **NEVER** use `a work/employer email`, `a work username`, or any `employer projects` project for this repo.
 
-**Credential hygiene:** Always `docker logout` immediately after pushing. Docker credentials are stored in macOS Keychain and shared across all terminal sessions — leaving them active risks accidental pushes from other contexts. Same principle applies to `gcloud`: switch back to your default (ES) config after personal project work with `gcloud config configurations activate default`.
+**Credential hygiene:** Always `docker logout` immediately after pushing. Docker credentials are stored in macOS Keychain and shared across all terminal sessions — leaving them active risks accidental pushes from other contexts. As of 2026-09-18 this machine has a single gcloud configuration, `default`, set to the personal account (there is no `development` config). If a work configuration is added again, activate the personal one for this repo and switch back afterwards.
 
 ## Project Overview
 
-- Static photo gallery: HTML/CSS/vanilla JS + nginx:alpine
+- Static photo gallery: HTML/CSS/vanilla JS + `nginx:1.31.4-alpine`. The version is pinned because the site pod's 32M memory limit OOM-killed 1.31.6 on 2026-09-18 and took the site down. Before bumping nginx, raise the limit in `k8s/deployment.yml`.
 - Photos served from GCS bucket `gs://colorless-days-children/`
 - Deployed to GKE in project `thematic-acumen-225120`
 - Docker image: `svlassiev/colorless-days-children` (same repo name as before, v2.0+)
