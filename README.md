@@ -44,7 +44,7 @@ The workflow needs these repository secrets:
 
 ## Adding new albums
 
-Albums appear in `albums.json` order (the home page shows the last 10), so a new album goes at the end. Photos live in `gs://colorless-days-children/<folder>/`. The site never resizes anything: every size it shows must already be in the bucket.
+Albums appear in `albums.json` order: chronological by when the trip happened, oldest at the top. The home page shows the last 10. `publish` appends the new album at the end, so if it's older than the latest album, move its entry up by hand. Photos live in `gs://colorless-days-children/<folder>/`. The site never resizes anything: every size it shows must already be in the bucket.
 
 New albums are file-based: `"useFiles": true` in `albums.json`, plus the filenames in `albums-files.json` (list order = display order). For each photo the bucket holds:
 
