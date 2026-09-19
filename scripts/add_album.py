@@ -82,6 +82,7 @@ def run(cmd, **kw):
 META_FIELDS = ("DateTimeOriginal", "OffsetTimeOriginal", "DateTimeDigitized",
                "OffsetTimeDigitized", "DateTime", "Model", "GPSLatitude")
 NAME_DATE_RE = re.compile(r"(20\d\d)(\d\d)(\d\d)[_-](\d\d)(\d\d)(\d\d)")  # PXL_/IMG_20260907_051323
+CAMERA_COUNTER_RE = re.compile(r"([A-Za-z]+)_(\d{4})(?!\d)")  # DSC_5370, IMG_0563 — not IMG_2019…
 
 
 def read_meta(path):
@@ -90,8 +91,7 @@ def read_meta(path):
     *values, w, h = (v.strip() for v in out.split("|"))
     exif = dict(zip(META_FIELDS, values))
 
-    # Capture time, best source first. Photos from a trip across time zones
-    # only sort correctly in UTC, so apply the EXIF offset when there is one.
+    # Capture time, best source first.
     date, offset, source = exif["DateTimeOriginal"], exif["OffsetTimeOriginal"], ""
     if not date:
         date, offset = exif["DateTimeDigitized"], exif["OffsetTimeDigitized"]
@@ -99,16 +99,61 @@ def read_meta(path):
         date, source = "{}:{}:{} {}:{}:{}".format(*m.groups()), "file name"
     if not date and exif["DateTime"]:  # last-modified; editors bump it
         date, source = exif["DateTime"], "EXIF DateTime"
-    sort_key = "9999"  # undated photos go last
-    if date:
-        when = datetime.strptime(date[:19], "%Y:%m:%d %H:%M:%S")
-        if re.fullmatch(r"[+-]\d\d:\d\d", offset):
-            sign = -1 if offset[0] == "-" else 1
-            when -= sign * timedelta(hours=int(offset[1:3]), minutes=int(offset[4:6]))
-        sort_key = when.isoformat()
-    return {"date": f"{date} {offset}".strip(), "source": source, "sort_key": sort_key,
-            "has_offset": bool(offset), "model": exif["Model"], "gps": bool(exif["GPSLatitude"]),
-            "size": f"{w}x{h}"}
+    utc_offset = None
+    if m := re.fullmatch(r"([+-])(\d\d):(\d\d)", offset):
+        utc_offset = (-1 if m[1] == "-" else 1) * timedelta(hours=int(m[2]), minutes=int(m[3]))
+    return {"local": datetime.strptime(date[:19], "%Y:%m:%d %H:%M:%S") if date else None,
+            "offset": utc_offset, "borrowed": False, "source": source, "model": exif["Model"],
+            "gps": bool(exif["GPSLatitude"]), "size": f"{w}x{h}"}
+
+
+def order_chronologically(photos, metas):
+    """Sort by UTC capture time, so a trip across time zones comes out right.
+
+    Edited copies (Google Photos "~2") keep the local time but lose the
+    offset; they borrow it from the photo nearest in local time.
+    """
+    known = [m for m in metas if m["local"] and m["offset"] is not None]
+    for m in metas:
+        if m["local"] and m["offset"] is None and known:
+            m["offset"] = min(known, key=lambda k: abs(k["local"] - m["local"]))["offset"]
+            m["borrowed"] = True
+
+    def key(pm):
+        photo, m = pm
+        return (m["local"] - (m["offset"] or timedelta()) if m["local"] else datetime.max, photo.name)
+
+    return sorted(zip(photos, metas), key=key)
+
+
+def format_date(m):
+    if not m["local"]:
+        return "— no date —"
+    text = m["local"].strftime("%Y:%m:%d %H:%M:%S")
+    if m["offset"] is not None:
+        minutes = int(m["offset"].total_seconds()) // 60
+        tz = f"{'-' if minutes < 0 else '+'}{abs(minutes) // 60:02}:{abs(minutes) % 60:02}"
+        text += f" ({tz})" if m["borrowed"] else f" {tz}"
+    return text + ("*" if m["source"] else "")
+
+
+def out_of_counter_order(names):
+    """Camera counters (DSC_5370, IMG_0563…) only go up. A photo whose date
+    puts it off the longest rising run of its counter has a suspect date."""
+    runs = {}
+    for name in names:
+        if m := CAMERA_COUNTER_RE.match(name):
+            runs.setdefault(m[1], []).append((int(m[2]), name))
+    suspects = []
+    for items in runs.values():
+        best = [[item] for item in items]  # longest rising run ending at i
+        for i in range(len(items)):
+            for j in range(i):
+                if items[j][0] < items[i][0] and len(best[j]) + 1 > len(best[i]):
+                    best[i] = best[j] + [items[i]]
+        keep = set(max(best, key=len))
+        suspects += [name for number, name in items if (number, name) not in keep]
+    return suspects
 
 
 def make_variants(src, dst_dir, stem):
@@ -133,7 +178,7 @@ def prepare(args):
 
     with ThreadPoolExecutor(8) as pool:
         metas = list(pool.map(read_meta, photos))
-    order = sorted(zip(photos, metas), key=lambda pm: (pm[1]["sort_key"], pm[0].name))
+    order = order_chronologically(photos, metas)
 
     stems, used = [], set()
     for p, _ in order:
@@ -163,27 +208,29 @@ def prepare(args):
         ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     print(f"\n{args.title}  →  {args.folder}/  ({len(names)} photos, staged in {out_dir})\n")
-    print(f"{'n':>3}  {'taken (local time)':27} {'size':>9}  {'camera':14}  file")
+    print(f"{'n':>3}  {'taken (local time)':29} {'size':>9}  {'camera':14}  file")
     for n, ((src, m), name) in enumerate(zip(order, names), 1):
         renamed = "" if name == src.name else f"   (from {src.name})"
-        date = m["date"] + ("*" if m["source"] else "")
         gps = " gps" if m["gps"] else ""
-        print(f"{n:>3}  {date or '— no date —':27} {m['size']:>9}  "
+        print(f"{n:>3}  {format_date(m):29} {m['size']:>9}  "
               f"{m['model'][:14]:14}  {name}{renamed}{gps}")
 
     notes = []
     if skipped:
         notes.append(f"skipped (not JPEG): {', '.join(skipped)}")
-    if undated := sum(1 for _, m in order if not m["date"]):
+    if undated := sum(1 for _, m in order if not m["local"]):
         notes.append(f"{undated} photo(s) have no date at all — placed last, by file name")
     for source in ("file name", "EXIF DateTime"):
         if flagged := [name for (_, m), name in zip(order, names) if m["source"] == source]:
             notes.append(f"* no EXIF capture time, dated from its {source}: {', '.join(flagged)}"
                          " — check the position")
-    dated = [m for _, m in order if m["date"]]
-    if any(m["has_offset"] for m in dated) and not all(m["has_offset"] for m in dated):
-        notes.append("some dates have no timezone offset — they're compared as if they were UTC")
-    if len({m["model"] for _, m in order}) > 1:
+    if borrowed := sum(1 for _, m in order if m["borrowed"]):
+        notes.append(f"{borrowed} photo(s) had no timezone offset (edited copies lose it) — "
+                     "borrowed from the nearest photo by local time, shown in (brackets)")
+    if suspects := out_of_counter_order(names):
+        notes.append(f"date disagrees with the camera's file counter: {', '.join(suspects)} "
+                     "— its clock was off (e.g. still on home time in flight) or the date was edited; check the position")
+    if len({m["model"] for _, m in order if m["model"]}) > 1:
         notes.append("several cameras — check their clocks agree, or the order will interleave wrongly")
     if gps := sum(1 for _, m in order if m["gps"]):
         notes.append(f"{gps} original(s) carry GPS coordinates; the bucket is public "
