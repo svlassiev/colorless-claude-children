@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sergey Vlassiev</title>
-  <meta name="description" content="Software engineer. Mathematician by training. St. Petersburg, Stockholm, Amsterdam, Stockholm. Building things since age seven that serve people.">
+  <meta name="description" content="Software engineer. Mathematician by training. St. Petersburg, Stockholm, Amsterdam, Stockholm. Building things that serve people since age seven.">
 
   <!-- Open Graph: controls how this page appears when shared on LinkedIn, Telegram, etc. -->
   <meta property="og:title" content="Sergey Vlassiev — Software Engineer">
-  <meta property="og:description" content="Software engineer. Mathematician by training. St. Petersburg, Stockholm, Amsterdam, Stockholm. Building things since age seven that serve people.">
+  <meta property="og:description" content="Software engineer. Mathematician by training. St. Petersburg, Stockholm, Amsterdam, Stockholm. Building things that serve people since age seven.">
   <meta property="og:type" content="profile">
   <meta property="og:url" content="https://serg.vlassiev.info/cv/">
   <meta property="og:image" content="https://serg.vlassiev.info/cv/preview.jpg">
@@ -18,7 +18,7 @@
   <!-- Twitter/X card -->
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Sergey Vlassiev — Software Engineer">
-  <meta name="twitter:description" content="Software engineer. Mathematician by training. St. Petersburg, Stockholm, Amsterdam, Stockholm. Building things since age seven that serve people.">
+  <meta name="twitter:description" content="Software engineer. Mathematician by training. St. Petersburg, Stockholm, Amsterdam, Stockholm. Building things that serve people since age seven.">
 
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/computer-modern@0.1.2/cmu-serif.min.css">
@@ -505,7 +505,7 @@
       <p>I&rsquo;ve been writing software since I was seven &mdash; I was born into a family of engineers and it was simply what people around me did. One of the programs I&rsquo;m still proud of from those years is a two-player game where my brother and I could fight as triangle-shaped knights together.</p>
       <p>I trained as a mathematician &mdash; and graduated as both mathematician and teacher &mdash; which shapes how I approach problems: I want to understand how something actually works before touching it, and I tend to explain things to people along the way. That was true when I was running algebra seminars at university in St. Petersburg and leading three-week expeditions above the Arctic Circle &mdash; and I still work that way.</p>
       <p>We&rsquo;ve moved as a family three times: to Stockholm when my wife was offered a role here, to Amsterdam when I joined AWS, and back to Sweden when we wanted the best conditions for our kids. We&rsquo;ve kept both careers throughout without either of us disappearing into the other&rsquo;s story. Parenting has been the central theme of my life in recent years &mdash; it makes me more deliberate about what I spend my time on and why.</p>
-      <p>I build the systems, processes, and guardrails that let people work safely and with some fun: on-call structures, alerts, documentation, automation, deployment pipelines. I&rsquo;m at Epidemic Sound in part because the domain matters to me. My <a href="https://open.spotify.com/artist/3KZLaCPYJKpRm56MrA4Hdr" target="_blank" rel="noopener" class="subtle-link">brother is a musician</a>, and working on infrastructure that affects millions of users means I&rsquo;m thinking about people like him &mdash; not abstractions. Right now my focus is on agentic readiness: making the platform infrastructure consumable by AI agents. I took a philosophy of technology course in 2021 because what engineers build shapes how people feel, create, and connect &mdash; and I&rsquo;d rather that be deliberate.</p>
+      <p>I build the systems and processes that let people, and now agents, work safely and with some fun: on-call structures, alerts, documentation, guardrails, automation, deployment pipelines. I was at Epidemic Sound in part because the domain matters to me. My <a href="https://open.spotify.com/artist/3KZLaCPYJKpRm56MrA4Hdr" target="_blank" rel="noopener" class="subtle-link">brother is a musician</a>, and working on infrastructure that affects millions of users means I&rsquo;m thinking about people like him &mdash; not abstractions. Right now my focus is on helping people to digest the complexity of an AI-blooming world. I took a philosophy of technology course in 2021 because what engineers build shapes how people feel, create, and connect &mdash; and I&rsquo;d rather that be deliberate.</p>
     </div>
   </section>
 
@@ -525,15 +525,15 @@
         <span class="job-dates">2026&mdash;present</span>
       </div>
       <div class="job-subtitle">Agentic RAG system &mdash; Vertex AI + Gemini multimodal and text RAG over a 20-year family photo archive and a private working journal</div>
-      <div class="job-tech">Main technologies: Python (FastAPI, asyncio), Vertex AI (now Gemini Enterprise Agent Platform), Gemini 2.5 Pro&thinsp;/&thinsp;Flash, Cloud Run, GKE, Firestore, Firebase Auth, GCS, Server-Sent Events, grafana-app-sdk</div>
+      <div class="job-tech">Main technologies: Python (FastAPI, asyncio), Vertex AI (now Gemini Enterprise Agent Platform), Gemini 3.6 Flash&thinsp;/&thinsp;3.5 Flash&thinsp;/&thinsp;3.5 Flash-Lite, Cloud Run, GKE, Firestore, Firebase Auth, GCS, Server-Sent Events, grafana-app-sdk</div>
       <details class="brag">
         <summary>key achievements</summary>
         <div class="brag-body">
           <ul class="brag-list">
-            <li><strong>Multimodal RAG over the family archive</strong> &mdash; <span class="m">6,004</span> personal photos embedded into a shared text&thinsp;/&thinsp;image space (multimodalembedding@001, 1408-dim). Natural-language questions are answered with cited images, and EXIF&thinsp;/&thinsp;folder-name date filters are parsed straight out of the query (&ldquo;summer 2017&rdquo;). A second corpus does text RAG over a private working journal with text-embedding-005.</li>
-            <li><strong>Two-stage retrieval with vision reranking</strong> &mdash; Cosine top-k over an in-memory index, then the top 20 images fanned out to four parallel Gemini 2.5 Flash batches that rerank under a structured schema; the best 10 go to Gemini 2.5 Pro for the written answer. A SHA-keyed byte map means Pro never re-downloads what Flash already saw, and a 15&thinsp;s timeout falls back to similarity order without tearing the response.</li>
-            <li><strong>Streamed answers over Server-Sent Events</strong> &mdash; The ask endpoint emits citations first (~5&ndash;10&thinsp;s in) so photos render while Pro is still writing, then the answer (~10&ndash;15&thinsp;s), then refreshed quota. A soft-failure wrapper (asyncio timeout in a worker thread) turns a 60&thinsp;s generation timeout into an inline notice rather than a 500 &mdash; citations always stay on screen.</li>
-            <li><strong>Cost engineering as a first principle</strong> &mdash; Rejected Vertex AI Vector Search (~<span class="m">$360</span>/mo) in favour of in-memory NumPy cosine similarity: 6k vectors &times; 1408-dim &asymp; 35&thinsp;MB fits in memory trivially, and the same code path scales to managed search at 100k+ items. Cloud Run scales to zero, so idle cost is <span class="m">$0</span>.</li>
+            <li><strong>Multimodal RAG over the family archive</strong> &mdash; <span class="m">6,149</span> personal photos embedded into a shared text&thinsp;/&thinsp;image space (gemini-embedding-2, 3072-dim). Natural-language questions are answered with cited images, and EXIF&thinsp;/&thinsp;folder-name date filters are parsed straight out of the query (&ldquo;summer 2017&rdquo;). A second corpus does text RAG over a private working journal with gemini-embedding-001.</li>
+            <li><strong>Two-stage retrieval with vision reranking</strong> &mdash; Cosine top-k over an in-memory index, then the top 20 images fanned out to four parallel Gemini 3.5 Flash-Lite batches that rerank under a structured schema; the best 10 go to Gemini 3.6 Flash for the written answer. A SHA-keyed byte map means the answer model never re-downloads what the reranker already saw, and a 15&thinsp;s timeout falls back to similarity order without tearing the response.</li>
+            <li><strong>Streamed answers over Server-Sent Events</strong> &mdash; The ask endpoint emits citations first (~5&ndash;10&thinsp;s in) so photos render while the answer is still being written, then the answer (~10&ndash;15&thinsp;s), then refreshed quota. A soft-failure wrapper (asyncio timeout in a worker thread) turns a 60&thinsp;s generation timeout into an inline notice rather than a 500 &mdash; citations always stay on screen.</li>
+            <li><strong>Cost engineering as a first principle</strong> &mdash; Rejected Vertex AI Vector Search (~<span class="m">$360</span>/mo) in favour of in-memory NumPy cosine similarity: 6k vectors &times; 3072-dim &asymp; 75&thinsp;MB fits in memory trivially, and the same code path scales to managed search at 100k+ items. Cloud Run scales to zero, so idle cost is <span class="m">$0</span>.</li>
             <li><strong>Auth as the only server-side trust boundary</strong> &mdash; Firebase ID tokens cryptographically verified (signature, audience, expiry) against Google&rsquo;s public keys, plus an email allow-list; the entire client flow can be broken without compromising it. Anonymous visitors query the public photo corpus (20/day globally); allow-listed users also reach the private journal corpus (50/day each).</li>
             <li><strong>Fail-closed rate limiting</strong> &mdash; Atomic per-day Firestore counters that avoid read-modify-write races under concurrency; corpus authorisation checked twice per request as defence-in-depth; if the counter store is unreachable the request fails closed rather than leaking quota.</li>
             <li><strong>Private deployment topology</strong> &mdash; Browser &rarr; GKE Ingress (TLS) &rarr; a small nginx-proxy pod &rarr; Cloud Run, keeping the internal run.app URL off the public surface at ~30&thinsp;ms p50 overhead. The proxy runs with buffering off and a 130&thinsp;s read timeout so SSE frames flush in real time. Packaged as a multi-package uv repository, deployed via Artifact Registry.</li>
@@ -549,7 +549,7 @@
       <div class="job-row">
         <span class="job-role">Software Engineer</span>
         <span class="job-company"><a href="https://www.epidemicsound.com/" target="_blank" rel="noopener" class="subtle-link">Epidemic Sound</a></span>
-        <span class="job-dates">Apr 2024&mdash;present</span>
+        <span class="job-dates">Apr 2024&mdash;2026</span>
       </div>
       <div class="job-subtitle">Enabling development teams to build backend services safely and at high velocity</div>
       <div class="job-tech">Main technologies: Go, Python, Keycloak, OAuth2&thinsp;/&thinsp;OIDC, Fastly CDN, GCP</div>
@@ -557,12 +557,12 @@
         <summary>key achievements</summary>
         <div class="brag-body">
           <ul class="brag-list">
-            <li><strong>API Platform &amp; agentic readiness</strong> &mdash; Building the API platform&rsquo;s client generation pipeline: automated TypeScript and Go client libraries from OpenAPI specs, published to internal registries, with agentic metadata embedded so AI agents like Claude Code, Cursor and Gemini Enterprise can consume services without external documentation. Currently driving adoption across the engineering organisation.</li>
-            <li><strong>GitHub Access Control</strong> &mdash; Identified compliance risks in the company&rsquo;s GitHub organisation setup. Ran the threat analysis, prepared stakeholder slides, coordinated with Security and Internal IT. Result: <span class="m">35%</span> fewer super-admins, all non-human owners removed, admin access made traceable. Directly supported IPO readiness.</li>
+            <li><strong>API Platform &amp; agentic readiness</strong> &mdash; Built the API platform&rsquo;s client generation pipeline: automated TypeScript and Go client libraries from OpenAPI specs, published to internal registries, with agentic metadata embedded so AI agents like Claude Code, Cursor and Gemini Enterprise can consume services without external documentation. Drove its adoption across the engineering organisation.</li>
+            <li><strong>GitHub Access Control</strong> &mdash; Identified compliance risks in the company&rsquo;s GitHub organisation setup. Ran the threat analysis, prepared stakeholder slides, coordinated with Security and Internal IT. Result: reduced and audited GitHub admin access.</li>
             <li><strong>Email verification simplification</strong> &mdash; Mapped the entire flow across Keycloak, multiple services, mobile, and CRM. Found the inconsistencies blocking the legacy user management service migration for months. Designed a cleaner flow where Keycloak fully owns verification &mdash; unblocking a long-stalled migration and making verification reliable for conversion flows.</li>
             <li><strong>Unified logout &amp; session invalidation</strong> &mdash; Investigated inconsistencies across web, mobile, plugins, and frontend. Designed Keycloak backchannel logout to close a real security gap. Scoped and planned as part of the External Publishing project.</li>
             <li><strong>MCP integration authentication</strong> &mdash; Designed auth infrastructure enabling MCP integration with the platform, including session invalidation mechanisms to control agentic users and ensure secure token lifecycle management.</li>
-            <li><strong>Enterprise SSO self-service</strong> &mdash; Implemented enabling flows including domain verification and session handling, enabling customer self-service onboarding and reducing manual operational overhead. Unlocked the small and medium business market &mdash; projected to bring in more than <span class="m">10,000</span> new customers in the first year, previously blocked by manual onboarding.</li>
+            <li><strong>Enterprise SSO self-service</strong> &mdash; Implemented flows including domain verification and session handling, enabling customer self-service onboarding and reducing manual operational overhead. Unlocked the small and medium business market &mdash; previously blocked by manual onboarding.</li>
             <li><strong>Observability pilot</strong> &mdash; Part of the pilot team connecting OpenTelemetry metrics and tracing with Grafana&rsquo;s Loki and Tempo; helped shape the rollout for the broader organisation.</li>
           </ul>
         </div>
@@ -614,7 +614,7 @@
             <li>Started a data analysis project using AI practices to help content creators build more attractive courses <em>(Baloo)</em>.</li>
             <li><strong><span class="m">100&times;</span> performance improvement</strong> <em>(PingPong)</em> &mdash; Found and resolved a critical backend bottleneck for users with exceptional loads. Response time dropped from seconds to milliseconds.</li>
             <li><strong>Security hardening</strong> <em>(PingPong)</em> &mdash; Initiated a full vulnerability audit, identified and fixed dozens of XSS vulnerabilities and other security concerns.</li>
-            <li><strong>Accessibility</strong> <em>(PingPong)</em> &mdash; Championed web accessibility improvements. Collaborated with Axess Labs for external testing and drove follow-up remediation.</li>
+            <li><strong>Accessibility</strong> <em>(PingPong)</em> &mdash; Championed web accessibility improvements. Collaborated with Axess Lab for external testing and drove follow-up remediation.</li>
             <li>Implemented new UI solutions including interactive charts and a Vuetify-based interface to qualify the product for public procurement <em>(PingPong)</em>. Updated the outdated Android app to a Trusted Web Application and published it on the Play Store, restoring mobility for thousands of users.</li>
           </ul>
         </div>
@@ -658,7 +658,7 @@
         <div class="brag-body">
           <ul class="brag-list">
             <li>Designed and implemented Java 8 language level support, significantly expanding the product&rsquo;s addressable market.</li>
-            <li>Contributed two merged upstream fixes to <a href="https://github.com/javaparser/javaparser" target="_blank" rel="noopener" class="subtle-link">JavaParser</a>, the widely-used open-source Java AST library, while building the analyzer&rsquo;s Java parsing &mdash; stopping a visitor from mutating an unmodifiable collection (<a href="https://github.com/javaparser/javaparser/pull/315" target="_blank" rel="noopener" class="subtle-link">#315</a>) and correcting traversal to descend into array initialisers (<a href="https://github.com/javaparser/javaparser/pull/322" target="_blank" rel="noopener" class="subtle-link">#322</a>).</li>
+            <li>Contributed two merged upstream fixes to <a href="https://github.com/javaparser/javaparser" target="_blank" rel="noopener" class="subtle-link">JavaParser</a>, the widely used open-source Java AST library, while building the analyser&rsquo;s Java parsing &mdash; stopping a visitor from mutating an unmodifiable collection (<a href="https://github.com/javaparser/javaparser/pull/315" target="_blank" rel="noopener" class="subtle-link">#315</a>) and correcting traversal to descend into array initialisers (<a href="https://github.com/javaparser/javaparser/pull/322" target="_blank" rel="noopener" class="subtle-link">#322</a>).</li>
             <li>Added support for major enterprise web technologies: JavaServer Faces, Apache Struts, JAX-RS, JSP tag libraries.</li>
             <li>Implemented code protection mechanisms &mdash; both hardware dongle-based and software-based &mdash; to prevent licence circumvention.</li>
             <li>Debugged a pilot on an insurance customer&rsquo;s premises, on their terms &mdash; no source code, logs, tools, or even a JDK could leave the room, so close reading of the stack traces was the only instrument left. I never isolated the cause for certain, but a handful of educated guesses, re-created and patched back at the office, held &mdash; the errors never returned, and their code never left their hands, which was what they&rsquo;d asked for.</li>
