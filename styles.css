@@ -64,20 +64,35 @@ img {
     text-align: center;
 }
 
+/* Inset so the links start and end at the outer thumbnails: each grid column
+   centers a ~100px thumbnail, so its left edge is at 1/8 width minus 50px. */
 .photo-nav {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
     margin-top: 8px;
+    padding: 0 calc(12.5% - 50px);
+}
+
+.photo-nav-prev {
+    text-align: left;
 }
 
 .photo-nav-up {
     text-align: center;
 }
 
+.photo-nav-next {
+    text-align: right;
+}
+
 @media (max-width: 600px) {
     .photo-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    .photo-nav {
+        padding: 0 calc(25% - 50px);
     }
 }
 
@@ -89,10 +104,38 @@ img {
     color: #0000CC;
 }
 
+.preview {
+    text-align: center;
+}
+
+.preview-frame {
+    display: inline-block;
+    max-width: 100%;
+}
+
 .preview-image {
     border: 0;
     max-width: 100%;
     height: auto;
+}
+
+.preview-share {
+    padding-top: 4px;
+}
+
+.preview-nav {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    min-height: 100px;
+}
+
+.preview-nav-prev {
+    justify-self: start;
+}
+
+.preview-nav-next {
+    justify-self: end;
 }
 
 .thumbnail-image {

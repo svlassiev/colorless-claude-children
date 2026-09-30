@@ -157,26 +157,34 @@ function buildTable(el) {
   }
   el.appendChild(grid);
 
+  // Three fixed slots, like the photo page: a missing prev/next link leaves
+  // its slot empty, so the up link stays centered on the first and last page.
   var nav = document.createElement('div');
   nav.className = 'photo-nav';
+  var prevSlot = document.createElement('div');
+  prevSlot.className = 'photo-nav-prev';
   if (first !== 0) {
     var nfirst = first < 16 ? 0 : first - 16;
     var prevLink = document.createElement('a');
     prevLink.href = 'folderIndex.html?folder=' + encodeURIComponent(folder) + '&first=' + nfirst;
     prevLink.textContent = '\u041f\u0440\u0435\u0434\u044b\u0434\u0443\u0449\u0438\u0435 \u0444\u043e\u0442\u043e\u0433\u0440\u0430\u0444\u0438\u0438';
-    nav.appendChild(prevLink);
+    prevSlot.appendChild(prevLink);
   }
+  nav.appendChild(prevSlot);
   var upLink = document.createElement('a');
   upLink.href = 'index.html';
   upLink.textContent = '\u0412\u0432\u0435\u0440\u0445';
   upLink.className = 'photo-nav-up';
   nav.appendChild(upLink);
+  var nextSlot = document.createElement('div');
+  nextSlot.className = 'photo-nav-next';
   if (first + 16 < total) {
     var nextLink = document.createElement('a');
     nextLink.href = 'folderIndex.html?folder=' + encodeURIComponent(folder) + '&first=' + (first + 16);
     nextLink.textContent = '\u0421\u043b\u0435\u0434\u0443\u0449\u0438\u0435 \u0444\u043e\u0442\u043e\u0433\u0440\u0430\u0444\u0438\u0438';
-    nav.appendChild(nextLink);
+    nextSlot.appendChild(nextLink);
   }
+  nav.appendChild(nextSlot);
   el.appendChild(nav);
 }
 
@@ -187,23 +195,20 @@ function buildPreviewPanel(el) {
   if (!album || n <= 0) return;
   var total = getAlbumTotal(album);
 
-  var table = document.createElement('table');
-  var trPic = table.insertRow();
+  // Frame shrinks to the photo's width and is centered; share link and nav
+  // row sit underneath at the same width.
+  var frame = document.createElement('div');
+  frame.className = 'preview-frame';
   var img = document.createElement('img');
   img.src = getImageUrl(album, n, album.useFiles ? '1024' : null);
   img.className = 'preview-image';
   var imgLink = document.createElement('a');
   imgLink.appendChild(img);
   imgLink.href = 'preview.html?folder=' + encodeURIComponent(folder) + '&n=' + (n % total + 1);
-  var tdPic = trPic.insertCell();
-  tdPic.colSpan = 3;
-  tdPic.appendChild(imgLink);
+  frame.appendChild(imgLink);
 
-  var trShare = table.insertRow();
-  var tdShare = trShare.insertCell();
-  tdShare.colSpan = 3;
-  tdShare.style.textAlign = 'center';
-  tdShare.style.paddingTop = '4px';
+  var share = document.createElement('div');
+  share.className = 'preview-share';
   var shareBtn = document.createElement('a');
   shareBtn.href = '#';
   shareBtn.textContent = '\u041f\u043e\u0434\u0435\u043b\u0438\u0442\u044c\u0441\u044f';
@@ -220,10 +225,15 @@ function buildPreviewPanel(el) {
       });
     }
   };
-  tdShare.appendChild(shareBtn);
+  share.appendChild(shareBtn);
+  frame.appendChild(share);
 
-  var trNav = table.insertRow();
-  var tdPrev = trNav.insertCell();
+  // Three fixed slots: an empty prev/next slot keeps its place, so "Вверх"
+  // stays centered on the first and last photo.
+  var nav = document.createElement('div');
+  nav.className = 'preview-nav';
+  var prevSlot = document.createElement('div');
+  prevSlot.className = 'preview-nav-prev';
   if (n > 1) {
     var prevImg = document.createElement('img');
     prevImg.src = getImageUrl(album, n - 1, 'thumbnail');
@@ -231,14 +241,17 @@ function buildPreviewPanel(el) {
     var prevLink = document.createElement('a');
     prevLink.appendChild(prevImg);
     prevLink.href = 'preview.html?folder=' + encodeURIComponent(folder) + '&n=' + (n - 1);
-    tdPrev.appendChild(prevLink);
+    prevSlot.appendChild(prevLink);
   }
-  var tdUp = trNav.insertCell();
+  nav.appendChild(prevSlot);
+  var upSlot = document.createElement('div');
   var upLink = document.createElement('a');
   upLink.href = 'folderIndex.html?folder=' + encodeURIComponent(folder) + '&first=' + (n - 1);
   upLink.textContent = '\u0412\u0432\u0435\u0440\u0445';
-  tdUp.appendChild(upLink);
-  var tdNext = trNav.insertCell();
+  upSlot.appendChild(upLink);
+  nav.appendChild(upSlot);
+  var nextSlot = document.createElement('div');
+  nextSlot.className = 'preview-nav-next';
   if (n < total) {
     var nextImg = document.createElement('img');
     nextImg.src = getImageUrl(album, n + 1, 'thumbnail');
@@ -246,9 +259,11 @@ function buildPreviewPanel(el) {
     var nextLink = document.createElement('a');
     nextLink.appendChild(nextImg);
     nextLink.href = 'preview.html?folder=' + encodeURIComponent(folder) + '&n=' + (n + 1);
-    tdNext.appendChild(nextLink);
+    nextSlot.appendChild(nextLink);
   }
-  el.appendChild(table);
+  nav.appendChild(nextSlot);
+  frame.appendChild(nav);
+  el.appendChild(frame);
 }
 
 function init(data) {
