@@ -59,6 +59,21 @@ spec:
                 name: explore-proxy
                 port:
                   name: http
+          # The API Journey deck; its Service and Deployment live in the deck's own repo.
+          - path: /theapijourney
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: theapijourney
+                port:
+                  name: http
+          - path: /theapijourney/*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: theapijourney
+                port:
+                  name: http
           - path: /hiking
             pathType: ImplementationSpecific
             backend:
