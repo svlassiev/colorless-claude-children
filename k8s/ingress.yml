@@ -95,10 +95,3 @@ spec:
                 name: hiking
                 port:
                   name: http
-          - path: /favicon.ico
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: hiking
-                port:
-                  name: http
