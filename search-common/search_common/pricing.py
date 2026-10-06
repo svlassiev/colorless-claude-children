@@ -20,7 +20,9 @@ PRICES_PER_1M: dict[str, tuple[float, float]] = {
     "gemini-2.5-flash-lite": (0.10, 0.40),
     "gemini-2.5-pro": (1.25, 10.00),
     "gemini-3.1-flash-lite": (0.25, 1.50),
-    "gemini-3.5-flash": (1.50, 9.00),
+    # Non-global rate: 3.5-flash only runs on europe-west3 here (the generate
+    # rollback after 2026-11-19); non-global endpoints bill +10% since 2026-07-01.
+    "gemini-3.5-flash": (1.65, 9.90),
     "gemini-3.5-flash-lite": (0.30, 2.50),
     "gemini-3.6-flash": (0.75, 3.75),
     # Introductory rate through 2026-12-31. TODO(2027-01-01): switch to

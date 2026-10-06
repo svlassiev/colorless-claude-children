@@ -151,7 +151,7 @@ Front-end mirrors the backend per event:
 
 ## Configuration
 
-All settings come from env vars at process start (see [`search_common.settings`](../search-common/search_common/settings.py)). Defaults match the personal-project setup; production overrides via Cloud Run `--set-env-vars` / Secret Manager.
+All settings come from env vars at process start (see [`search_common.settings`](../search-common/search_common/settings.py)). Defaults match the personal-project setup; production overrides via Cloud Run `--update-env-vars` / Secret Manager. Never `--set-env-vars`: it replaces the whole set and wipes `GEOCODING_API_KEY` and the allow-lists.
 
 | Env var | Default | Purpose |
 |---|---|---|
