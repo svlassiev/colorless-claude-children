@@ -136,7 +136,9 @@ def _generate(
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
                     response_schema=SCHEMA,
-                    max_output_tokens=2000,
+                    # Thinking shares this pool: 3.8-flash used up to ~1.5k
+                    # of it (3.6-flash ~1.3k); truncated JSON fails the photo.
+                    max_output_tokens=4096,
                 ),
             )
             cap = json.loads(resp.text or "{}")

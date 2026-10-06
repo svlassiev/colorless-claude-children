@@ -21,19 +21,26 @@ from photo_search.tools.base import Filters
 from search_common.pricing import generation_cost
 
 # The Gemini generate models draw thinking AND the visible answer from ONE
-# output-token pool. Cap thinking so it can't consume the whole pool and truncate
-# the answer mid-word; size the pool as that cap plus a FLOORED, per-hit visible
-# allowance so even a 1-2 photo result still gets a complete, reasonably full
-# reply. (thinking_budget is accepted by both the 2.5 and 3.x families —
-# verified against 3.5-flash/-lite and 3.6-flash in the migration eval.)
-GEN_THINKING_BUDGET = 1024  # ceiling on the model's reasoning tokens for this task
+# output-token pool. Size the pool as a thinking headroom plus a FLOORED,
+# per-hit visible allowance so even a 1-2 photo result still gets a complete,
+# reasonably full reply. Gemini 3.x thinking can't be capped in tokens:
+# thinking_budget is deprecated there (intermittent 400 INVALID_ARGUMENT), so
+# the knob is thinking_level (LOW/MEDIUM/HIGH on 3.5-, 3.6- and 3.8-flash;
+# 3.8 rejects MINIMAL). The headroom is room, not a cap — only the level keeps
+# reasoning inside it, so re-check thoughts_token_count after a model swap.
+# MEDIUM, not LOW: on 3.8-flash LOW thought 0 tokens and broke the filter-trust
+# rule that 3.6-flash (~500-700 thinking tokens) kept; MEDIUM thinks ~1-1.8k.
+GEN_THINKING_LEVEL = types.ThinkingLevel.MEDIUM
+GEN_THINKING_HEADROOM = 2048  # output-pool room left for the model's reasoning
 MIN_VISIBLE_TOKENS = 900    # floor on the visible-answer budget (small result sets)
 PER_HIT_VISIBLE_TOKENS = 220  # visible budget grows with how many photos to cover
 
 # Deep answer mode — analytical queries (Filters.deep / the UI checkbox).
 # The task shifts from describe-what-you-see to reason-across-the-evidence,
-# so the thinking ceiling rises 8x and the visible answer gets more room.
-DEEP_THINKING_BUDGET = 8192
+# so thinking goes up a level, its headroom rises 8x and the visible answer
+# gets more room.
+DEEP_THINKING_LEVEL = types.ThinkingLevel.MEDIUM
+DEEP_THINKING_HEADROOM = 8192
 DEEP_MIN_VISIBLE_TOKENS = 1500
 DEEP_PER_HIT_VISIBLE_TOKENS = 300
 
@@ -219,15 +226,17 @@ def generate(
     of re-downloading — the rerank pipeline already fetched them.
 
     `max_output_tokens` caps Gemini's TOTAL output (thinking + visible). When
-    None it is GEN_THINKING_BUDGET + max(MIN_VISIBLE_TOKENS, PER_HIT_VISIBLE_TOKENS
-    * len(hits)), paired with a thinking_budget cap below. This guarantees the
-    visible answer a floor (so a 1-2 photo result still gets a complete reply)
-    and stops the model's reasoning from eating the pool and truncating mid-word.
+    None it is GEN_THINKING_HEADROOM + max(MIN_VISIBLE_TOKENS, PER_HIT_VISIBLE_TOKENS
+    * len(hits)), paired with a thinking_level below. As long as the level keeps
+    reasoning inside the headroom, the visible answer keeps its floor (a 1-2
+    photo result still gets a complete reply); reasoning that overruns the
+    headroom truncates the answer mid-word.
     The generate models think by default — thinking + visible both bill as output.
 
     Returns (answer_text, usage_dict).
     """
-    thinking_budget = DEEP_THINKING_BUDGET if deep else GEN_THINKING_BUDGET
+    thinking_level = DEEP_THINKING_LEVEL if deep else GEN_THINKING_LEVEL
+    thinking_headroom = DEEP_THINKING_HEADROOM if deep else GEN_THINKING_HEADROOM
     if max_output_tokens is None:
         if deep:
             visible_budget = max(
@@ -235,7 +244,7 @@ def generate(
             )
         else:
             visible_budget = max(MIN_VISIBLE_TOKENS, PER_HIT_VISIBLE_TOKENS * len(hits))
-        max_output_tokens = thinking_budget + visible_budget
+        max_output_tokens = thinking_headroom + visible_budget
 
     # Resolve bytes for every hit: prefer the prefetched map, otherwise
     # download what's missing in parallel. After this block every hit has
@@ -289,8 +298,8 @@ def generate(
         contents=contents,
         config=types.GenerateContentConfig(
             max_output_tokens=max_output_tokens,
-            # Cap reasoning so it can't starve the visible answer (see budget note).
-            thinking_config=types.ThinkingConfig(thinking_budget=thinking_budget),
+            # Reasoning effort by level, not a token cap (see headroom note above).
+            thinking_config=types.ThinkingConfig(thinking_level=thinking_level),
         ),
     )
 

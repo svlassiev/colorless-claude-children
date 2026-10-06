@@ -62,7 +62,17 @@ _VOICE_BLOCK = (
     " default assistant style:\n{voice}\n"
 )
 
-DEEP_THINKING_BUDGET = 8192
+# Output pool = thinking + visible. Gemini 3.x thinking is set by level, not a
+# token budget (see photo_search.qa). Deep adds a thinking headroom to its pool;
+# lookup gets only 300/hit, so it pins LOW: under 3.6-flash's default thinking
+# one depth-8 eval query thought 1,916 tokens (~80% of today's 2,400 pool; it
+# truncated under the old 2,000), and 3.8-flash defaults to MEDIUM. Tightest at
+# the API's k=8 and the local server/CLI's k=5 (1,500); the UI sends k=20 (6,000).
+# On 3.8-flash LOW thinks ~0 tokens and matched 3.6-flash's answers in the eval
+# (unlike photo lookups, which needed MEDIUM to keep the filter-trust rule).
+LOOKUP_THINKING_LEVEL = types.ThinkingLevel.LOW
+DEEP_THINKING_LEVEL = types.ThinkingLevel.MEDIUM
+DEEP_THINKING_HEADROOM = 8192
 DEEP_PER_HIT_TOKENS = 400
 DEEP_MIN_VISIBLE_TOKENS = 1500
 
@@ -113,13 +123,14 @@ def generate(
     When None, scales with retrieval depth: 300 * len(hits). At k=8 → 2400;
     at k=20 → 6000, so the visible answer isn't starved when more chunks are
     summarised. The Gemini generate models think by default — thinking tokens
-    count toward this budget and toward billing. (Raised from 250/hit during
+    count toward this budget and toward billing, and only the thinking_level
+    below (not a token cap) keeps them in check. (Raised from 250/hit during
     the 3.x migration: both 2.5-pro and 3.6-flash truncated long syntheses at
     the old budget; 2.5-pro worse, since it thinks more.)
     """
     if max_output_tokens is None:
         if deep:
-            max_output_tokens = DEEP_THINKING_BUDGET + max(
+            max_output_tokens = DEEP_THINKING_HEADROOM + max(
                 DEEP_MIN_VISIBLE_TOKENS, DEEP_PER_HIT_TOKENS * len(hits)
             )
         else:
@@ -132,14 +143,12 @@ def generate(
         voice_block=_VOICE_BLOCK.format(voice=voice) if voice else "",
         history_block=_HISTORY_BLOCK.format(history=history) if history else "",
     )
-    config = types.GenerateContentConfig(max_output_tokens=max_output_tokens)
-    if deep:
-        # Same reasoning ceiling as the photo side; lookup mode keeps the
-        # model's default thinking behavior it has always had here.
-        config = types.GenerateContentConfig(
-            max_output_tokens=max_output_tokens,
-            thinking_config=types.ThinkingConfig(thinking_budget=DEEP_THINKING_BUDGET),
-        )
+    # LOW for lookup (see LOOKUP_THINKING_LEVEL), MEDIUM for deep.
+    thinking_level = DEEP_THINKING_LEVEL if deep else LOOKUP_THINKING_LEVEL
+    config = types.GenerateContentConfig(
+        max_output_tokens=max_output_tokens,
+        thinking_config=types.ThinkingConfig(thinking_level=thinking_level),
+    )
     resp = client.models.generate_content(
         model=GENERATE_MODEL,
         contents=prompt,

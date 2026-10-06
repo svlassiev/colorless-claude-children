@@ -33,7 +33,7 @@ Deployment topology — where it runs:
        GCS (private) ─────→ index cache + raw photo bytes
 ```
 
-Cloud Run scales to zero when idle, so steady-state cost is dominated by Gemini calls (generation on gemini-3.6-flash: $0.75 / 1M input, $3.75 / 1M output). The L7 ingress + proxy hop adds ~30 ms p50 vs hitting Cloud Run directly — acceptable for the privacy of keeping `*.run.app` URLs out of the public surface.
+Cloud Run scales to zero when idle, so steady-state cost is dominated by Gemini calls (generation on gemini-3.8-flash: $0.75 / $3.75 per 1M input / output through 2026-12-31, then $1.50 / $7.50). The L7 ingress + proxy hop adds ~30 ms p50 vs hitting Cloud Run directly — acceptable for the privacy of keeping `*.run.app` URLs out of the public surface.
 
 ## Repository layout
 
@@ -102,7 +102,7 @@ A few load-bearing details:
 
 **Rerank (photo, depth ≥ 20).** When the caller picks depth 20, [`photo_search.rerank.rerank_hits`](../photo-search/photo_search/rerank.py) downloads the 20 image bytes in parallel, fans them out to **four parallel Flash-tier calls of five images each** (gemini-3.5-flash-lite) with a structured `response_schema`, sorts the hits by relevance score (cosine as tiebreaker), and trims to `RERANK_KEEP=10` for generation. Bytes are kept in a sha-keyed map and reused — the generator never re-downloads what the reranker already saw. The whole rerank step is bounded by `RERANK_TIMEOUT_S=15s`; on timeout or any exception we fall back to similarity order, **but the generator's input is still trimmed to 10** — wall time stays bounded even when Flash is unreachable.
 
-**Generation.** The generate model (gemini-3.6-flash) receives the (possibly reranked, possibly trimmed) hits inline as JPEG bytes plus dates and captions. The output budget scales with hit count so the visible answer doesn't get starved by reasoning tokens at high depth.
+**Generation.** The generate model (gemini-3.8-flash) receives the (possibly reranked, possibly trimmed) hits inline as JPEG bytes plus dates and captions. The output budget scales with hit count so the visible answer doesn't get starved by reasoning tokens at high depth.
 
 **Soft-failure wrapper.** Every generation call goes through [`search_common.generation.safe_generate`](../search-common/search_common/generation.py), which dispatches the sync Gemini call to `asyncio.to_thread` under `asyncio.wait_for` (default 60 s). On timeout or exception we return `GenerationOutcome(answer=None, usage=zero, error=<safe string>)` instead of bubbling a 500 — citations still render, and the frontend surfaces the error in a small inline notice.
 
@@ -157,12 +157,12 @@ All settings come from env vars at process start (see [`search_common.settings`]
 |---|---|---|
 | `EXPLORE_PROJECT` | `thematic-acumen-225120` | GCP project for Vertex / Firestore / GCS. |
 | `EXPLORE_LOCATION` | `europe-west4` | Regional Vertex endpoint — embeddings (and any bare-named model). Must match the indexer's region. |
-| `EXPLORE_GENERATE_MODEL` | `gemini-3.6-flash@global` | Generation (photo + log). Accepts `model` or `model@location` — the endpoint travels with the model. |
+| `EXPLORE_GENERATE_MODEL` | `gemini-3.8-flash@global` | Generation (photo + log). Accepts `model` or `model@location` — the endpoint travels with the model. |
 | `EXPLORE_ROUTING_MODEL` | `gemini-3.5-flash@europe-west3` | Query-filter routing. 3.5-flash matched the 2.5 baseline 20/20 in the migration eval; Frankfurt is the closest 3.x region. |
 | `EXPLORE_RERANK_MODEL` | `gemini-3.5-flash-lite@global` | Depth-20 photo rerank. |
-| `EXPLORE_PHOTO_CAPTION_MODEL` | `gemini-3.6-flash@global` | Offline photo captioning (indexer). |
-| `EXPLORE_LOG_CAPTION_MODEL` | `gemini-3.6-flash@global` | Offline log-image captioning. |
-| `EXPLORE_GEMINI_LOCATION` | = `EXPLORE_LOCATION` | Default endpoint for a bare model name (no `@location`). Rollback to 2.5 = set the bare 2.5 model names. |
+| `EXPLORE_PHOTO_CAPTION_MODEL` | `gemini-3.8-flash@global` | Offline photo captioning (indexer). |
+| `EXPLORE_LOG_CAPTION_MODEL` | `gemini-3.8-flash@global` | Offline log-image captioning. |
+| `EXPLORE_GEMINI_LOCATION` | = `EXPLORE_LOCATION` | Default endpoint for a bare model name (no `@location`). Generate/caption rollback: set `EXPLORE_GENERATE_MODEL` (Cloud Run: `--update-env-vars` — `--set-env-vars` wipes the other vars) and, for local caption runs, `EXPLORE_PHOTO_CAPTION_MODEL` / `EXPLORE_LOG_CAPTION_MODEL` to `gemini-3.6-flash@global` until it retires 2026-11-19, then `gemini-3.5-flash@europe-west3`; there is no 2.5 rollback (2.5 retires 2026-10-20). |
 | `EXPLORE_FIREBASE_PROJECT_ID` | same as `EXPLORE_PROJECT` | Audience claim for ID-token verification. |
 | `EXPLORE_ALLOWED_EMAILS` | empty | Comma-separated allow-list. Lower-cased, trimmed. |
 | `EXPLORE_LOG_TAB_ENABLED` | `false` | Master kill-switch for the log corpus tab + endpoint. |

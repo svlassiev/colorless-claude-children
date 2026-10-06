@@ -1,8 +1,9 @@
 """Per-model generation pricing for the cost footer / usage accounting.
 
 Rates are USD per 1M tokens (standard tier), taken from the Cloud Billing
-catalog (service "Gemini API") on 2026-08-14. Output rate applies to
-thinking + visible tokens combined — bill on the sum.
+catalog (service "Gemini API") on 2026-08-14; gemini-3.8-flash from the
+Vertex AI pricing page (global, Standard PayGo) on 2026-10-05. Output rate
+applies to thinking + visible tokens combined — bill on the sum.
 
 Unknown model → cost is None (shown as "n/a"), never a wrong number from a
 stale hardcoded rate. Keep this table in sync when swapping EXPLORE_*_MODEL.
@@ -22,6 +23,9 @@ PRICES_PER_1M: dict[str, tuple[float, float]] = {
     "gemini-3.5-flash": (1.50, 9.00),
     "gemini-3.5-flash-lite": (0.30, 2.50),
     "gemini-3.6-flash": (0.75, 3.75),
+    # Introductory rate through 2026-12-31. TODO(2027-01-01): switch to
+    # (1.50, 7.50), or the footer under-reports 3.8-flash cost 2x.
+    "gemini-3.8-flash": (0.75, 3.75),
 }
 
 

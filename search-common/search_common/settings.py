@@ -26,7 +26,9 @@ class Settings:
     # model available on its endpoint is a one-env-var swap (EXPLORE_*_MODEL).
     # Each generative model env var accepts "model" or "model@location": the
     # 3.x Gemini family serves only from specific endpoints (verified 2026-08:
-    # everything from "global", gemini-3.5-flash also europe-west3), while the
+    # everything from "global", gemini-3.5-flash also europe-west3; 2026-10:
+    # gemini-3.8-flash: use "@global" — its us/eu multi-region endpoints don't
+    # pass _model_spec's location check), while the
     # 2.5 family and both embedding models are regional. The parsed *_location
     # fields drive per-purpose clients; embedding clients ALWAYS stay on
     # `location` (multimodalembedding@001 / text-embedding-005 are regional).
@@ -104,18 +106,29 @@ def _load() -> Settings:
     face_allowed = frozenset(e.strip().lower() for e in raw_face_emails.split(",") if e.strip())
     face_enabled = os.environ.get("EXPLORE_FACE_SEARCH_ENABLED", "false").lower() == "true"
     gemini_location = os.environ.get("EXPLORE_GEMINI_LOCATION", location)
-    # Defaults migrated 2.5 → 3.x on 2026-08-14 (2.5 discontinued on Vertex
-    # 2026-10-20; ELA price hike 2027-01-28). Choices are eval-backed — see
-    # ~/Documents/gemini3-migration-eval/ANALYSIS.md:
+    # Defaults migrated 2.5 → 3.x on 2026-08-14 (the 2.5 family retires on
+    # Vertex 2026-10-20 — there is NO 2.5 rollback). Choices are eval-backed —
+    # see ~/Documents/gemini3-migration-eval/ANALYSIS.md:
     #   - routing: 3.5-flash was the only candidate matching 2.5-flash 20/20
     #     on the golden set (3.5-flash-lite invents year ranges for season
     #     queries). Frankfurt endpoint — closest 3.x region to the compute.
     #   - generation/captions: 3.6-flash ≥ 2.5-pro on our tasks at ~half cost.
     #   - rerank: 3.5-flash-lite matches 2.5-flash orderings at equal price.
-    # Rollback: put the old 2.5 name in the env var — the 2.5 family serves
-    # unchanged (regionally) until 2027-01-28.
+    # Generation/captions then moved 3.6-flash → 3.8-flash in 2026-10, since
+    # 3.6-flash retires on Vertex 2026-11-19. Eval on identical inputs (private
+    # embed-eval/gemini38/): deep answers better, lookups and captions on par,
+    # log lookups 2-4x faster at ~half the cost; photo lookups need MEDIUM
+    # thinking (LOW broke the filter-trust rule); voice captions ~25% dearer.
+    # It is a "short-term availability" model (no retirement date yet, ≥45
+    # days' notice), so expect another migration.
+    # Rollback (generation/captions): set EXPLORE_GENERATE_MODEL (Cloud Run:
+    # --update-env-vars; --set-env-vars wipes the other vars) and, for local
+    # caption runs, EXPLORE_PHOTO_CAPTION_MODEL / EXPLORE_LOG_CAPTION_MODEL to
+    # gemini-3.6-flash@global until 2026-11-19; after that
+    # gemini-3.5-flash@europe-west3 (no quality edge over 3.6-flash in the
+    # 2026-08 eval, at 2×/2.4× its input/output price).
     generate_model, generate_location = _model_spec(
-        "EXPLORE_GENERATE_MODEL", "gemini-3.6-flash@global", gemini_location
+        "EXPLORE_GENERATE_MODEL", "gemini-3.8-flash@global", gemini_location
     )
     routing_model, routing_location = _model_spec(
         "EXPLORE_ROUTING_MODEL", "gemini-3.5-flash@europe-west3", gemini_location
@@ -124,10 +137,10 @@ def _load() -> Settings:
         "EXPLORE_RERANK_MODEL", "gemini-3.5-flash-lite@global", gemini_location
     )
     photo_caption_model, photo_caption_location = _model_spec(
-        "EXPLORE_PHOTO_CAPTION_MODEL", "gemini-3.6-flash@global", gemini_location
+        "EXPLORE_PHOTO_CAPTION_MODEL", "gemini-3.8-flash@global", gemini_location
     )
     log_caption_model, log_caption_location = _model_spec(
-        "EXPLORE_LOG_CAPTION_MODEL", "gemini-3.6-flash@global", gemini_location
+        "EXPLORE_LOG_CAPTION_MODEL", "gemini-3.8-flash@global", gemini_location
     )
     # Embedding defaults migrated 2026-08-18 after the retrieval A/B (see the
     # private embed-eval/ANALYSIS.md): gemini-embedding-2 fixed every known

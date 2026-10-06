@@ -50,7 +50,7 @@ This module is **never published as a public demo**. It is for personal use and 
                                     ▼ (server pulls on startup)
                        in-memory NumPy + cosine similarity
                                     │
-query ── embed ── top-k ── Gemini 3.6 Flash ── answer + citations
+query ── embed ── top-k ── Gemini 3.8 Flash ── answer + citations
 ```
 
 **No Vertex AI Vector Search.** The corpus is small enough (~1 k chunks, ~1 MB of vectors) to fit in memory; running the managed service for it would cost ~$360/mo for zero benefit. This is the right engineering call: "I evaluated Vector Search and rejected it for this corpus size; the same code path scales to it at 100 k+ chunks."
@@ -63,7 +63,7 @@ query ── embed ── top-k ── Gemini 3.6 Flash ── answer + citation
 | Embeddings | `gemini-embedding-001` (3072-dim, `EXPLORE_LOG_EMBED_MODEL`) | Migrated from `text-embedding-005` 2026-08 — stronger multilingual retrieval, task-type asymmetry, path-breadcrumb chunks |
 | Index | In-memory NumPy + cosine similarity      | 1.3 k chunks × 3072-dim ≈ 16 MB — trivially fits |
 | Retrieval | Top-k (k=5) + optional date-range filter | Date metadata enables temporal queries without re-embedding |
-| Generation | Gemini 3.6 Flash (`EXPLORE_GENERATE_MODEL`) | Matched/beat 2.5 Pro on this corpus in the 2026-08 migration eval, at ~⅓ the cost |
+| Generation | Gemini 3.8 Flash (`EXPLORE_GENERATE_MODEL`) | On par with 3.6 Flash on this corpus in the 2026-10 eval, 2–4× faster at ~half the cost per lookup |
 | UI (MVP) | FastAPI + vanilla HTML, `127.0.0.1:8080` only | Visually consistent with the rest of `serg.vlassiev.info` (Verdana, retro palette). Localhost-only, single-user, no auth |
 | UI (stretch) | Same FastAPI app, authed at `serg.vlassiev.info/log` | Phase 5 — three deployment options ranked, decision deferred |
 
@@ -142,7 +142,7 @@ Vertex AI is pay-per-use; this project has no subscription, reservation, or hour
 
 **2. One-off embed** (~$0.05 for the full corpus) — `gemini-embedding-001` at $0.15/1M tokens. SHA-keyed cache; editing one journal entry only re-bills that chunk. The corpus is indexed from **committed files only** (`python -m log_search.committed_corpus` exports HEAD; point `LOG_CORPUS_ROOT` at it).
 
-**3. Per-query** — only the moment you click `ask`. The query is embedded (negligible) and the generate model (Gemini 3.6 Flash) reads `depth` chunks and writes the answer. **Cost scales linearly with the `depth` preset:**
+**3. Per-query** — only the moment you click `ask`. The query is embedded (negligible) and the generate model (Gemini 3.8 Flash) reads `depth` chunks and writes the answer. **Cost scales linearly with the `depth` preset:**
 
 | depth | full Gemini per query | `retrieve only` per query |
 |---|---|---|
@@ -150,7 +150,7 @@ Vertex AI is pay-per-use; this project has no subscription, reservation, or hour
 | 12 | ~$0.009–$0.015 | ~$0.0001 |
 | 20 | ~$0.015–$0.025 | ~$0.0001 |
 
-Gemini 3.6 Flash: $0.75/1M input, $3.75/1M output (measured per-query costs above are from the 2026-08 migration eval; the old 2.5 Pro numbers ran ~2.5× higher on the same queries). Each extra chunk adds ~200 input tokens. The `retrieve only` mode skips Gemini entirely and bills only the query embedding — much cheaper, ideal for iterating on prompts or debugging retrieval quality.
+Gemini 3.8 Flash: $0.75 / $3.75 per 1M input / output through 2026-12-31, then $1.50 / $7.50 (the depth table above is 3.6 Flash from the 2026-08 migration eval; 3.8 measured lower in 2026-10: ~$0.0035–0.006 per lookup at depth 8–12 and ~$0.010–0.012 per depth-12 deep answer). Each extra chunk adds ~200 input tokens. The `retrieve only` mode skips Gemini entirely and bills only the query embedding — much cheaper, ideal for iterating on prompts or debugging retrieval quality.
 
 **Idle = $0.** No Vertex AI Vector Search endpoint, no Cloud Run, no recurring infrastructure. The FastAPI server is a Python process holding ~6 MB of vectors in RAM — it bills only when you query.
 

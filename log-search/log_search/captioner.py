@@ -14,8 +14,9 @@ Why a separate step (and a strong tier, not the cheapest):
 - Captions are deterministic-enough per image; we cache by image-bytes
   sha so re-runs on unchanged corpora cost nothing.
 
-Cost: ~$0.003–0.006 per image at 3.6-flash rates (258 image tokens +
-~30 prompt + up to ~1500 output tokens at $0.75/$3.75 per 1M).
+Cost: ~$0.003–0.016 per image at 3.8-flash rates (~1120 image tokens +
+~30 prompt + up to ~4096 output tokens at $0.75/$3.75 per 1M through
+2026-12-31; double that from 2027-01-01 at $1.50/$7.50).
 
 Run:  uv run --directory log-search python -m log_search.captioner
 """
@@ -72,9 +73,11 @@ description as prose — no bullet lists, no markdown headings.
 """
 
 # Generous output budget — the caption model thinks by default, so leave
-# headroom for thinking tokens. 2 paragraphs is ~400-500 tokens visible; the 1500 cap
-# covers thinking + visible without truncating.
-MAX_OUTPUT_TOKENS = 1500
+# headroom for thinking tokens. 2 paragraphs is ~400-500 tokens visible. 1500
+# covered 3.6-flash (~500-800 thinking) but truncated 3.8-flash, whose default
+# MEDIUM thinking took 1338 of 1500 on a screenshot. A truncated caption is
+# cached by sha and never retried, so keep ~2.5x headroom over that.
+MAX_OUTPUT_TOKENS = 4096
 
 
 @dataclass(frozen=True)
