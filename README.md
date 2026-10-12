@@ -82,7 +82,7 @@ New albums are file-based: `"useFiles": true` in `albums.json`, plus the filenam
    kubectl --context $CTX rollout status deployment/hiking-api
    curl -s https://serg.vlassiev.info/share/<folder>/1 | grep og:image   # expect the _1024 URL
    ```
-7. **Optional, and billed:** photos show up in /explore search only after the photo-search index is rebuilt (about $0.0005 per photo, see `photo-search/README.md` "Rebuilding the index") and explore is redeployed, because its image bakes in `albums.json`.
+7. **Optional, and billed:** photos show up in /explore search only after the photo-search index is rebuilt — captions, vectors, place labels, people tags **and the owner-voice Russian captions**, in the order of `photo-search/README.md` "Rebuilding the index" (about $0.006 per photo plus download egress; 149 phone photos ≈ $1) — and explore is redeployed, because its image bakes in `albums.json`.
 
 To reorder a published album or hide a photo, edit its list in `albums-files.json`. The bucket objects can stay where they are.
 

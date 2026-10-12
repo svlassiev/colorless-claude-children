@@ -31,3 +31,7 @@ face = [
 
 [tool.uv.sources]
 search-common = { path = "../search-common", editable = true }
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

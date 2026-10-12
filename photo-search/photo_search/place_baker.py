@@ -19,6 +19,9 @@ Workflow:
   2. python -m photo_search.embedder            # rewrites manifest_meta.jsonl
                                                 # (cache hits all SHAs — no
                                                 #  new embeddings, no cost)
+
+After an indexer run, bake only once `embedder` and `dedup` have run: the labels
+count positions on the DEDUPLICATED manifest, and this refuses to run otherwise.
 """
 
 from __future__ import annotations
@@ -265,6 +268,18 @@ def bake(rows: list[dict], labels: dict, coords_map: dict | None = None) -> dict
     }
 
 
+def duplicate_photos(rows: list[dict]) -> int:
+    """How many photos (content shas) the manifest holds more than once.
+
+    Every one of them is something `dedup` can clear — it also deduplicates the
+    rows that are not in the index — so this cannot refuse for ever.
+    """
+    seen: dict[str, int] = defaultdict(int)
+    for r in rows:
+        seen[r["sha"]] += 1
+    return sum(1 for n in seen.values() if n > 1)
+
+
 def _write_atomic(rows: list[dict], dest: Path) -> None:
     """Write JSONL atomically: temp file in same dir, then os.replace.
 
@@ -305,6 +320,17 @@ def main() -> int:
         return 1
 
     rows = [json.loads(line) for line in args.manifest.open()]
+    duplicates = duplicate_photos(rows)
+    if duplicates:
+        # Labels address a photo by its POSITION in the album's file list, counted on
+        # the deduplicated manifest. An indexer run brings the byte-identical copies
+        # back; baking now would shift the numbering and label photos with the wrong place.
+        print(
+            f"refusing to bake: {duplicates} photo(s) appear more than once in the manifest — "
+            "run `python -m photo_search.embedder` and `python -m photo_search.dedup` first",
+            file=sys.stderr,
+        )
+        return 1
     labels = json.loads(args.labels.read_text())
     coords_map = (
         json.loads(args.coords.read_text(encoding="utf-8"))

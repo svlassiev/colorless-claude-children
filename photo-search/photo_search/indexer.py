@@ -39,6 +39,7 @@ from photo_search.paths import (
     PROJECT,
     ensure_cache_dir,
 )
+from photo_search.safety import carry_over, drop_relisted_copies
 
 # Pricing rough-estimate at Flash-tier rates ($0.30-0.75/1M in, $2.50-3.75/1M out).
 # Per image: 258 image tokens + ~30 prompt tokens input, ~50 output tokens.
@@ -315,10 +316,35 @@ def main() -> int:
         )
 
     if not args.dry_run:
-        with MANIFEST_PATH.open("w") as f:
-            for m in metas:
-                f.write(json.dumps(asdict(m)) + "\n")
-        print(f"\nwrote {len(metas)} rows to {MANIFEST_PATH}", file=sys.stderr)
+        rows = [asdict(m) for m in metas]
+        # The manifest is rebuilt from the bucket listing, but it is also where
+        # place_baker and face_promote bake their fields. Keep those: without
+        # this, the next embedder run serves an index with no place labels and
+        # no people tags for the whole corpus (see photo_search.safety).
+        previous = (
+            [json.loads(line) for line in MANIFEST_PATH.open(encoding="utf-8") if line.strip()]
+            if MANIFEST_PATH.exists() else []
+        )
+        if args.limit and len(previous) > len(rows):
+            # A smoke run must not truncate the manifest: the next full run would
+            # find nothing to carry over. Its captions are in the caption cache.
+            print(
+                f"--limit run: {MANIFEST_PATH} left as it is ({len(previous)} rows)",
+                file=sys.stderr,
+            )
+        else:
+            kept = carry_over(previous, rows)
+            listed = len(rows)
+            rows = drop_relisted_copies(previous, rows)
+            print(
+                f"kept baked place/people fields on {kept} rows; "
+                f"left out {listed - len(rows)} re-listed copies of photos already in the manifest",
+                file=sys.stderr,
+            )
+            with MANIFEST_PATH.open("w", encoding="utf-8") as f:
+                for row in rows:
+                    f.write(json.dumps(row, ensure_ascii=False) + "\n")
+            print(f"\nwrote {len(rows)} rows to {MANIFEST_PATH}", file=sys.stderr)
 
     # Always print a JSON summary to stdout for easy piping.
     summary = {
@@ -336,8 +362,11 @@ def main() -> int:
 
     # Auto-push updated artefacts to the private GCS bucket. Cheap (Class A
     # ops at $0.005/1k → ~$0). Idempotent — no-op if remote already up to date.
-    # Skip on dry-run/count-only to keep those modes fully offline.
-    if not args.dry_run and not args.count_only:
+    # Skip on dry-run/count-only to keep those modes fully offline — and on a
+    # --limit smoke run, whose N-row manifest must never replace the live one.
+    if args.limit:
+        print("--limit run: nothing pushed (the manifest holds only the limited rows)", file=sys.stderr)
+    if not args.dry_run and not args.count_only and not args.limit:
         try:
             from photo_search.cloud_cache import push_to_gcs
 

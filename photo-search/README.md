@@ -96,6 +96,8 @@ uv run python -m photo_search.dedup
 
 The indexer and embedder are **idempotent** — re-running on unchanged inputs costs $0 (path-keyed caption cache, sha-keyed embedding cache).
 
+That is the first build. **After adding photos, follow [Rebuilding the index](#rebuilding-the-index)** — it has more steps (place labels, people tags, the owner-voice Russian captions), and their order matters.
+
 ### Ask a question
 
 ```bash
@@ -176,7 +178,9 @@ Each extra image adds ~1,120 input tokens to the generate model (Gemini 3.8 Flas
 | `indexer` smoke (10 photos) | ~$0.003 | Validates prompt quality before the full batch |
 | `indexer` full (~6.5k photos) | ~$1.62 | One-off; path-cached so re-runs cost $0 |
 | `embedder` full (~6.5k photos) | ~$1.30 | One-off; sha-cached |
-| `dedup` | $0 | Local file processing only |
+| `dedup`, `place_baker`, `face_promote` | $0 | Local file processing only |
+| `style_captioner` (owner-voice ru/en) | ~$0.005 per photo | Part of every rebuild; the style card rides on every call |
+| Egress while indexing | ~$0.12 per GB | `indexer`, `embedder`, `style_captioner` each download the originals |
 | `ask` / server, depth=8 | ~$0.004–$0.008 per query | Default; cost printed in stderr / page footer |
 | `ask` / server, depth=12 | ~$0.008–$0.012 per query | +50% photos, +50% input tokens |
 | `ask` / server, depth=20 | ~$0.013–$0.020 per query | Useful for broad "show me everything …" queries |
@@ -195,7 +199,7 @@ uv run python -m photo_search.cloud_cache pull   # bucket → local (only newer 
 
 The server's `lifespan()` calls `pull_from_gcs()` at startup automatically — no-op if local is already fresh.
 
-Files synced: `index.npz`, `manifest.jsonl`, `manifest_meta.jsonl`, `caption_cache.jsonl`.
+Files synced: `index-<embed-model>.npz` and `manifest_meta-<embed-model>.jsonl` (today `index-gemini-embedding-2.npz` / `manifest_meta-gemini-embedding-2.jsonl`; the untagged `index.npz` / `manifest_meta.jsonl` in the bucket are the legacy `multimodalembedding@001` index and are not served), `manifest.jsonl`, `caption_cache.jsonl`, `caption_cache_styled.jsonl`, plus the private `answer_voice.md`, `person_aliases.json`, `hiking_image_ids.json`. A push is checked against the live copies first — see [A rebuild cannot wipe what is live](#a-rebuild-cannot-wipe-what-is-live).
 
 Bucket: `gs://cdc-search-cache/photo-search/` — UBLA + `publicAccessPrevention=enforced` + versioning enabled + 7-day soft-delete. Never public; overwrites are recoverable.
 
@@ -203,14 +207,78 @@ Cost: ~$0.001/month for the ~37 MB cache; Class A/B ops effectively $0.
 
 ### Rebuilding the index
 
-If you've added photos to `gs://colorless-days-children/` and want the index to reflect them:
+After photos were added to `gs://colorless-days-children/`. **This order, all of it** — the served
+index is more than vectors: place labels and the owner-voice Russian captions are baked on by later
+passes, and a rebuild that skips them serves new photos without them; people tags are re-applied
+to the photos that already belong to a named face cluster.
 
 ```bash
-uv run python -m photo_search.indexer --workers 10  # ~$1.62 for ~6.5k photos, path-cached
-uv run python -m photo_search.embedder --workers 4  # ~$1.30 for ~6.5k photos, sha-cached
-uv run python -m photo_search.dedup                 # local file processing only
-# all three auto-push the updated artefacts to GCS at the end
+uv run python -m photo_search.indexer --workers 10   # captions new photos        ~$0.00025 / new photo
+uv run python -m photo_search.embedder --workers 4   # vectors for new photos     ~$0.0002  / new photo
+uv run python -m photo_search.dedup                  # local: drops byte-identical copies
+uv run python -m photo_search.place_baker            # local: place labels (refuses until dedup has run)
+uv run python -m photo_search.face_promote           # local: re-applies the people tags of the named face clusters
+uv run python -m photo_search.embedder --workers 4   # $0 (cache hits): carries the baked fields into the served meta
+uv run python -m photo_search.style_captioner        # owner-voice {ru, en} captions  ~$0.005 / new photo
+uv run python -m photo_search.cloud_cache push       # the styled cache is not pushed by its tool
+# new albums or app uploads? also:  python -m photo_search.hiking_links  (free; share links), then push
 ```
+
+- **The Russian captions are part of every rebuild, not an extra** — search shows `caption_ru` to a
+  Russian query, and a photo without one falls back to the generic English caption. They use the
+  place labels as context, so label new albums in `photo_search/data/place_labels.json` *before*
+  this run if the captions should be able to say where.
+- **Every photo gets a vector, caption or not.** The vector is made from the image alone, so a photo
+  the caption model declined to describe is still searchable (until 2026-09-21 the embedder skipped
+  such photos silently). What is *not* indexed is decided in one place, explicitly: the indexer's
+  file-name rules (`_is_photo`).
+- **People tags do not reach new photos.** `face_promote` only re-applies the named clusters in
+  `~/.cache/photo-search/clusters.json` + `cluster_labels.json`. Photos added since the last
+  `face_detect` → `face_cluster` → naming pass have no faces on record and get no `person_names`
+  until that (local, separate) pass is run again.
+- **What it really costs.** Per new photo ~$0.0005 for caption + vector, ~$0.005 for the styled
+  captions (the style card rides on every call; about a third of the photos get a second,
+  hedge-removing call) — and **egress**: `indexer`, `embedder` and `style_captioner` each download
+  the full-size originals from the EU multi-region bucket (~$0.12/GB). For 149 phone photos
+  (426 MB) on 2026-09-20: captions $0.04, vectors $0.03, styled captions ≈ $0.7–1.1, egress ≈ $0.15.
+- New albums also need the **explore image rebuilt** (`albums.json` / `albums-files.json` are baked
+  into it; see `explore/README.md`) for their share links. New *data* alone does not: the server
+  pulls the caches from GCS on its next cold start.
+
+#### A rebuild cannot wipe what is live
+
+`indexer`, `embedder` and `dedup` push to the live bucket by themselves at the end of a run, and the
+indexer rebuilds `manifest.jsonl` from the bucket listing. Until 2026-09-20 that combination meant:
+run the three commands above as the old README listed them, and production served an index with
+**no place labels and no people tags for the whole corpus**. Now ([`photo_search/safety.py`](photo_search/safety.py),
+[`tests/test_safety.py`](tests/test_safety.py)):
+
+- the **indexer keeps** the fields `place_baker` and `face_promote` baked onto a photo, and **keeps
+  re-listed copies out**: a photo the previous manifest already holds stays under that path, so a
+  byte-identical copy published in a new album cannot take its place (the old album would lose a
+  row, and every place label after it would move by one — labels address a photo by its position).
+  `dedup` makes the same choice for whatever is left: the copy that was kept before wins, then the
+  smallest path. *Not covered:* a file **replaced under the same name** is not noticed at all — the
+  caption cache is keyed by path, so it keeps its old sha, caption, vector and tags until its row is
+  removed from `caption_cache.jsonl` by hand;
+- an `indexer --limit N` smoke run **does not push and does not truncate** an existing, fuller manifest;
+- `place_baker` **refuses to run** while the manifest still holds byte-identical (captioned) copies —
+  its labels count positions on the deduplicated manifest;
+- every **push is checked against what is live, and is all-or-nothing**: it is refused — nothing
+  uploaded, a non-zero exit from the CLI — if photos would lose baked fields (more than 2 % of those
+  that carry one), more than 5 % of the live photos would disappear (counted by content, so `dedup`
+  dropping duplicate rows passes), or any synced file would shrink by more than 20 %. An intended
+  loss (an album deleted, labels withdrawn) goes through with
+  `python -m photo_search.cloud_cache push --allow-data-loss`, which prints what it overrides. It is
+  a flag on that one command on purpose — there is no environment variable that could stay exported;
+- **vectors and rows must pair up** whenever either file is pushed — first push and
+  `--allow-data-loss` included: no intended loss looks like that;
+- a storage error while looking at the live copy **fails the push** instead of being read as
+  "nothing live to lose" (the server's start-up pull stays tolerant: it starts on its local copy).
+
+Run the tests: `cd photo-search && uv run pytest -q` (24, no cloud).
+
+The bucket keeps versions and a 7-day soft-delete as the last line; `dedup` leaves `*.bak` locally.
 
 ## Known follow-ups
 

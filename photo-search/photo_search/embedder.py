@@ -3,7 +3,8 @@
 The embedding model puts images and text into one joint space
 (multimodalembedding@001: 1408-dim; gemini-embedding-2: 3072-dim), so a text
 query at retrieval time lands near matching image vectors without a
-captioning detour. Captions remain useful as displayed metadata.
+captioning detour. Captions remain useful as displayed metadata — and are not
+needed for a photo to be searchable: a photo without one is embedded like any other.
 
 Cost-aware:
 - Sanity check on one image + its caption (cosine margin) gates the batch.
@@ -27,6 +28,7 @@ import numpy as np
 from google.cloud import storage
 
 from photo_search.embedding import PhotoEmbedder, make_photo_embedder
+from photo_search.safety import ENRICHMENT_FIELDS
 from photo_search.paths import (
     BUCKET,
     EMBED_DIM,
@@ -119,6 +121,19 @@ def _process_one(
     raise RuntimeError("unreachable")
 
 
+def searchable_rows(manifest: list[dict]) -> list[dict]:
+    """The photos that get a vector: ALL of them.
+
+    The vector is made from the IMAGE alone; a caption is only text shown next
+    to it. Until 2026-09-21 rows without a caption were skipped here as "failed
+    Phase 1" — so a model declining to describe one photo silently dropped that
+    photo from search (nine of them, found by the owner). The owner's rule: every
+    image is searchable unless it is excluded EXPLICITLY — and that is decided in
+    one place, the indexer's file-name rules, never as a side effect here.
+    """
+    return list(manifest)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(prog="photo-search-embedder")
     parser.add_argument("--limit", type=int, default=None, help="cap photos (smoke)")
@@ -131,14 +146,11 @@ def main() -> int:
         return 1
 
     manifest = [json.loads(line) for line in MANIFEST_PATH.open()]
-    # Skip rows with empty caption — those failed Phase 1 and we don't keep them
-    # in the searchable index. Could include them with image-only embedding if
-    # we wanted pure visual search of the failures.
-    rows = [r for r in manifest if r.get("caption")]
-    skipped = len(manifest) - len(rows)
+    rows = searchable_rows(manifest)
+    uncaptioned = sum(1 for r in rows if not r.get("caption"))
     print(
-        f"manifest: {len(manifest)} total, {skipped} skipped (no caption), "
-        f"{len(rows)} to embed",
+        f"manifest: {len(rows)} photos"
+        + (f" ({uncaptioned} without a caption — embedded all the same)" if uncaptioned else ""),
         file=sys.stderr,
     )
 
@@ -160,8 +172,10 @@ def main() -> int:
     embedder = make_photo_embedder()
     storage_client = storage.Client(project=PROJECT)
 
-    if not args.skip_sanity and to_embed:
-        _sanity_check(embedder, storage_client, rows[0]["blob_path"], rows[0]["caption"])
+    # The sanity check compares an image with its own caption, so it needs a row that has one.
+    sample = next((r for r in rows if r.get("caption")), None)
+    if not args.skip_sanity and to_embed and sample:
+        _sanity_check(embedder, storage_client, sample["blob_path"], sample["caption"])
 
     vectors = np.zeros((len(rows), EMBED_DIM), dtype=np.float32)
     for i, r in enumerate(rows):
@@ -207,15 +221,7 @@ def main() -> int:
     # place_baker.py, person_names added by face_promote.py) only land in meta
     # when present on the manifest row; rows without them stay clean.
     META_REQUIRED = ("id", "gcs_uri", "blob_path", "exif_date_iso", "exif_gps", "caption", "sha")
-    META_OPTIONAL = (
-        "place_names",
-        "place_detail",
-        "place_approximate",
-        "place_context",
-        "place_coord",
-        "place_coord_source",
-        "person_names",
-    )
+    META_OPTIONAL = ENRICHMENT_FIELDS  # the same list the push guard protects
     with META_PATH.open("w", encoding="utf-8") as f:
         for r in rows:
             meta: dict = {k: r.get(k) for k in META_REQUIRED}

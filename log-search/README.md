@@ -183,11 +183,22 @@ Bucket: `gs://cdc-search-cache/log-search/` — UBLA + `publicAccessPrevention=e
 
 ### Rebuilding the index
 
-If you've edited the journal and want the index to reflect the new content:
+After the journal changed. The index is built from **committed files only** — the export step makes
+that a one-liner, and drafts or scratch notes never enter it:
 
 ```bash
-uv run python -m log_search.chunker     # free; re-chunks ~/projects/log
-uv run python -m log_search.embedder    # ~$0.025 full corpus, sha-cached on incremental
+uv run python -m log_search.committed_corpus     # free; exports the journal's HEAD into the cache
+export LOG_CORPUS_ROOT=~/.cache/log-search/corpus_committed
+uv run python -m log_search.captioner            # new committed images only (~$0.003–0.006 each)
+uv run python -m log_search.chunker              # free; re-chunks the export
+uv run python -m log_search.embedder             # ~$0.025 full corpus, sha-cached on incremental
 # embedder auto-pushes the updated index to GCS at the end
 ```
 
+The push is **all-or-nothing and checked against what is live**: it is refused (nothing uploaded,
+non-zero exit from the CLI) if any synced file would shrink by more than 10 % — the journal only
+grows, so that is a chunker run on the wrong corpus root or a truncated write — or if vectors and
+rows disagree. An intended loss: `python -m log_search.cloud_cache push --allow-data-loss` — a flag on
+that one command (no environment variable), which prints what it overrides and never waives the
+vectors/rows check. A storage error while looking at the live copy fails the push rather than
+being read as "nothing live to lose".
